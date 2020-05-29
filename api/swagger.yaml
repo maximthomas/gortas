@@ -1,0 +1,109 @@
+openapi: 3.0.1
+info:
+  title: Auth Service
+  description: ''
+  termsOfService: 'TODO'
+  contact:
+    email: 'maxim.thomas@gmail.com'
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+  - url: https://gortas:8443/v1/
+tags:
+  - name: authentication
+    description: Everything about your Pets
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+paths:
+  /auth/{realm}/{service}:
+    get:
+      tags:
+        - authentication
+      summary: start authentication
+      operationId: startAuth
+      parameters:
+        - name: realm
+          in: path
+          description: Realm to authenticate
+          required: true
+          schema:
+            type: string
+        - name: service
+          in: path
+          description: Authentication service
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallbackRequest'
+    post:
+      tags:
+        - authentication
+      summary: Add a new pet to the store
+      operationId: submit authentication data
+      parameters:
+        - name: realm
+          in: path
+          description: Realm to authenticate
+          required: true
+          schema:
+            type: string
+        - name: service
+          in: path
+          description: Service ti authenticate to authenticate
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Pet object that needs to be added to the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallbackRequest'
+        required: true
+      responses:
+        405:
+          description: Invalid input
+          content: {}
+
+components:
+  schemas:
+    Callback:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        value:
+          type: string
+        validation:
+          type: string
+          description: 'Regular expression to validate field'
+        required:
+          type: boolean
+        properties:
+          additionalProperties:
+            type: string
+      required:
+        - type
+        - value
+    CallbackRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        module:
+          type: string
+        callbacks:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Callback'
