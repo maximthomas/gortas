@@ -9,10 +9,14 @@ services:
       - 8080:8080
     depends_on:
       - mongo
+    environment:
+      SESSION_DATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
+      AUTHENTICATION_REALMS_STAFF_USERDATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
 
   gortas-ui:
     build: 
-      context: ../gortas-ui
+      dockerfile: ui.Dockerfile
+      context: .
     ports:
      - 3000:80
 

@@ -42,8 +42,4 @@ session:
       -----END RSA PRIVATE KEY-----
 
   dataStore:
-    type: "mongo"
-    properties:
-      url: "mongodb://root:changeme@localhost:27017"
-      database:   "session"
-      collection: "session"
+    type: "inMemory"
