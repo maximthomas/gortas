@@ -1,6 +1,6 @@
 authentication:
   realms:
-    staff:
+    users:
       modules:
         login:
           type: "login"

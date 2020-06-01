@@ -43,3 +43,8 @@ session:
 
   dataStore:
     type: "inMemory"
+
+server:
+  cors:
+    allowedOrigins:
+      - http://localhost:3000

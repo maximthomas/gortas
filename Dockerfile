@@ -8,6 +8,6 @@ FROM alpine
 RUN adduser -S -D -H -h /app appuser
 USER appuser
 COPY --from=builder /build/main /app/
-ADD test/auth-config-dev.yaml /app/config/auth-config.yaml
+ADD ./auth-config.yaml /app/config/auth-config.yaml
 WORKDIR /app
 CMD ["./main", "--config", "./config/auth-config.yaml"]

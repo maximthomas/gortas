@@ -1,7 +1,6 @@
 version: '3.7'
 
 services:
-
   gortas:
     build:
       context: .
@@ -11,7 +10,7 @@ services:
       - mongo
     environment:
       SESSION_DATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
-      AUTHENTICATION_REALMS_STAFF_USERDATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
+      AUTHENTICATION_REALMS_USERS_USERDATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
 
   gortas-ui:
     build: 
