@@ -87,6 +87,6 @@ const (
 )
 
 const (
-	AuthCookieName    = "BlazewallAuthSession"
-	SessionCookieName = "BlazewallSession"
+	AuthCookieName    = "GortasAuthSession"
+	SessionCookieName = "GortasSession"
 )
