@@ -1,11 +1,11 @@
 # Gortas
 
 **Gortas** is an API based authentication service, allows adding authentication to your site or service with minimum efforts. 
-**Gortas** supports multiple authentication methods across various data sources.
+**Gortas** supports multiple authentication methods across various data sources. You can authenticate against your Active Dorectory or other LDAP user directory or use MongoDB.
 
 It allows building complex authentication processes with various steps and different authentication methods.   
 
-For example, you can build authentication with SMS confirmation code, and the user won't be authenticated until he enters a one-time password sent via SMS.
+For example, you can build login and password authentication with SMS confirmation code, and the user won't be authenticated until he enters a one-time password sent via SMS.
 
 ## Quick Start with docker-compose
 
