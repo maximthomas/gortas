@@ -1,6 +1,6 @@
 # Gortas
 
-**Gortas** is an API based authentication service, allows adding authentication to your site or service with minimum efforts. 
+**Gortas** (Golang Authentication Service) is an API based authentication service, allows adding authentication to your site or service with minimum efforts. 
 **Gortas** supports multiple authentication methods across various data sources. You can authenticate against your Active Dorectory or other LDAP user directory or use MongoDB.
 
 It allows building complex authentication processes with various steps and different authentication methods.   
