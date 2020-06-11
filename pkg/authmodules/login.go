@@ -47,6 +47,10 @@ func (lm *LoginPassword) ValidateCallbacks(cbs []models.Callback) error {
 	return lm.BaseAuthModule.ValidateCallbacks(cbs)
 }
 
+func (lm *LoginPassword) PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error {
+	return nil
+}
+
 func NewLoginModule(base BaseAuthModule) *LoginPassword {
 	(&base).callbacks = []models.Callback{
 		{

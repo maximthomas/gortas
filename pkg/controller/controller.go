@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -52,6 +53,7 @@ func (l LoginController) processAuthChain(authChain config.AuthChain, realm conf
 	//get login session state from request, if there's no session state, create one
 	lss := l.getLoginSessionState(authChain, realm, c)
 
+	moduleInstances := make([]authmodules.AuthModule, len(lss.Modules))
 	for moduleIndex, moduleInfo := range lss.Modules { //iterate modules in chain
 		switch moduleInfo.State {
 		case auth.Start, auth.InProgress:
@@ -59,6 +61,7 @@ func (l LoginController) processAuthChain(authChain config.AuthChain, realm conf
 			if err != nil {
 				return err
 			}
+			moduleInstances[moduleIndex] = am
 			var newState auth.ModuleState
 			var cbs []models.Callback
 			switch moduleInfo.State {
@@ -124,13 +127,26 @@ func (l LoginController) processAuthChain(authChain config.AuthChain, realm conf
 			break
 		}
 	}
+
 	if authSucceeded {
-		session, err := l.createSession(lss, realm)
+		sessID, err := l.createSession(lss, realm)
 		if err != nil {
 			return err
 		}
-		c.SetCookie(auth.SessionCookieName, session, 0, "/", "", false, true)
-		c.JSON(200, gin.H{"status": "success"})
+
+		for moduleIndex := range lss.Modules {
+			err = moduleInstances[moduleIndex].PostProcess(sessID, lss, c)
+			if err != nil {
+				return err
+			}
+		}
+
+		c.SetCookie(auth.SessionCookieName, sessID, 0, "/", "", false, true)
+		if lss.RedirectURI != "" {
+			c.Redirect(http.StatusFound, lss.RedirectURI)
+		} else {
+			c.JSON(200, gin.H{"status": "success"})
+		}
 	}
 
 	return nil
