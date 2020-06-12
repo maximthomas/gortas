@@ -144,3 +144,7 @@ func (k *Kerberos) ProcessCallbacks(_ []models.Callback, _ *auth.LoginSessionSta
 func (k *Kerberos) ValidateCallbacks(cbs []models.Callback) error {
 	return k.BaseAuthModule.ValidateCallbacks(cbs)
 }
+
+func (k *Kerberos) PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error {
+	return nil
+}

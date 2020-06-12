@@ -2,11 +2,12 @@ package authmodules
 
 import (
 	"errors"
+	"reflect"
+
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/mitchellh/mapstructure"
-	"reflect"
 )
 
 const (
@@ -93,6 +94,10 @@ func (rm *Registration) ProcessCallbacks(inCbs []models.Callback, lss *auth.Logi
 
 func (rm *Registration) ValidateCallbacks(cbs []models.Callback) error {
 	return rm.BaseAuthModule.ValidateCallbacks(cbs)
+}
+
+func (rm *Registration) PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error {
+	return nil
 }
 
 func NewRegistrationModule(base BaseAuthModule) *Registration {

@@ -13,6 +13,7 @@ type LoginSessionState struct {
 	SharedState map[string]string
 	UserId      string
 	SessionId   string
+	RedirectURI string
 }
 
 type LoginSessionStateModuleInfo struct {
