@@ -111,14 +111,17 @@ func (h *Hydra) PostProcess(_ string, lss *auth.LoginSessionState, c *gin.Contex
 }
 
 func NewHydraModule(base BaseAuthModule) *Hydra {
+	skipTLS, _ := base.properties["skiptls"].(bool)
+
 	uri, ok := base.properties["uri"].(string)
+
 	if !ok {
 		panic("hydra module missing uri property")
 	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: skipTLS,
 			},
 		},
 	}
