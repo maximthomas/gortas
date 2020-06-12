@@ -1,0 +1,56 @@
+authentication:
+  realms:
+    users:
+      modules:
+        login:
+          type: "login"
+          properties:
+        registration:
+          type: "registration"
+          properties:
+            additionalFileds:
+              - dataStore: "name"
+                prompt: "Name"
+        hydra:
+          type: "hydra"
+          properties:
+            uri: "https://localhost:4445"
+
+      authChains:
+        login:
+          modules:
+            - id: "hydra"
+            - id: "login"
+              properties:
+        registration:
+          modules:
+            - id: "hydra"
+            - id: "registration"
+              properties:
+
+      userDataStore:
+        type: "inMemory"
+
+session:
+  type: "stateless" #could be also stateful, implement later
+  expires: 60000
+  jwt:
+    issuer: 'http://gortas'
+    privateKeyPem: |
+      -----BEGIN RSA PRIVATE KEY-----
+      MIIBOQIBAAJATmLeD2qa5ejVKJ3rwcSJaZAeRw4CVrUHvi1uVvBah6+6qCdjvH8N
+      RT+GOI3ymdnilILPHcn51A0XQAXyrvFkgwIDAQABAkAPZUvIK2ARGBIF0D6l6Dw1
+      B6Fqw02iShwjNjkdykd9rsZ+UwsYHJ9xXSa2xp7eGurIUqyaDxF+53xpE9AH72PB
+      AiEAlEOIScKvyIqp3ZAxjYUd3feke2AGq4ckoq/dXFvxKHcCIQCHWH+6xKyXqaDL
+      bG5rq18VQR2Nj7VknY4Eir6Z6LrzVQIgSz3WbXBi2wgb2ngx3ZsfpCToEUCTQftM
+      iU9srFFwmlMCIFPUbMixqHUHi6BzuLDXpDz15+gWarO3Io+NoCCUFbdBAiEAinVf
+      Lnb+YDP3L5ZzSNF92P9yBQaopFCifjrUqSS85uw=
+      -----END RSA PRIVATE KEY-----
+
+  dataStore:
+    type: "inMemory"
+
+server:
+  cors:
+    allowedOrigins:
+      - http://localhost:3000

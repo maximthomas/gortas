@@ -2,6 +2,7 @@ package authmodules
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,10 +14,11 @@ import (
 	"github.com/maximthomas/gortas/pkg/models"
 )
 
-//Hydra ORY Hydra authenctiaction module
+//Hydra ORY Hydra authentication module
 type Hydra struct {
 	BaseAuthModule
-	URI string //hydra URI
+	URI    string //hydra URI
+	client *http.Client
 }
 
 type HydraLoginData struct {
@@ -31,15 +33,18 @@ type HydraSubject struct {
 	ACR         string `json:"acr"`
 }
 
-func (h *Hydra) Process(s *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
+func (h *Hydra) Process(_ *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
 	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, url.PathEscape(c.Query("login_challenge")))
-	resp, err := http.Get(uri)
+	resp, err := h.client.Get(uri)
 	if err != nil {
 		return auth.Fail, h.callbacks, err
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return auth.Fail, h.callbacks, err
+	}
 	var hld HydraLoginData
 	err = json.Unmarshal(body, &hld)
 	if err != nil {
@@ -53,7 +58,7 @@ func (h *Hydra) Process(s *auth.LoginSessionState, c *gin.Context) (ms auth.Modu
 	return auth.Pass, h.callbacks, err
 }
 
-func (h *Hydra) ProcessCallbacks(inCbs []models.Callback, s *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
+func (h *Hydra) ProcessCallbacks(_ []models.Callback, s *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
 	return h.Process(s, c)
 }
 
@@ -61,7 +66,7 @@ func (h *Hydra) ValidateCallbacks(cbs []models.Callback) error {
 	return h.BaseAuthModule.ValidateCallbacks(cbs)
 }
 
-func (h *Hydra) PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error {
+func (h *Hydra) PostProcess(_ string, lss *auth.LoginSessionState, c *gin.Context) error {
 
 	hs := HydraSubject{
 		Subject:     lss.UserId,
@@ -83,21 +88,24 @@ func (h *Hydra) PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.C
 	}
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := h.client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	var hres struct {
-		RedirectTo string `json:"redirect_to"`
-	}
-	err = json.Unmarshal(body, &hres)
 	if err != nil {
 		return err
 	}
-	lss.RedirectURI = hres.RedirectTo
+	var hRes struct {
+		RedirectTo string `json:"redirect_to"`
+	}
+	err = json.Unmarshal(body, &hRes)
+	if err != nil {
+		return err
+	}
+	lss.RedirectURI = hRes.RedirectTo
 	return nil
 
 }
@@ -107,6 +115,13 @@ func NewHydraModule(base BaseAuthModule) *Hydra {
 	if !ok {
 		panic("hydra module missing uri property")
 	}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 
-	return &Hydra{URI: uri}
+	return &Hydra{URI: uri, client: client}
 }
