@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"github.com/google/uuid"
 	"os"
+
+	"github.com/google/uuid"
 
 	"github.com/maximthomas/gortas/pkg/models"
 )

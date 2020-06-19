@@ -17,13 +17,14 @@ type AuthModule interface {
 	PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error
 }
 
-func GetAuthModule(moduleType string, properties map[string]interface{}, r config.Realm, sr repo.SessionRepository) (AuthModule, error) {
+func GetAuthModule(mi auth.LoginSessionStateModuleInfo, r config.Realm, sr repo.SessionRepository) (AuthModule, error) {
 	base := BaseAuthModule{
-		properties: properties,
-		r:          r,
-		sr:         sr,
+		properties:  mi.Properties,
+		r:           r,
+		sr:          sr,
+		sharedState: mi.SharedState,
 	}
-	switch moduleType {
+	switch mi.Type {
 	case "login":
 		return NewLoginModule(base), nil
 	case "registration":
@@ -38,10 +39,11 @@ func GetAuthModule(moduleType string, properties map[string]interface{}, r confi
 }
 
 type BaseAuthModule struct {
-	properties map[string]interface{}
-	r          config.Realm
-	sr         repo.SessionRepository
-	callbacks  []models.Callback
+	properties  map[string]interface{}
+	r           config.Realm
+	sr          repo.SessionRepository
+	callbacks   []models.Callback
+	sharedState map[string]interface{}
 }
 
 func (b BaseAuthModule) ValidateCallbacks(cbs []models.Callback) error {

@@ -56,7 +56,7 @@ func (l LoginController) processAuthChain(authChain config.AuthChain, realm conf
 	for moduleIndex, moduleInfo := range lss.Modules { //iterate modules in chain
 		switch moduleInfo.State {
 		case auth.Start, auth.InProgress:
-			am, err := authmodules.GetAuthModule(moduleInfo.Type, moduleInfo.Properties, realm, l.sr)
+			am, err := authmodules.GetAuthModule(moduleInfo, realm, l.sr)
 			if err != nil {
 				return err
 			}
@@ -133,7 +133,7 @@ func (l LoginController) processAuthChain(authChain config.AuthChain, realm conf
 		}
 
 		for _, moduleInfo := range lss.Modules {
-			am, err := authmodules.GetAuthModule(moduleInfo.Type, moduleInfo.Properties, realm, l.sr)
+			am, err := authmodules.GetAuthModule(moduleInfo, realm, l.sr)
 			if err != nil {
 				return err
 			}
@@ -210,7 +210,7 @@ func (l LoginController) getLoginSessionState(authChain config.AuthChain, realm 
 			for k, v := range chainModule.Properties {
 				lss.Modules[i].Properties[k] = v
 			}
-			lss.Modules[i].SharedState = make(map[string]string)
+			lss.Modules[i].SharedState = make(map[string]interface{})
 		}
 	}
 
@@ -260,6 +260,7 @@ func (l LoginController) createSession(lss *auth.LoginSessionState, realm config
 		claims["iat"] = time.Now().Unix()
 		claims["iss"] = sc.Jwt.Issuer
 		claims["sub"] = lss.UserId
+		claims["realm"] = realm.ID
 		if userExists {
 			claims["props"] = user.Properties
 		}
@@ -273,6 +274,7 @@ func (l LoginController) createSession(lss *auth.LoginSessionState, realm config
 			ID: sessionID,
 			Properties: map[string]string{
 				"userId": user.ID,
+				"sub":    user.ID,
 				"realm":  realm.ID,
 			},
 		}

@@ -32,6 +32,7 @@ var (
 				Modules: map[string]config.Module{
 					"login":    {Type: "login"},
 					"kerberos": {Type: "kerberos"},
+					"qr":       {Type: "qr"},
 				},
 				AuthChains: map[string]config.AuthChain{
 					"default": {Modules: []config.ChainModule{
@@ -42,6 +43,11 @@ var (
 					"kerberos": {Modules: []config.ChainModule{
 						{
 							ID: "kerberos",
+						},
+					}},
+					"qr": {Modules: []config.ChainModule{
+						{
+							ID: "qr",
 						},
 					}},
 				},

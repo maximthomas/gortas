@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/controller"
+	"github.com/maximthomas/gortas/pkg/middleware"
 	cors "github.com/rs/cors/wrapper/gin"
 )
 
@@ -38,6 +39,7 @@ func setupRouter(conf config.Config) *gin.Engine {
 			})
 		}
 		idm := v1.Group("/idm")
+		idm.Use(middleware.NewAuthenticatedMiddleware(config.GetConfig().Session))
 		{
 			idm.GET("", func(context *gin.Context) {
 				idmController.Profile(context)

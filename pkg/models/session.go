@@ -8,3 +8,23 @@ type Session struct {
 	CreatedAt  time.Time         `json:"createdat,omitempty" bson:"createdAt"`
 	Properties map[string]string `json:"properties,omitempty"`
 }
+
+func (s *Session) GetUserID() string {
+	userID, ok := s.Properties["sub"]
+	if !ok {
+		return ""
+	}
+	return userID
+}
+
+func (s *Session) SetUserID(userID string) {
+	s.Properties["sub"] = userID
+}
+
+func (s *Session) GetRealm() string {
+	realm, ok := s.Properties["realm"]
+	if !ok {
+		return ""
+	}
+	return realm
+}

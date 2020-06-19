@@ -1,8 +1,9 @@
 package controller
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"net/http"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/config"
