@@ -19,7 +19,7 @@ type QR struct {
 	qrTimeout int64
 }
 
-func (q *QR) Process(lss *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
+func (q *QR) Process(lss *auth.LoginSessionState, _ *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
 
 	key, err := q.getKey()
 	if err != nil {
@@ -41,9 +41,9 @@ func (q *QR) Process(lss *auth.LoginSessionState, c *gin.Context) (ms auth.Modul
 	return auth.InProgress, q.callbacks, err
 }
 
-func (q *QR) ProcessCallbacks(inCbs []models.Callback, lss *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
+func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, _ *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
 
-	uid, ok := lss.SharedState["qrUserId"]
+	uid, ok := q.BaseAuthModule.sharedState["qrUserId"].(string)
 	if !ok {
 		key, err := q.getKey()
 		if err != nil {
@@ -80,7 +80,7 @@ func (q *QR) ValidateCallbacks(cbs []models.Callback) error {
 	return q.BaseAuthModule.ValidateCallbacks(cbs)
 }
 
-func (q *QR) PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error {
+func (q *QR) PostProcess(_ string, _ *auth.LoginSessionState, _ *gin.Context) error {
 	return nil
 }
 

@@ -149,13 +149,26 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 	var lss auth.LoginSessionState
 	err = json.Unmarshal([]byte(session.Properties["lss"]), &lss)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "there is no valid authentication session"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
-	lss.SharedState["qrUserId"] = authQRRequest.UID
+
+	moduleFound := false
+	for _, m := range lss.Modules {
+		if m.Type == "qr" && m.State == auth.InProgress {
+			m.SharedState["qrUserId"] = authQRRequest.UID
+			moduleFound = true
+			break
+		}
+	}
+	if !moduleFound {
+		pc.logger.Warn("AuthQR: no active qr module in the chain")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
+		return
+	}
 	lssJSON, err := json.Marshal(lss)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "there is no valid authentication session"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
 	session.Properties["lss"] = string(lssJSON)

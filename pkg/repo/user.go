@@ -1,8 +1,6 @@
 package repo
 
 import (
-	"os"
-
 	"github.com/google/uuid"
 
 	"github.com/maximthomas/gortas/pkg/models"
@@ -54,8 +52,15 @@ func (ur *InMemoryUserRepository) CreateUser(user models.User) (models.User, err
 }
 
 func (ur *InMemoryUserRepository) UpdateUser(user models.User) error {
+	for i, u := range ur.Users {
+		if u.ID == user.ID {
+			ur.Users[i] = user
+			break
+		}
+	}
 	return nil
 }
+
 func (ur *InMemoryUserRepository) SetPassword(id, password string) error {
 	ur.passwords[id] = password
 	return nil
@@ -86,14 +91,4 @@ func NewInMemoryUserRepository() UserRepository {
 		ds.passwords[u.ID] = "password"
 	}
 	return ds
-}
-
-func NewUserRepository() UserRepository {
-	//ac := config.GetConfig()
-	//sr = &RestSessionRepository{Endpoint: ac.Endpoints.SessionService}
-	local := os.Getenv("DEV_LOCAL")
-	if local == "true" {
-		return NewInMemoryUserRepository()
-	}
-	return nil
 }

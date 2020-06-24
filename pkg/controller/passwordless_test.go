@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -161,17 +162,42 @@ func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
 }
 
 func TestPasswordlessServicesController_AuthQR(t *testing.T) {
-	sess := models.Session{
+	badSess := models.Session{
 		ID:         uuid.New().String(),
 		CreatedAt:  time.Now(),
 		Properties: nil,
 	}
-	conf.Session.DataStore.Repo.CreateSession(sess)
+	conf.Session.DataStore.Repo.CreateSession(badSess)
+
+	lss := auth.LoginSessionState{
+		Modules: []auth.LoginSessionStateModuleInfo{
+			{
+				Id:          "",
+				Type:        "qr",
+				Properties:  nil,
+				State:       auth.InProgress,
+				SharedState: map[string]interface{}{},
+			},
+		},
+		SharedState: map[string]string{},
+		UserId:      "",
+		SessionId:   "",
+		RedirectURI: "",
+	}
+	lssBytes, _ := json.Marshal(lss)
+	validSess := models.Session{
+		ID:        uuid.New().String(),
+		CreatedAt: time.Now(),
+		Properties: map[string]string{
+			"lss": string(lssBytes),
+		},
+	}
+	conf.Session.DataStore.Repo.CreateSession(validSess)
 
 	ur := conf.Authentication.Realms["staff"].UserDataStore.Repo
 	user, _ := ur.GetUser("user1")
 	user.Properties = map[string]string{
-		"passwordless.qr": `{}`,
+		"passwordless.qr": `{"secret": "s3cr3t"}`,
 	}
 	ur.UpdateUser(user)
 
@@ -201,7 +227,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "no valid session",
 			args: args{
-				body: `{"sid":"bad","uid":"user1","realm":"staff","secret":"secret"}`,
+				body: `{"sid":"bad","uid":"user1","realm":"staff","secret":"s3cr3t"}`,
 			},
 			want: want{
 				code:       http.StatusBadRequest,
@@ -211,7 +237,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "no valid user in a repo",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"bad","realm":"staff","secret":"secret"}`, sess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -219,9 +245,9 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			},
 		},
 		{
-			name: "no valid user in a repo",
+			name: "user not bound",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user2","realm":"staff","secret":"secret"}`, sess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -229,13 +255,33 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			},
 		},
 		{
-			name: "no valid user in a repo",
+			name: "secret does not match",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"secret"}`, sess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
 				errMessage: "the user is not bound to QR",
+			},
+		},
+
+		{
+			name: "bad authentication session",
+			args: args{
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, badSess.ID),
+			},
+			want: want{
+				code:       http.StatusUnauthorized,
+				errMessage: "there is no valid authentication session",
+			},
+		},
+		{
+			name: "valid authentication session",
+			args: args{
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+			},
+			want: want{
+				code: http.StatusOK,
 			},
 		},
 	}
@@ -245,7 +291,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			c, _ := gin.CreateTestContext(recorder)
 			c.Request = httptest.NewRequest("POST", "/", strings.NewReader(tt.args.body))
 			pc.AuthQR(c)
-			assert.Equal(t, recorder.Code, tt.want.code)
+			assert.Equal(t, tt.want.code, recorder.Code)
 			var respJson = make(map[string]interface{})
 			err := json.Unmarshal([]byte(recorder.Body.String()), &respJson)
 			assert.NoError(t, err)
