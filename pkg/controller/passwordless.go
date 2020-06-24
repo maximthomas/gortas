@@ -19,16 +19,22 @@ import (
 type PasswordlessServicesController struct {
 	sr     repo.SessionRepository
 	logger logrus.FieldLogger
+	conf   config.Config
 }
 
 func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
 	logger := config.Logger.WithField("module", "PasswordlessServicesController")
 	sr := config.Session.DataStore.Repo
-	return &PasswordlessServicesController{sr, logger}
+
+	return &PasswordlessServicesController{sr, logger, config}
+}
+
+type QRProps struct {
+	Secret string `json:"secret"`
 }
 
 func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
-	si, ok := c.Keys["session"]
+	si, ok := c.Get("session")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 		return
@@ -36,7 +42,7 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	s := si.(models.Session)
 	uid := s.GetUserID()
 	realm := s.GetRealm()
-	ur := config.GetConfig().Authentication.Realms[realm].UserDataStore.Repo
+	ur := pc.conf.Authentication.Realms[realm].UserDataStore.Repo
 
 	_, ok = ur.GetUser(uid)
 	if !ok {
@@ -44,11 +50,11 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 		return
 	}
 
-	imageData := fmt.Sprintf("%s?sid=%s&action=register", c.Request.RequestURI, s)
+	imageData := fmt.Sprintf("%s?sid=%s&action=register", c.Request.RequestURI, s.ID)
 	png, err := qrcode.Encode(imageData, qrcode.Medium, 256)
 	if err != nil {
 		pc.logger.Error(err)
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error generate QR code"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error generate QR code"})
 		return
 	}
 
@@ -57,7 +63,7 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 }
 
 func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
-	si, ok := c.Keys["session"]
+	si, ok := c.Get("session")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 		return
@@ -65,23 +71,31 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	s := si.(models.Session)
 	uid := s.GetUserID()
 	realm := s.GetRealm()
-	ur := config.GetConfig().Authentication.Realms[realm].UserDataStore.Repo
+	ur := pc.conf.Authentication.Realms[realm].UserDataStore.Repo
 
 	user, ok := ur.GetUser(uid)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "No user found in the repository"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
 	}
 	//generate secret key
 	secret := uuid.New().String()
-	qrProps, err := json.Marshal("") //TODO implement
+	qrProps := QRProps{Secret: secret}
+	qrPropsJSON, err := json.Marshal(qrProps)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}
-	user.Properties["passwordless.qr"] = string(qrProps)
-	ur.UpdateUser(user)
-	c.JSON(http.StatusOK, gin.H{"secret": secret, "uid": user.ID})
+	if user.Properties == nil {
+		user.Properties = make(map[string]string)
+	}
+	user.Properties["passwordless.qr"] = string(qrPropsJSON)
+	err = ur.UpdateUser(user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID})
 }
 
 func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
@@ -92,9 +106,10 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		Secret string `json:"secret"`
 	}
 
-	err := c.ShouldBindJSON(authQRRequest)
+	err := c.ShouldBindJSON(&authQRRequest)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "error updating user"})
+		pc.logger.Warn("invalid request body", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
@@ -104,21 +119,28 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	ur := config.GetConfig().Authentication.Realms[authQRRequest.Realm].UserDataStore.Repo
+	ur := pc.conf.Authentication.Realms[authQRRequest.Realm].UserDataStore.Repo
 	user, ok := ur.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})
 		return
 	}
-
 	jsonProp, ok := user.Properties["passwordless.qr"]
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})
 		return
 	}
-	props := make(map[string]string)
-	err = json.Unmarshal([]byte(jsonProp), props)
+	var qrProps QRProps
+	err = json.Unmarshal([]byte(jsonProp), &qrProps)
 	if err != nil {
+		pc.logger.Warn("AuthQR: the user is not bound to QR")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})
+		return
+	}
+
+	err = json.Unmarshal([]byte(jsonProp), &qrProps)
+	if qrProps.Secret != authQRRequest.Secret {
+		pc.logger.Warn("AuthQR: user qr secrets does not match")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})
 		return
 	}
@@ -143,6 +165,6 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"result": "success"})
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 
 }

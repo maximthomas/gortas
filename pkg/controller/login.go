@@ -165,14 +165,6 @@ func getLoginSessionIdFromRequest(c *gin.Context) string {
 	return ""
 }
 
-func getSessionIdFromRequest(c *gin.Context) string {
-	sessionCookie, err := c.Request.Cookie(auth.SessionCookieName)
-	if err == nil {
-		return sessionCookie.Value
-	}
-	return ""
-}
-
 func (l LoginController) getLoginSessionState(authChain config.AuthChain, realm config.Realm, c *gin.Context) *auth.LoginSessionState {
 
 	createNewSession := false

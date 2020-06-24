@@ -36,6 +36,7 @@ func TestIDMController_Profile(t *testing.T) {
 	}
 
 	c.Request.AddCookie(authCookie)
+	c.Set("session", sess)
 	idm := NewIDMController(conf)
 	idm.Profile(c)
 	assert.Equal(t, http.StatusOK, recorder.Code)

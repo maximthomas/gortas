@@ -2,8 +2,7 @@ package repo
 
 import (
 	"errors"
-	"log"
-	"os"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +18,7 @@ type SessionRepository interface {
 
 type InMemorySessionRepository struct {
 	sessions map[string]models.Session
+	logger   logrus.FieldLogger
 }
 
 func (sr *InMemorySessionRepository) CreateSession(session models.Session) (models.Session, error) {
@@ -60,32 +60,26 @@ func (sr *InMemorySessionRepository) cleanupExpired() {
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	for {
-		t := <-ticker.C
-		log.Println("Current time: ", t)
-		for k, _ := range sr.sessions {
+		_ = <-ticker.C
+		for k := range sr.sessions {
 			sess := sr.sessions[k]
 			if (sess.CreatedAt.Second() + 60*60*24) < time.Now().Second() {
-				log.Println("delete session ", sess.ID)
+				sr.logger.Infof("delete session %s due to timeout", sess.ID)
 				delete(sr.sessions, k)
 			}
 		}
 	}
 }
 
-func NewSessionRepository() SessionRepository {
-	//ac := config.GetConfig()
-	//sr = &RestSessionRepository{Endpoint: ac.Endpoints.SessionService}
-	local := os.Getenv("DEV_LOCAL")
-	if local == "true" {
-		return NewInMemorySessionRepository()
+func NewInMemorySessionRepository(logger logrus.FieldLogger) SessionRepository {
+	if logger == nil {
+		logger = logrus.New()
 	}
-	return nil
-}
-
-func NewInMemorySessionRepository() SessionRepository {
 	repo := &InMemorySessionRepository{
 		sessions: make(map[string]models.Session),
+		logger:   logger.WithField("module", "InMemorySessionRepository"),
 	}
+
 	go repo.cleanupExpired()
 	return repo
 }

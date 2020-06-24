@@ -12,15 +12,13 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/maximthomas/gortas/pkg/repo"
 )
 
 func NewAuthenticatedMiddleware(s config.Session) gin.HandlerFunc {
-	return authenticatedMiddleware{s.DataStore.Repo, s}.build()
+	return authenticatedMiddleware{s}.build()
 }
 
 type authenticatedMiddleware struct {
-	sr repo.SessionRepository
 	sc config.Session
 }
 
@@ -68,7 +66,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 				Properties: sessionProps,
 			}
 		} else {
-			session, err = a.sr.GetSession(sessionID)
+			session, err = a.sc.DataStore.Repo.GetSession(sessionID)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 				return
@@ -80,7 +78,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 			return
 		}
 
-		c.Keys["session"] = session
+		c.Set("session", session)
 
 		c.Next()
 	}

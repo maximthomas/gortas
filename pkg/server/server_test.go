@@ -57,10 +57,10 @@ var (
 			},
 		},
 	}
-
-	conf = config.Config{
+	logger = logrus.New()
+	conf   = config.Config{
 		Authentication: authConf,
-		Logger:         logrus.New(),
+		Logger:         logger,
 		Session: config.Session{
 			Type:    "stateless",
 			Expires: 60000,
@@ -70,14 +70,14 @@ var (
 				PublicKey:    publicKey,
 				PrivateKeyID: "dummy",
 			},
-			DataStore: config.SessionDataStore{Repo: repo.NewInMemorySessionRepository()},
+			DataStore: config.SessionDataStore{Repo: repo.NewInMemorySessionRepository(logger)},
 		},
 	}
 	router = setupRouter(conf)
 )
 
 func TestSetupRouter(t *testing.T) {
-	assert.Equal(t, 3, len(router.Routes()))
+	assert.Equal(t, 6, len(router.Routes()))
 }
 
 const target = "http://localhost/gortas/v1/login/staff/default"
@@ -128,7 +128,7 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, "login", cbReq.Module)
 
 		log.Info("bad login and password")
-		for i, _ := range cbReq.Callbacks {
+		for i := range cbReq.Callbacks {
 			(&cbReq.Callbacks[i]).Value = "bad"
 		}
 		body, _ := json.Marshal(cbReq)
@@ -189,7 +189,7 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
 
-		recorder.Result().Header = recorder.HeaderMap
+		recorder.Result().Header = recorder.Header()
 		newCookieVal, _ := getCookieValue(auth.AuthCookieName, recorder.Result().Cookies())
 		assert.Equal(t, cookieVal, newCookieVal)
 
@@ -231,6 +231,10 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, login, claims["sub"])
 
 	})
+}
+
+func TestIDM(t *testing.T) {
+
 }
 
 //helper functions
