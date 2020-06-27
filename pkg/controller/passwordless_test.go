@@ -3,16 +3,17 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/auth"
-	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/maximthomas/gortas/pkg/auth"
+	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
@@ -153,6 +154,7 @@ func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
 			if tt.args.session != nil {
 				c.Set("session", tt.args.session)
 			}
+			c.Request = httptest.NewRequest("POST", "/", nil)
 
 			pc.RegisterConfirmQR(c)
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -95,7 +96,10 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "realm": realm})
+
+	authURI := strings.ReplaceAll(c.Request.RequestURI, "/idm/otp/qr", "/service/otp/qr/login")
+
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "realm": realm, "authURI": authURI})
 }
 
 func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
