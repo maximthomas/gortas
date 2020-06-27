@@ -47,6 +47,9 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 
 			sessionProps := make(map[string]string)
 			for key, value := range claims {
+				if value == nil {
+					continue
+				}
 				var strVal string
 				if key == "props" {
 					bytes, err := json.Marshal(value)

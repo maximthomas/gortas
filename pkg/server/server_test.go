@@ -6,10 +6,13 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 
 	"github.com/dgrijalva/jwt-go"
@@ -18,7 +21,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/maximthomas/gortas/pkg/repo"
-	"github.com/prometheus/common/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,6 +31,7 @@ var (
 	authConf = config.Authentication{
 		Realms: map[string]config.Realm{
 			"staff": {
+				ID: "staff",
 				Modules: map[string]config.Module{
 					"login":    {Type: "login"},
 					"kerberos": {Type: "kerberos"},
@@ -235,6 +238,116 @@ func TestLogin(t *testing.T) {
 
 func TestIDM(t *testing.T) {
 
+}
+
+func TestRegisterQR(t *testing.T) {
+	sessionId := doLogin(t, "user1", "password")
+	assert.NotEmpty(t, sessionId)
+
+	//getting QR code
+	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/idm/otp/qr/", nil)
+
+	sessionCookie := &http.Cookie{
+		Name:  auth.SessionCookieName,
+		Value: sessionId,
+	}
+	request.AddCookie(sessionCookie)
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
+	var resp map[string]string
+	err := json.Unmarshal([]byte(recorder.Body.String()), &resp)
+	assert.NoError(t, err)
+	qrB64, ok := resp["qr"]
+	assert.True(t, ok)
+	assert.NotEmpty(t, qrB64)
+	assert.True(t, strings.HasPrefix(qrB64, "data"))
+
+	//QR register
+	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/idm/otp/qr/", nil)
+	request.AddCookie(sessionCookie)
+	recorder = httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
+	err = json.Unmarshal([]byte(recorder.Body.String()), &resp)
+	assert.NoError(t, err)
+	secret, ok := resp["secret"]
+	assert.True(t, ok)
+	assert.NotEmpty(t, secret)
+}
+
+func TestAuthQR(t *testing.T) {
+	const secret = "s3cr3t"
+	user1, _ := ur.GetUser("user1")
+	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%s"}`, secret))
+	ur.UpdateUser(user1)
+
+	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/login/staff/qr", nil)
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
+
+	cookieVal, _ := getCookieValue(auth.AuthCookieName, recorder.Result().Cookies())
+
+	authCookie := &http.Cookie{
+		Name:  auth.AuthCookieName,
+		Value: cookieVal,
+	}
+
+	cbReq := &models.CallbackRequest{}
+	err := json.Unmarshal([]byte(recorder.Body.String()), cbReq)
+	assert.NoError(t, err)
+
+	//auth QR
+	authQRBody := fmt.Sprintf(`{"sid":"%s", "uid": "%s", "realm":"%s", "secret": "%s"}`, cookieVal, "user1", "staff", secret)
+	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/service/otp/qr/login/", bytes.NewBuffer([]byte(authQRBody)))
+	recorder = httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
+
+	//try to authenticate
+	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/login/staff/qr", bytes.NewBuffer([]byte(`{}`)))
+	request.AddCookie(authCookie)
+	recorder = httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
+
+	var respJSON = make(map[string]interface{})
+	json.Unmarshal([]byte(recorder.Body.String()), &respJSON)
+	log.Info(recorder.Result())
+	assert.NoError(t, err)
+	sessionCookie, err := getCookieValue(auth.SessionCookieName, recorder.Result().Cookies())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, sessionCookie)
+	assert.Equal(t, "success", respJSON["status"])
+
+}
+
+func doLogin(t *testing.T, login string, password string) (sessionId string) {
+	request := httptest.NewRequest("GET", target, nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+	cbReq := &models.CallbackRequest{}
+	json.Unmarshal([]byte(recorder.Body.String()), cbReq)
+	recorder.Result().Header = recorder.Header()
+	cookieVal, _ := getCookieValue(auth.AuthCookieName, recorder.Result().Cookies())
+
+	authCookie := &http.Cookie{
+		Name:  auth.AuthCookieName,
+		Value: cookieVal,
+	}
+
+	(&cbReq.Callbacks[0]).Value = login
+	(&cbReq.Callbacks[1]).Value = password
+
+	body, _ := json.Marshal(cbReq)
+	request = httptest.NewRequest("POST", target, bytes.NewBuffer(body))
+	request.AddCookie(authCookie)
+	recorder = httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	sessionId, _ = getCookieValue(auth.SessionCookieName, recorder.Result().Cookies())
+	return sessionId
 }
 
 //helper functions

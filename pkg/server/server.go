@@ -40,20 +40,22 @@ func setupRouter(conf config.Config) *gin.Engine {
 			})
 		}
 		idm := v1.Group("/idm")
-		am := middleware.NewAuthenticatedMiddleware(config.GetConfig().Session)
-		idm.Use()
+		am := middleware.NewAuthenticatedMiddleware(conf.Session)
+		idm.Use(am)
 		{
-			profile := idm.GET("", func(context *gin.Context) {
-				idmController.Profile(context)
-			})
-			profile.Use(am)
+			idm.GET("", idmController.Profile)
 			otpQR := idm.Group("/otp/qr")
-			otpQRGet := otpQR.GET("/", pwlessCtrl.RegisterGenerateQR)
-			otpQRGet.Use(am)
-			otpQRPost := otpQR.POST("/", pwlessCtrl.RegisterConfirmQR)
-			otpQRPost.Use(am)
-			otpQR.POST("/login", pwlessCtrl.AuthQR)
+			{
+				otpQR.GET("/", pwlessCtrl.RegisterGenerateQR)
+				otpQR.POST("/", pwlessCtrl.RegisterConfirmQR)
+			}
 		}
+		service := v1.Group("/service")
+		{
+			otpQrLogin := service.Group("/otp/qr/login")
+			otpQrLogin.POST("/", pwlessCtrl.AuthQR)
+		}
+
 	}
 	return router
 }

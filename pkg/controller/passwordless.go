@@ -95,7 +95,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID})
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "realm": realm})
 }
 
 func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {

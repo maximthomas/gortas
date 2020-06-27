@@ -77,7 +77,7 @@ func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, 
 }
 
 func (q *QR) ValidateCallbacks(cbs []models.Callback) error {
-	return q.BaseAuthModule.ValidateCallbacks(cbs)
+	return nil
 }
 
 func (q *QR) PostProcess(_ string, _ *auth.LoginSessionState, _ *gin.Context) error {
@@ -130,8 +130,13 @@ func NewQRModule(base BaseAuthModule) *QR {
 			Properties: map[string]string{},
 		},
 	}
+
+	qrTimeout := 30
+	if qrTimeoutProp, ok := base.properties["qrTimeout"]; ok {
+		qrTimeout = qrTimeoutProp.(int)
+	}
 	return &QR{
 		BaseAuthModule: base,
-		qrTimeout:      int64(base.properties["qrTimeout"].(int)),
+		qrTimeout:      int64(qrTimeout),
 	}
 }

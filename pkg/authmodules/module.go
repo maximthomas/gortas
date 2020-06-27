@@ -33,6 +33,8 @@ func GetAuthModule(mi auth.LoginSessionStateModuleInfo, r config.Realm, sr repo.
 		return NewKerberosModule(base), nil
 	case "hydra":
 		return NewHydraModule(base), nil
+	case "qr":
+		return NewQRModule(base), nil
 	default:
 		return nil, errors.New("module does not exists")
 	}
