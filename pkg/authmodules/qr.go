@@ -26,12 +26,16 @@ func (q *QR) Process(lss *auth.LoginSessionState, _ *gin.Context) (ms auth.Modul
 		return auth.Fail, q.callbacks, err
 	}
 
-	qrT, ok := q.sharedState["qrT"].(int64)
-	if !ok {
+	var qrT int64
+	qrTf, ok := q.sharedState["qrT"].(float64)
+	if ok {
+		qrT = int64(qrTf)
+	} else {
 		seconds := time.Now().Unix()
 		qrT = seconds / q.qrTimeout
 		q.sharedState["qrT"] = qrT
 	}
+
 	image, err := q.generateQRImage(lss.SessionId, qrT, key)
 	if err != nil {
 		return auth.Fail, q.callbacks, err
@@ -50,9 +54,12 @@ func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, 
 			return auth.Fail, q.callbacks, err
 		}
 		//check if qr is outdated
-		qrT, ok := q.sharedState["qrT"].(int64)
+		var qrT int64
+		qrTf, ok := q.sharedState["qrT"].(float64)
 		seconds := time.Now().Unix()
-		if !ok {
+		if ok {
+			qrT = int64(qrTf)
+		} else {
 			qrT = seconds / q.qrTimeout
 			q.sharedState["qrT"] = qrT
 		}
@@ -76,7 +83,7 @@ func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, 
 
 }
 
-func (q *QR) ValidateCallbacks(cbs []models.Callback) error {
+func (q *QR) ValidateCallbacks(_ []models.Callback) error {
 	return nil
 }
 
@@ -128,6 +135,13 @@ func NewQRModule(base BaseAuthModule) *QR {
 			Prompt:     "Enter QR code",
 			Value:      "",
 			Properties: map[string]string{},
+		},
+		{
+			Name: "submit",
+			Type: "autosubmit",
+			Properties: map[string]string{
+				"interval": "30",
+			},
 		},
 	}
 
