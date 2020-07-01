@@ -12,15 +12,9 @@ import (
 )
 
 func TestQR(t *testing.T) {
-	b := BaseAuthModule{
-		properties: map[string]interface{}{
-			"qrTimeout": 30,
-		},
-		sharedState: map[string]interface{}{},
-	}
-	q := NewQRModule(b)
 
 	t.Run("Test request new qr", func(t *testing.T) {
+		q := getQRModule()
 		recorder := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("GET", "/login", nil)
@@ -36,18 +30,20 @@ func TestQR(t *testing.T) {
 	})
 
 	t.Run("Test process successful auth", func(t *testing.T) {
+		q := getQRModule()
 		recorder := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("POST", "/login", nil)
 		lss := &auth.LoginSessionState{SharedState: map[string]string{}}
 		lss.SessionId = uuid.New().String()
-		lss.SharedState["qrUserId"] = "ivan"
+		q.BaseAuthModule.sharedState["qrUserId"] = "ivan"
 		ms, _, err := q.ProcessCallbacks(q.callbacks, lss, c)
 		assert.Equal(t, auth.Pass, ms)
 		assert.NoError(t, err)
 	})
 
 	t.Run("Test process update QR", func(t *testing.T) {
+		q := getQRModule()
 		recorder := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("POST", "/login", nil)
@@ -60,4 +56,14 @@ func TestQR(t *testing.T) {
 		assert.NotEmpty(t, image)
 	})
 
+}
+
+func getQRModule() *QR {
+	b := BaseAuthModule{
+		properties: map[string]interface{}{
+			"qrTimeout": 10,
+		},
+		sharedState: map[string]interface{}{},
+	}
+	return NewQRModule(b)
 }

@@ -3,8 +3,10 @@ package crypt
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/md5"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"io"
 )
@@ -55,4 +57,10 @@ func Decrypt(key []byte, securemess string) (decodedmess string, err error) {
 
 	decodedmess = string(cipherText)
 	return
+}
+
+func MD5(str string) string {
+	h := md5.New()
+	h.Write([]byte(str))
+	return hex.EncodeToString(h.Sum(nil))
 }

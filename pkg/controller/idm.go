@@ -4,8 +4,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/models"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
-
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
@@ -36,17 +34,6 @@ func (ic IDMController) Profile(c *gin.Context) {
 	if s.ID == "" {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 	} else {
-		s, err := ic.sr.GetSession(s.ID)
-		if err != nil {
-			token, err := jwt.Parse(s.ID, func(token *jwt.Token) (interface{}, error) {
-				return ic.conf.Session.Jwt.PublicKey, nil
-			})
-			if err != nil {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
-			}
-			c.JSON(http.StatusOK, token)
-		} else {
-			c.JSON(http.StatusOK, s)
-		}
+		c.JSON(http.StatusOK, s)
 	}
 }

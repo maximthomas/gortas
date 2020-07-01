@@ -10,14 +10,15 @@ import (
 
 func setupRouter(conf config.Config) *gin.Engine {
 	router := gin.Default()
-
 	c := cors.New(cors.Options{
 		AllowedOrigins:   conf.Server.Cors.AllowedOrigins,
 		AllowCredentials: true,
 		Debug:            true,
 	})
 
-	router.Use(c)
+	ru := middleware.NewRequestURIMiddleware()
+
+	router.Use(c, ru)
 
 	var loginController = controller.NewLoginController(conf)
 	var idmController = controller.NewIDMController(conf)
@@ -46,14 +47,14 @@ func setupRouter(conf config.Config) *gin.Engine {
 			idm.GET("", idmController.Profile)
 			otpQR := idm.Group("/otp/qr")
 			{
-				otpQR.GET("/", pwlessCtrl.RegisterGenerateQR)
-				otpQR.POST("/", pwlessCtrl.RegisterConfirmQR)
+				otpQR.GET("", pwlessCtrl.RegisterGenerateQR)
+				otpQR.POST("", pwlessCtrl.RegisterConfirmQR)
 			}
 		}
 		service := v1.Group("/service")
 		{
 			otpQrLogin := service.Group("/otp/qr/login")
-			otpQrLogin.POST("/", pwlessCtrl.AuthQR)
+			otpQrLogin.POST("", pwlessCtrl.AuthQR)
 		}
 
 	}

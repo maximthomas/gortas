@@ -21,11 +21,6 @@ type QR struct {
 
 func (q *QR) Process(lss *auth.LoginSessionState, _ *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
 
-	key, err := q.getKey()
-	if err != nil {
-		return auth.Fail, q.callbacks, err
-	}
-
 	var qrT int64
 	qrTf, ok := q.sharedState["qrT"].(float64)
 	if ok {
@@ -36,7 +31,7 @@ func (q *QR) Process(lss *auth.LoginSessionState, _ *gin.Context) (ms auth.Modul
 		q.sharedState["qrT"] = qrT
 	}
 
-	image, err := q.generateQRImage(lss.SessionId, qrT, key)
+	image, err := q.generateQRImage(lss.SessionId, qrT)
 	if err != nil {
 		return auth.Fail, q.callbacks, err
 	}
@@ -49,10 +44,6 @@ func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, 
 
 	uid, ok := q.BaseAuthModule.sharedState["qrUserId"].(string)
 	if !ok {
-		key, err := q.getKey()
-		if err != nil {
-			return auth.Fail, q.callbacks, err
-		}
 		//check if qr is outdated
 		var qrT int64
 		qrTf, ok := q.sharedState["qrT"].(float64)
@@ -69,7 +60,7 @@ func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, 
 			q.sharedState["qrT"] = newQrT
 		}
 
-		image, err := q.generateQRImage(lss.SessionId, qrT, key)
+		image, err := q.generateQRImage(lss.SessionId, qrT)
 		if err != nil {
 			return auth.Fail, cbs, err
 		}
@@ -91,34 +82,30 @@ func (q *QR) PostProcess(_ string, _ *auth.LoginSessionState, _ *gin.Context) er
 	return nil
 }
 
-func (q *QR) getKey() (key []byte, err error) {
+func (q *QR) getSecret() (secret string, err error) {
 	secret, ok := q.sharedState["secret"].(string)
 	if !ok {
-		key = make([]byte, 32)
+		key := make([]byte, 32)
 		_, err := rand.Read(key)
 		if err != nil {
-			return key, err
+			return secret, err
 		}
 		secret = base64.StdEncoding.EncodeToString([]byte(key))
 		q.sharedState["secret"] = secret
-	} else {
-		key, err = base64.StdEncoding.DecodeString(secret)
-		if err != nil {
-			return key, err
-		}
 	}
-	return key, err
+	return secret, err
 }
 
-func (q *QR) generateQRImage(sessId string, qrT int64, key []byte) (string, error) {
+func (q *QR) generateQRImage(sessId string, qrT int64) (string, error) {
 	var image string
-	qrValue := fmt.Sprintf("%s;%s", sessId, strconv.FormatInt(qrT, 10))
-
-	encrypted, err := crypt.Encrypt(key, qrValue)
+	secret, err := q.getSecret()
 	if err != nil {
 		return image, err
 	}
-	png, err := qrcode.Encode(fmt.Sprintf("%s;%s", sessId, encrypted), qrcode.Medium, 256)
+
+	h := crypt.MD5(secret + strconv.FormatInt(qrT, 10))
+	qrValue := fmt.Sprintf("%s;%s", sessId, h)
+	png, err := qrcode.Encode(qrValue, qrcode.Medium, 256)
 	if err != nil {
 		return image, err
 	}
@@ -140,7 +127,7 @@ func NewQRModule(base BaseAuthModule) *QR {
 			Name: "submit",
 			Type: "autosubmit",
 			Properties: map[string]string{
-				"interval": "30",
+				"interval": "5",
 			},
 		},
 	}

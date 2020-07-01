@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/maximthomas/gortas/pkg/middleware"
 	"net/http"
 	"strings"
 
@@ -50,8 +51,8 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
 	}
-
-	imageData := fmt.Sprintf("%s?sid=%s&action=register", c.Request.RequestURI, s.ID)
+	requestURI := middleware.GetRequestURI(c)
+	imageData := fmt.Sprintf("%s?sid=%s&action=register", requestURI, s.ID)
 	png, err := qrcode.Encode(imageData, qrcode.Medium, 256)
 	if err != nil {
 		pc.logger.Error(err)
@@ -96,8 +97,8 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}
-
-	authURI := strings.ReplaceAll(c.Request.RequestURI, "/idm/otp/qr", "/service/otp/qr/login")
+	requestURI := middleware.GetRequestURI(c)
+	authURI := strings.ReplaceAll(requestURI, "/idm/otp/qr", "/service/otp/qr/login")
 
 	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "realm": realm, "authURI": authURI})
 }
