@@ -245,7 +245,7 @@ func TestRegisterQR(t *testing.T) {
 	assert.NotEmpty(t, sessionId)
 
 	//getting QR code
-	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/idm/otp/qr/", nil)
+	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/idm/otp/qr", nil)
 
 	sessionCookie := &http.Cookie{
 		Name:  auth.SessionCookieName,
@@ -264,7 +264,7 @@ func TestRegisterQR(t *testing.T) {
 	assert.True(t, strings.HasPrefix(qrB64, "data"))
 
 	//QR register
-	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/idm/otp/qr/", nil)
+	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/idm/otp/qr", nil)
 	request.AddCookie(sessionCookie)
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
@@ -300,7 +300,7 @@ func TestAuthQR(t *testing.T) {
 
 	//auth QR
 	authQRBody := fmt.Sprintf(`{"sid":"%s", "uid": "%s", "realm":"%s", "secret": "%s"}`, cookieVal, "user1", "staff", secret)
-	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/service/otp/qr/login/", bytes.NewBuffer([]byte(authQRBody)))
+	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/service/otp/qr/login", bytes.NewBuffer([]byte(authQRBody)))
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)

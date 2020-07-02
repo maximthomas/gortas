@@ -11,6 +11,8 @@ authentication:
             additionalFileds:
               - dataStore: "name"
                 prompt: "Name"
+        qr:
+          type: "qr"
 
       authChains:
         login:
@@ -21,7 +23,10 @@ authentication:
           modules:
             - id: "registration"
               properties:
-
+        qr:
+          modules:
+            - id: "qr"
+            
       userDataStore:
         type: "inMemory"
 
