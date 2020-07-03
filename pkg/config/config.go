@@ -161,7 +161,7 @@ func InitConfig() error {
 			return err
 		}
 	} else {
-		config.Session.DataStore.Repo = repo.NewInMemorySessionRepository()
+		config.Session.DataStore.Repo = repo.NewInMemorySessionRepository(logger)
 	}
 
 	configLogger.Infof("got configuration %+v", auth)

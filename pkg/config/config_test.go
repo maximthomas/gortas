@@ -9,17 +9,17 @@ import (
 )
 
 func TestReadConfigFileViper(t *testing.T) {
-	viper.SetConfigName("auth-config") // name of config file (without extension)
-	viper.AddConfigPath("../..")       // optionally look for config in the working directory
-	err := viper.ReadInConfig()        // Find and read the config file
+	viper.SetConfigName("auth-config-dev") // name of config file (without extension)
+	viper.AddConfigPath("../../test")      // optionally look for config in the working directory
+	err := viper.ReadInConfig()            // Find and read the config file
 	assert.NoError(t, err)
 	err = InitConfig()
 	assert.NoError(t, err)
 	conf := GetConfig()
 	assert.NotNil(t, conf.Authentication)
-	r := conf.Authentication.Realms["staff"]
+	r := conf.Authentication.Realms["users"]
 	assert.True(t, len(r.AuthChains) > 0)
-	assert.Equal(t, "staff", r.ID)
+	assert.Equal(t, "users", r.ID)
 	assert.NotEmpty(t, config.Session.Jwt.PrivateKeyPem)
 	assert.NotEmpty(t, config.Session.Jwt.PrivateKeyID)
 	assert.NotNil(t, config.Session.Jwt.PublicKey)

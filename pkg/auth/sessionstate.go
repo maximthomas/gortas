@@ -21,7 +21,7 @@ type LoginSessionStateModuleInfo struct {
 	Type        string
 	Properties  LoginSessionStateModuleProperties
 	State       ModuleState
-	SharedState map[string]string
+	SharedState map[string]interface{}
 }
 
 type LoginSessionStateModuleProperties map[string]interface{}

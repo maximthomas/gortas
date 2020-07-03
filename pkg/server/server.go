@@ -4,22 +4,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/controller"
+	"github.com/maximthomas/gortas/pkg/middleware"
 	cors "github.com/rs/cors/wrapper/gin"
 )
 
 func setupRouter(conf config.Config) *gin.Engine {
 	router := gin.Default()
-
 	c := cors.New(cors.Options{
 		AllowedOrigins:   conf.Server.Cors.AllowedOrigins,
 		AllowCredentials: true,
 		Debug:            true,
 	})
 
-	router.Use(c)
+	ru := middleware.NewRequestURIMiddleware()
+
+	router.Use(c, ru)
 
 	var loginController = controller.NewLoginController(conf)
 	var idmController = controller.NewIDMController(conf)
+	var pwlessCtrl = controller.NewPasswordlessServicesController(conf)
 
 	v1 := router.Group("/gortas/v1")
 	{
@@ -38,10 +41,20 @@ func setupRouter(conf config.Config) *gin.Engine {
 			})
 		}
 		idm := v1.Group("/idm")
+		am := middleware.NewAuthenticatedMiddleware(conf.Session)
+		idm.Use(am)
 		{
-			idm.GET("", func(context *gin.Context) {
-				idmController.Profile(context)
-			})
+			idm.GET("", idmController.Profile)
+			otpQR := idm.Group("/otp/qr")
+			{
+				otpQR.GET("", pwlessCtrl.RegisterGenerateQR)
+				otpQR.POST("", pwlessCtrl.RegisterConfirmQR)
+			}
+		}
+		service := v1.Group("/service")
+		{
+			otpQrLogin := service.Group("/otp/qr/login")
+			otpQrLogin.POST("", pwlessCtrl.AuthQR)
 		}
 
 	}

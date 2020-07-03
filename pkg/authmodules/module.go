@@ -17,13 +17,14 @@ type AuthModule interface {
 	PostProcess(sessID string, lss *auth.LoginSessionState, c *gin.Context) error
 }
 
-func GetAuthModule(moduleType string, properties map[string]interface{}, r config.Realm, sr repo.SessionRepository) (AuthModule, error) {
+func GetAuthModule(mi auth.LoginSessionStateModuleInfo, r config.Realm, sr repo.SessionRepository) (AuthModule, error) {
 	base := BaseAuthModule{
-		properties: properties,
-		r:          r,
-		sr:         sr,
+		properties:  mi.Properties,
+		r:           r,
+		sr:          sr,
+		sharedState: mi.SharedState,
 	}
-	switch moduleType {
+	switch mi.Type {
 	case "login":
 		return NewLoginModule(base), nil
 	case "registration":
@@ -32,16 +33,19 @@ func GetAuthModule(moduleType string, properties map[string]interface{}, r confi
 		return NewKerberosModule(base), nil
 	case "hydra":
 		return NewHydraModule(base), nil
+	case "qr":
+		return NewQRModule(base), nil
 	default:
 		return nil, errors.New("module does not exists")
 	}
 }
 
 type BaseAuthModule struct {
-	properties map[string]interface{}
-	r          config.Realm
-	sr         repo.SessionRepository
-	callbacks  []models.Callback
+	properties  map[string]interface{}
+	r           config.Realm
+	sr          repo.SessionRepository
+	callbacks   []models.Callback
+	sharedState map[string]interface{}
 }
 
 func (b BaseAuthModule) ValidateCallbacks(cbs []models.Callback) error {

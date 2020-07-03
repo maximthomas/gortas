@@ -14,3 +14,10 @@ type Password struct {
 type ValidatePasswordResult struct {
 	Valid bool `json:"valid,omitempty"`
 }
+
+func (u *User) SetProperty(prop, val string) {
+	if u.Properties == nil {
+		u.Properties = make(map[string]string)
+	}
+	u.Properties[prop] = val
+}
