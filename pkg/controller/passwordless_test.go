@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth"
+	"github.com/maximthomas/gortas/pkg/crypt"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/stretchr/testify/assert"
 )
@@ -232,14 +233,14 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 				body: `{"sid":"bad","uid":"user1","realm":"staff","secret":"s3cr3t"}`,
 			},
 			want: want{
-				code:       http.StatusBadRequest,
+				code:       http.StatusUnauthorized,
 				errMessage: "there is no valid authentication session",
 			},
 		},
 		{
 			name: "no valid user in a repo",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID+";"+crypt.MD5("rand")),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -249,7 +250,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "user not bound",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID+";"+crypt.MD5("rand")),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -259,7 +260,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "secret does not match",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID+";"+crypt.MD5("rand")),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -280,7 +281,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "valid authentication session",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID+";"+crypt.MD5("rand")),
 			},
 			want: want{
 				code: http.StatusOK,

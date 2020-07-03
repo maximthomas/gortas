@@ -104,7 +104,7 @@ func (q *QR) generateQRImage(sessId string, qrT int64) (string, error) {
 	}
 
 	h := crypt.MD5(secret + strconv.FormatInt(qrT, 10))
-	qrValue := fmt.Sprintf("%s;%s", sessId, h)
+	qrValue := fmt.Sprintf("?sid=%s;%s&action=login", sessId, h)
 	png, err := qrcode.Encode(qrValue, qrcode.Medium, 256)
 	if err != nil {
 		return image, err

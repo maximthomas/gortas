@@ -4,9 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/maximthomas/gortas/pkg/middleware"
 	"net/http"
 	"strings"
+
+	"github.com/maximthomas/gortas/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -117,10 +118,16 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+	sIDs := strings.Split(authQRRequest.SID, ";")
+	if len(sIDs) != 2 {
+		pc.logger.Warn("invalid SID", err)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
+		return
+	}
 
-	session, err := pc.sr.GetSession(authQRRequest.SID)
+	session, err := pc.sr.GetSession(sIDs[0])
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "there is no valid authentication session"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
 
