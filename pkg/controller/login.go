@@ -239,7 +239,7 @@ func (l LoginController) createSession(lss *auth.LoginSessionState, realm config
 	if lss.UserId == "" {
 		return sessId, errors.New("user id is not set")
 	}
-	var user models.User
+
 	user, userExists := realm.UserDataStore.Repo.GetUser(lss.UserId)
 
 	var sessionID string
