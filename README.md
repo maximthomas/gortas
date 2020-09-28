@@ -1,7 +1,7 @@
 # Gortas
 
 **Gortas** (Golang Authentication Service) is an API based authentication service, allows adding authentication to your site or service with minimum efforts. 
-**Gortas** supports multiple authentication methods across various data sources. You can authenticate against your Active Dorectory or other LDAP user directory or use MongoDB.
+**Gortas** supports multiple authentication methods across various data sources. You can authenticate against your Active Directory or other LDAP user directory or use MongoDB.
 
 It allows building complex authentication processes with various steps and different authentication methods.   
 
@@ -15,7 +15,7 @@ Clone **Gortas** repository
 git clone https://github.com/maximthomas/gortas.git
 ```
 
-Then goto `gortas` directory and run `docker-compose`
+Then go to `gortas` directory and run `docker-compose`
 
 ```
 docker-compose up
@@ -31,8 +31,8 @@ Open http://localhost:3000 in your browser to Sign Up. After signing up you can 
 ## Deeper Into the Details
 
 ## Supported Authentication methods
-* Username and password - authenticates against existing user datastore
-* Registration - creates a user account in a user datastore for further authentication
+* Username and password - authenticates against existing user data store
+* Registration - creates a user account in a user data store for further authentication
 * Kerberos - uses Kerberos authentication
 
 It is possible to develop custom authentication methods. 
@@ -49,9 +49,9 @@ With **Gortas** you can build an authentication system with any desired complexi
 
 ### Realm
 
-There could be different realms - for example, `staff` realm for employees and `clients` realm for the clients. 
+There could be different realms - for example, `staff` realm for employees and `clients` realm for clients. 
 All realms use their own user data stores. For example, for staff users, we will use an enterprise LDAP user directory, for clients we could use another database, for example, MongoDB.
-A realm contains authentication modules, authentication chains, and user data store.
+Every realm contains authentication modules, authentication chains, and user data store.
 
 ### Authentication Module
 
@@ -61,13 +61,13 @@ For example - prompt username and password or send and verify a one-time passwor
 ### Authentication Chain
 
 Authentication modules organized in authentication chains. 
-An authentication chain is the sequence of authentication modules to organize complex authentication process.
+Every authentication chain is the sequence of authentication modules to orchestrate complex authentication process.
 For example, we have two modules: Login module - prompts a user to provide login and password and OTP module - sends SMS with a one-time password to the user.
 
 When a user tries to authenticate he will be prompted to enter login and password. 
 If the credentials are correct authentication service sends OTP via SMS and prompts the user to enter the one-time password as a second authentication factor.
-On the other hand, we can organize kerberos and login and password in the same chain. 
-So if the user was not authenticated via Kerberos he will be prompted to enter his credentials manually.
+On the other hand, we can line up kerberos and login and password in the same chain. 
+So if a user was not authenticated via Kerberos they will be prompted to enter his credentials manually.
 
 ## Configuration Reference
 
@@ -96,7 +96,7 @@ authentication: #section defines everything related to authentication process
             - id: "registration"
               properties:
 
-      userDataStore: # defines User Data Stokre
+      userDataStore: # defines User Data Store
         type: "mongodb" # could be "mongodb" or "ldap"
         properties:
           url:  "mongodb://root:changeme@localhost:27017"
