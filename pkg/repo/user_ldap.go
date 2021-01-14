@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/go-ldap/ldap/v3"
 	"github.com/maximthomas/gortas/pkg/models"
-	"gopkg.in/ldap.v3"
 )
 
 type UserLdapRepository struct {
