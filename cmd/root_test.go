@@ -14,7 +14,7 @@ func TestExecute(t *testing.T) {
 	err := rootCmd.Execute()
 	assert.NoError(t, err)
 	conf := config.GetConfig()
-	r := conf.Authentication.Realms["staff"]
+	r := conf.Authentication.Realms["users"]
 	assert.True(t, len(r.AuthChains) > 0)
 
 }

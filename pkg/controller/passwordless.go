@@ -118,14 +118,8 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	sIDs := strings.Split(authQRRequest.SID, ";")
-	if len(sIDs) != 2 {
-		pc.logger.Warn("invalid SID", err)
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
-		return
-	}
 
-	session, err := pc.sr.GetSession(sIDs[0])
+	session, err := pc.sr.GetSession(authQRRequest.SID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
