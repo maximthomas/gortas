@@ -21,12 +21,12 @@ type Hydra struct {
 	client *http.Client
 }
 
-type HydraLoginData struct {
+type hydraLoginData struct {
 	Skip    bool   `json:"skip"`
 	Subject string `json:"subject"`
 }
 
-type HydraSubject struct {
+type hydraSubject struct {
 	Subject     string `json:"subject"`
 	Remember    bool   `json:"remember"`
 	RememberFor int32  `json:"remember_for"`
@@ -45,7 +45,7 @@ func (h *Hydra) Process(_ *auth.LoginSessionState, c *gin.Context) (ms auth.Modu
 	if err != nil {
 		return auth.Fail, h.callbacks, err
 	}
-	var hld HydraLoginData
+	var hld hydraLoginData
 	err = json.Unmarshal(body, &hld)
 	if err != nil {
 		return auth.Fail, h.callbacks, err
@@ -68,7 +68,7 @@ func (h *Hydra) ValidateCallbacks(cbs []models.Callback) error {
 
 func (h *Hydra) PostProcess(_ string, lss *auth.LoginSessionState, c *gin.Context) error {
 
-	hs := HydraSubject{
+	hs := hydraSubject{
 		Subject:     lss.UserId,
 		Remember:    false,
 		RememberFor: 0,

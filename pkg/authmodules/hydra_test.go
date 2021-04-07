@@ -17,7 +17,7 @@ func TestHydra(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, loginChallenge, req.URL.Query()["login_challenge"][0])
-		if req.Method == http.MethodGet && "/oauth2/auth/requests/login" == req.URL.Path {
+		if req.Method == http.MethodGet && req.URL.Path == "/oauth2/auth/requests/login" {
 
 			rw.Write([]byte(`{
 				"skip": false,
@@ -29,7 +29,7 @@ func TestHydra(t *testing.T) {
 				"context": {}
 			}`))
 			return
-		} else if req.Method == http.MethodPut && "/oauth2/auth/requests/login/accept" == req.URL.Path {
+		} else if req.Method == http.MethodPut && req.URL.Path == "/oauth2/auth/requests/login/accept" {
 			rw.Write([]byte(`{
 				"redirect_to": "https://hydra/"
 			}`))

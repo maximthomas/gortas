@@ -13,7 +13,7 @@ servers:
   - url: https://gortas:8443/v1/
 tags:
   - name: authentication
-    description: Everything about your Pets
+    description: Authentication service
     externalDocs:
       description: Find out more
       url: http://swagger.io

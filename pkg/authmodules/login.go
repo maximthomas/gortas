@@ -26,7 +26,6 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []models.Callback, lss *auth.Log
 		switch cb.Name {
 		case "login":
 			username = cb.Value
-			break
 		case "password":
 			password = cb.Value
 		}

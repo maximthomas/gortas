@@ -124,7 +124,7 @@ func (k *Kerberos) Process(lss *auth.LoginSessionState, c *gin.Context) (ms auth
 		id := ctx.Value(spnego.CTXKeyCredentials).(goidentity.Identity)
 		requestCtx := r.Context()
 		requestCtx = context.WithValue(requestCtx, spnego.CTXKeyCredentials, id)
-		requestCtx = context.WithValue(requestCtx, spnego.CTXKeyAuthenticated, ctx.Value(spnego.CTXKeyAuthenticated))
+		_ = context.WithValue(requestCtx, spnego.CTXKeyAuthenticated, ctx.Value(spnego.CTXKeyAuthenticated))
 		log.Printf("%s %s@%s - SPNEGO authentication succeeded", r.RemoteAddr, id.UserName(), id.Domain())
 		lss.UserId = id.UserName()
 		return auth.Pass, k.callbacks, err
