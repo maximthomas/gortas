@@ -37,7 +37,7 @@ func (h *Hydra) Process(_ *auth.LoginSessionState, c *gin.Context) (ms auth.Modu
 	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, url.PathEscape(c.Query("login_challenge")))
 	resp, err := h.client.Get(uri)
 	if err != nil {
-		return auth.Fail, h.callbacks, err
+		return auth.Fail, h.callbacks, fmt.Errorf("Process %v: %v", uri, err)
 	}
 
 	defer resp.Body.Close()

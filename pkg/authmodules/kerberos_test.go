@@ -9,17 +9,19 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jcmturner/gokrb5/v8/test/testdata"
 	"github.com/maximthomas/gortas/pkg/auth"
-	"gopkg.in/jcmturner/gokrb5.v7/test/testdata"
 )
 
 func TestKerberos(t *testing.T) {
+
 	b := BaseAuthModule{
 		properties: map[string]interface{}{
-			keyTabDataProperty:       testdata.TESTUSER1_USERKRB5_AD_KEYTAB,
+			keyTabDataProperty:       testdata.KEYTAB_TESTUSER1_TEST_GOKRB5,
 			servicePrincipalProperty: "HTTP/authservice@ADKERBEROS",
 		},
 	}
+
 	k := NewKerberosModule(b)
 
 	t.Run("Test request negotiate", func(t *testing.T) {
@@ -55,5 +57,4 @@ func TestKerberos(t *testing.T) {
 
 		assert.Error(t, err)
 	})
-
 }

@@ -18,7 +18,7 @@ var (
 	cfgFile string
 	rootCmd = &cobra.Command{
 		Use:   "gortas",
-		Short: "Hugo is a very fast static site generator",
+		Short: "Gortas is a golang authentication service",
 		Run: func(cmd *cobra.Command, args []string) {
 			server.RunServer()
 		},
@@ -41,7 +41,6 @@ func Execute() {
 }
 
 func init() {
-	fmt.Println("init")
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/auth-config.yaml)")
 	rootCmd.AddCommand(versionCmd)

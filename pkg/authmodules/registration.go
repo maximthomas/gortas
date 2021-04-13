@@ -31,7 +31,7 @@ func (rm *Registration) Process(lss *auth.LoginSessionState, c *gin.Context) (ms
 
 func (rm *Registration) ProcessCallbacks(inCbs []models.Callback, lss *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
 	if inCbs == nil {
-		return auth.Fail, cbs, errors.New("Callbacks cant be nil")
+		return auth.Fail, cbs, errors.New("callbacks can't be nil")
 	}
 
 	callbacksValid := true
@@ -64,7 +64,6 @@ func (rm *Registration) ProcessCallbacks(inCbs []models.Callback, lss *auth.Logi
 		switch cb.Name {
 		case "login":
 			username = cb.Value
-			break
 		case "password":
 			password = cb.Value
 		default:

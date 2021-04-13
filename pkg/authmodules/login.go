@@ -50,7 +50,7 @@ func (lm *LoginPassword) PostProcess(sessID string, lss *auth.LoginSessionState,
 	return nil
 }
 
-func NewLoginModule(base BaseAuthModule) *LoginPassword {
+func NewLoginPassword(base BaseAuthModule) *LoginPassword {
 	(&base).callbacks = []models.Callback{
 		{
 			Name:   "login",

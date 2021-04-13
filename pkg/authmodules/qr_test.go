@@ -52,7 +52,7 @@ func TestQR(t *testing.T) {
 		ms, cbs, err := q.ProcessCallbacks(q.callbacks, lss, c)
 		assert.Equal(t, auth.InProgress, ms)
 		assert.NoError(t, err)
-		image, _ := cbs[0].Properties["image"]
+		image := cbs[0].Properties["image"]
 		assert.NotEmpty(t, image)
 	})
 

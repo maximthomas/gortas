@@ -1,7 +1,7 @@
 package authmodules
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth"
@@ -26,7 +26,7 @@ func GetAuthModule(mi auth.LoginSessionStateModuleInfo, r config.Realm, sr repo.
 	}
 	switch mi.Type {
 	case "login":
-		return NewLoginModule(base), nil
+		return NewLoginPassword(base), nil
 	case "registration":
 		return NewRegistrationModule(base), nil
 	case "kerberos":
@@ -36,7 +36,7 @@ func GetAuthModule(mi auth.LoginSessionStateModuleInfo, r config.Realm, sr repo.
 	case "qr":
 		return NewQRModule(base), nil
 	default:
-		return nil, errors.New("module does not exists")
+		return nil, fmt.Errorf("module %v does not exists", mi.Type)
 	}
 }
 
@@ -49,10 +49,10 @@ type BaseAuthModule struct {
 }
 
 func (b BaseAuthModule) ValidateCallbacks(cbs []models.Callback) error {
-	err := errors.New("callbacks does not match")
+	err := fmt.Errorf("callbacks does not match %v %v", b.callbacks, cbs)
 	if len(cbs) == len(b.callbacks) {
 		for i := range cbs {
-			if cbs[i].Name != cbs[i].Name {
+			if cbs[i].Name != b.callbacks[i].Name {
 				return err
 			}
 		}

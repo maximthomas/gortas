@@ -1,24 +1,24 @@
 package authmodules
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/gin-gonic/gin"
+	"github.com/jcmturner/gokrb5/v8/credentials"
+	"github.com/jcmturner/gokrb5/v8/gssapi"
+	"github.com/jcmturner/gokrb5/v8/keytab"
+	"github.com/jcmturner/gokrb5/v8/service"
+	"github.com/jcmturner/gokrb5/v8/spnego"
+	"github.com/jcmturner/gokrb5/v8/types"
 	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/models"
-	"gopkg.in/jcmturner/goidentity.v3"
-	"gopkg.in/jcmturner/gokrb5.v7/gssapi"
-	"gopkg.in/jcmturner/gokrb5.v7/keytab"
-	"gopkg.in/jcmturner/gokrb5.v7/service"
-	"gopkg.in/jcmturner/gokrb5.v7/spnego"
-	"gopkg.in/jcmturner/gokrb5.v7/types"
 )
 
 type Kerberos struct {
@@ -31,6 +31,7 @@ const (
 	keyTabFileProperty       = "keytabfile"
 	keyTabDataProperty       = "keytabdata"
 	servicePrincipalProperty = "serviceprincipal"
+	ctxCredentials           = "github.com/jcmturner/gokrb5/v8/ctxCredentials"
 )
 
 func NewKerberosModule(base BaseAuthModule) *Kerberos {
@@ -121,13 +122,15 @@ func (k *Kerberos) Process(lss *auth.LoginSessionState, c *gin.Context) (ms auth
 		return ms, cbs, errors.New(errText)
 	}
 	if authed {
-		id := ctx.Value(spnego.CTXKeyCredentials).(goidentity.Identity)
-		requestCtx := r.Context()
-		requestCtx = context.WithValue(requestCtx, spnego.CTXKeyCredentials, id)
-		_ = context.WithValue(requestCtx, spnego.CTXKeyAuthenticated, ctx.Value(spnego.CTXKeyAuthenticated))
-		log.Printf("%s %s@%s - SPNEGO authentication succeeded", r.RemoteAddr, id.UserName(), id.Domain())
+		// Authentication successful; get user's credentials from the context
+
+		id := ctx.Value(ctxCredentials).(*credentials.Credentials)
 		lss.UserId = id.UserName()
+
+		log.Printf("%s %s@%s - SPNEGO authentication succeeded", r.RemoteAddr, id.UserName(), id.Domain())
+
 		return auth.Pass, k.callbacks, err
+
 	} else {
 		errText := fmt.Sprintf("%s - SPNEGO Kerberos authentication failed", r.RemoteAddr)
 		log.Print(errText)
