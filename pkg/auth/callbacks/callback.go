@@ -17,7 +17,7 @@ type Callback struct {
 	Validation string            `json:"validation,omitempty"`
 	Required   bool              `json:"required,omitempty"`
 	Options    []string          `json:"options,omitempty"`
-	Properties map[string]string `json:"properties,omitempty"` //TODO move to map[string]interface{}
+	Properties map[string]string `json:"properties,omitempty"` //TODO v2 move to map[string]interface{}
 	Error      string            `json:"error,omitempty"`
 }
 

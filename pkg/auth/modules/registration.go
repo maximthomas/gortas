@@ -46,7 +46,6 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 	if inCbs == nil {
 		return state.FAIL, cbs, errors.New("callbacks can't be nil")
 	}
-
 	callbacksValid := true
 	errCbs := make([]callbacks.Callback, len(rm.Callbacks))
 	copy(errCbs, rm.Callbacks)
@@ -58,7 +57,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		} else if errCbs[i].Validation != "" {
 			re, err := regexp.Compile(errCbs[i].Validation)
 			if err != nil {
-				//TODO process error (logging?)
+				rm.l.Errorf("error compiling regex for callback %v", cb.Validation)
 				return state.FAIL, cbs, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
 			match := re.Match([]byte(cb.Value))

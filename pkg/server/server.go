@@ -23,7 +23,6 @@ func SetupRouter(conf config.Config) *gin.Engine {
 
 	v1 := router.Group("/gortas/v1")
 	{
-		// TODO remove login route and login controller
 		auth := v1.Group("/auth")
 		{
 			route := "/:realm/:flow"

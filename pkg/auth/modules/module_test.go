@@ -6,6 +6,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +49,9 @@ func TestModuleRegistered(t *testing.T) {
 }
 
 func TestGetModuleFromRegistry(t *testing.T) {
-
+	config.SetConfig(config.Config{
+		Logger: logrus.New(),
+	})
 	mi := state.FlowStateModuleInfo{
 		Id:   "simple",
 		Type: "simple",

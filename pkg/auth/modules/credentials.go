@@ -41,7 +41,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 		} else if cbs[i].Validation != "" {
 			re, err := regexp.Compile(cbs[i].Validation)
 			if err != nil {
-				//TODO process error (logging?)
+				cm.l.Errorf("error compiling regex for callback %v", cb.Validation)
 				return state.FAIL, nil, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
 			match := re.Match([]byte(cb.Value))

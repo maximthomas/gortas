@@ -42,6 +42,7 @@ func GetAuthModule(mi state.FlowStateModuleInfo, realm config.Realm, req *http.R
 		State:      mi.State,
 		req:        req,
 		w:          w,
+		l:          config.GetConfig().Logger.WithField("module", mi.Type),
 	}
 	constructor, ok := modulesRegistry.Load(mi.Type)
 	if !ok {
@@ -60,6 +61,7 @@ type BaseAuthModule struct {
 	State      map[string]interface{}
 	req        *http.Request
 	w          http.ResponseWriter
+	l          *logrus.Entry
 }
 
 func (b BaseAuthModule) getUserRepo() repo.UserRepository {

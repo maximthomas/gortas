@@ -246,7 +246,7 @@ func TestLogin(t *testing.T) {
 
 func TestIDM(t *testing.T) {
 	t.Skip()
-	//TODO implement test
+	//TODO v2 implement test
 	assert.Fail(t, "implement test")
 }
 

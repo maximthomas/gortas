@@ -7,6 +7,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -127,6 +128,7 @@ func getCredentialsModule(t *testing.T) *Credentials {
 
 	const emailRegexp = "^([a-z0-9_-]+)(@[a-z0-9-]+)(\\.[a-z]+|\\.[a-z]+\\.[a-z]+)?$"
 	var b = BaseAuthModule{
+		l: logrus.New().WithField("module", "credentials"),
 		Properties: map[string]interface{}{
 			keyPrimaryField: Field{
 				Name:       "login",

@@ -17,7 +17,7 @@ import (
 
 type Config struct {
 	Authentication Authentication
-	Logger         logrus.FieldLogger
+	Logger         *logrus.Logger
 	Session        Session `yaml:"session"`
 	Server         Server  `yaml:"server"`
 }

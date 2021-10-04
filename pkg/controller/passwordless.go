@@ -19,7 +19,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-//TODO refactor passwordless architecture
+//TODO v2 refactor passwordless architecture
 type PasswordlessServicesController struct {
 	sr     repo.SessionRepository
 	logger logrus.FieldLogger

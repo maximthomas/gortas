@@ -36,7 +36,7 @@ func (f *Flow) Process(cbReq callbacks.Request, r *http.Request, w http.Response
 	var outCbs []callbacks.Callback
 	for moduleIndex, moduleInfo := range f.fs.Modules {
 		switch moduleInfo.Status {
-		// TODO v2 match module name in a callback request
+		// TODO v2 match module names in a callback request
 		case state.START, state.IN_PROGRESS:
 			instance, err := modules.GetAuthModule(moduleInfo, realm, r, w)
 			if err != nil {

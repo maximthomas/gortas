@@ -11,6 +11,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,31 +19,6 @@ const (
 	userName = "johnDoe"
 	password = "passw0rdJ0hn"
 )
-
-var b = BaseAuthModule{
-	Properties: map[string]interface{}{
-		keyPrimaryField: Field{
-			Name:       "login",
-			Prompt:     "Email",
-			Required:   true,
-			Validation: "^\\w{4,}$",
-		},
-		keyAdditionalFields: []Field{{
-			Name:     "name",
-			Prompt:   "Name",
-			Required: true,
-		},
-		},
-	},
-	realm: config.Realm{
-		ID:        "",
-		Modules:   nil,
-		AuthFlows: nil,
-		UserDataStore: config.UserDataStore{
-			Repo: repo.NewInMemoryUserRepository(),
-		},
-	},
-}
 
 func TestNewRegistrationModule(t *testing.T) {
 	rm := getNewRegistrationModule(t)
@@ -198,6 +174,35 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 }
 
 func getNewRegistrationModule(t *testing.T) *Registration {
+	config.SetConfig(config.Config{
+		Logger: logrus.New(),
+	})
+	var b = BaseAuthModule{
+		l: config.GetConfig().Logger.WithField("module", "registration"),
+		Properties: map[string]interface{}{
+			keyPrimaryField: Field{
+				Name:       "login",
+				Prompt:     "Email",
+				Required:   true,
+				Validation: "^\\w{4,}$",
+			},
+			keyAdditionalFields: []Field{{
+				Name:     "name",
+				Prompt:   "Name",
+				Required: true,
+			},
+			},
+		},
+		realm: config.Realm{
+			ID:        "",
+			Modules:   nil,
+			AuthFlows: nil,
+			UserDataStore: config.UserDataStore{
+				Repo: repo.NewInMemoryUserRepository(),
+			},
+		},
+	}
+
 	var m = newRegistrationModule(b)
 	rm, ok := m.(*Registration)
 	assert.True(t, ok)
