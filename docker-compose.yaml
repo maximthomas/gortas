@@ -36,3 +36,9 @@ services:
   #   environment:
   #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
   #     ME_CONFIG_MONGODB_ADMINPASSWORD: changeme
+  smtp:
+    image: mailhog/mailhog:latest
+    restart: always
+    ports: 
+      - 1025:1025
+      - 8025:8025

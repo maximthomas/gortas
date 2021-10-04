@@ -1,4 +1,4 @@
-package authmodules
+package modules
 
 import (
 	"bytes"
@@ -9,9 +9,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gin-gonic/gin"
-	"github.com/maximthomas/gortas/pkg/auth"
-	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/auth/callbacks"
+	"github.com/maximthomas/gortas/pkg/auth/state"
 )
 
 //Hydra ORY Hydra authentication module
@@ -21,55 +20,60 @@ type Hydra struct {
 	client *http.Client
 }
 
-type HydraLoginData struct {
+type hydraLoginData struct {
 	Skip    bool   `json:"skip"`
 	Subject string `json:"subject"`
 }
 
-type HydraSubject struct {
+type hydraSubject struct {
 	Subject     string `json:"subject"`
 	Remember    bool   `json:"remember"`
 	RememberFor int32  `json:"remember_for"`
 	ACR         string `json:"acr"`
 }
 
-func (h *Hydra) Process(_ *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
-	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, url.PathEscape(c.Query("login_challenge")))
+func (h *Hydra) getLoginChallenge() string {
+	return url.PathEscape(h.req.URL.Query().Get("login_challenge"))
+}
+
+func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
+
+	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, h.getLoginChallenge())
 	resp, err := h.client.Get(uri)
 	if err != nil {
-		return auth.Fail, h.callbacks, err
+		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", uri, err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return auth.Fail, h.callbacks, err
+		return state.FAIL, h.Callbacks, err
 	}
-	var hld HydraLoginData
+	var hld hydraLoginData
 	err = json.Unmarshal(body, &hld)
 	if err != nil {
-		return auth.Fail, h.callbacks, err
+		return state.FAIL, h.Callbacks, err
 	}
 
 	if !hld.Skip {
 
 	}
 
-	return auth.Pass, h.callbacks, err
+	return state.PASS, h.Callbacks, err
 }
 
-func (h *Hydra) ProcessCallbacks(_ []models.Callback, s *auth.LoginSessionState, c *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
-	return h.Process(s, c)
+func (h *Hydra) ProcessCallbacks(_ []callbacks.Callback, s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
+	return h.Process(s)
 }
 
-func (h *Hydra) ValidateCallbacks(cbs []models.Callback) error {
+func (h *Hydra) ValidateCallbacks(cbs []callbacks.Callback) error {
 	return h.BaseAuthModule.ValidateCallbacks(cbs)
 }
 
-func (h *Hydra) PostProcess(_ string, lss *auth.LoginSessionState, c *gin.Context) error {
+func (h *Hydra) PostProcess(fs *state.FlowState) error {
 
-	hs := HydraSubject{
-		Subject:     lss.UserId,
+	hs := hydraSubject{
+		Subject:     fs.UserId,
 		Remember:    false,
 		RememberFor: 0,
 		ACR:         "gortas",
@@ -80,7 +84,7 @@ func (h *Hydra) PostProcess(_ string, lss *auth.LoginSessionState, c *gin.Contex
 	if err != nil {
 		return err
 	}
-	uri := fmt.Sprintf("%s/oauth2/auth/requests/login/accept?login_challenge=%s", h.URI, url.PathEscape(c.Query("login_challenge")))
+	uri := fmt.Sprintf("%s/oauth2/auth/requests/login/accept?login_challenge=%s", h.URI, h.getLoginChallenge())
 
 	req, err := http.NewRequest(http.MethodPut, uri, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -105,15 +109,19 @@ func (h *Hydra) PostProcess(_ string, lss *auth.LoginSessionState, c *gin.Contex
 	if err != nil {
 		return err
 	}
-	lss.RedirectURI = hRes.RedirectTo
+	fs.RedirectURI = hRes.RedirectTo
 	return nil
 
 }
 
-func NewHydraModule(base BaseAuthModule) *Hydra {
-	skipTLS, _ := base.properties["skiptls"].(bool)
+func init() {
+	RegisterModule("hydra", newHydraModule)
+}
 
-	uri, ok := base.properties["uri"].(string)
+func newHydraModule(base BaseAuthModule) AuthModule {
+	skipTLS, _ := base.Properties["skiptls"].(bool)
+
+	uri, ok := base.Properties["uri"].(string)
 
 	if !ok {
 		panic("hydra module missing uri property")

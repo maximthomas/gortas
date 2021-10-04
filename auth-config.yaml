@@ -14,7 +14,7 @@ authentication:
               - dataStore: "email"
                 prompt: "Email"
 
-      authChains:
+      authFlows:
         login:
           modules:
             - id: "login"

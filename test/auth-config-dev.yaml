@@ -5,6 +5,7 @@ authentication:
         login:
           type: "login"
           properties:
+        
         registration:
           type: "registration"
           properties:
@@ -13,8 +14,14 @@ authentication:
                 prompt: "Name"
         qr:
           type: "qr"
+        
+        kerberos:
+          type: "kerberos"
+          properties:
+            keyTabFile: ""
+            servicePrincipal: ""
 
-      authChains:
+      authFlows:
         login:
           modules:
             - id: "login"
@@ -26,6 +33,10 @@ authentication:
         qr:
           modules:
             - id: "qr"
+
+        kerberos:
+          modules:
+            - id: "kerberos"
             
       userDataStore:
         type: "inMemory"

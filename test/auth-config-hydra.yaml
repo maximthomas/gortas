@@ -17,7 +17,7 @@ authentication:
             uri: "https://localhost:4445"
             skipTLS: true #disable in production!
 
-      authChains:
+      authFlows:
         login:
           modules:
             - id: "hydra"

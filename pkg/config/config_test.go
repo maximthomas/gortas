@@ -18,7 +18,7 @@ func TestReadConfigFileViper(t *testing.T) {
 	conf := GetConfig()
 	assert.NotNil(t, conf.Authentication)
 	r := conf.Authentication.Realms["users"]
-	assert.True(t, len(r.AuthChains) > 0)
+	assert.True(t, len(r.AuthFlows) > 0)
 	assert.Equal(t, "users", r.ID)
 	assert.NotEmpty(t, config.Session.Jwt.PrivateKeyPem)
 	assert.NotEmpty(t, config.Session.Jwt.PrivateKeyID)

@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"math/big"
 )
 
 func Encrypt(key []byte, message string) (encmess string, err error) {
@@ -63,4 +64,27 @@ func MD5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func RandomString(length int, useLetters bool, useDigits bool) (string, error) {
+	var runes string
+	if useLetters {
+		runes += "abcdefghijklmnopqrstuvwxyz"
+	}
+	if useDigits {
+		runes += "0123456789"
+	}
+
+	if runes == "" {
+		return "", errors.New("at least letters or numbers should be specified")
+	}
+	ret := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(runes))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = runes[num.Int64()]
+	}
+	return string(ret), nil
 }

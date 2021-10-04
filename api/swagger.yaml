@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: Auth Service
+  title: Gortas Authentication Service
   description: ''
   termsOfService: 'TODO'
   contact:
@@ -13,12 +13,12 @@ servers:
   - url: https://gortas:8443/v1/
 tags:
   - name: authentication
-    description: Everything about your Pets
+    description: Authentication service
     externalDocs:
       description: Find out more
       url: http://swagger.io
 paths:
-  /auth/{realm}/{service}:
+  /auth/{realm}/{flow}:
     get:
       tags:
         - authentication
@@ -31,7 +31,7 @@ paths:
           required: true
           schema:
             type: string
-        - name: service
+        - name: flow
           in: path
           description: Authentication service
           required: true
@@ -43,11 +43,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CallbackRequest'
+                $ref: '#/components/schemas/CredentialsRequest'
     post:
       tags:
         - authentication
-      summary: Add a new pet to the store
+      summary: submit credentials
       operationId: submit authentication data
       parameters:
         - name: realm
@@ -56,18 +56,18 @@ paths:
           required: true
           schema:
             type: string
-        - name: service
+        - name: flow
           in: path
           description: Service ti authenticate to authenticate
           required: true
           schema:
             type: string
       requestBody:
-        description: Pet object that needs to be added to the store
+        description: Credentials data
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CallbackRequest'
+              $ref: '#/components/schemas/CredentialsResponse'
         required: true
       responses:
         405:
@@ -76,11 +76,9 @@ paths:
 
 components:
   schemas:
-    Callback:
+    Credential:
       type: object
       properties:
-        name:
-          type: string
         type:
           type: string
         value:
@@ -92,18 +90,24 @@ components:
           type: boolean
         properties:
           additionalProperties:
-            type: string
+            type: object        
+        error: 
+          type: string
+          description: 'Error message if input is incorrect'
       required:
         - type
         - value
-    CallbackRequest:
+    CredentialsRequest:
       type: object
       properties:
-        sessionId:
+        flowId:
           type: string
         module:
           type: string
-        callbacks:
+        credentials:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/Callback'
+            $ref: '#/components/schemas/Credential'
+    CredentialsResponse:
+      allOf:
+        - $ref: '#/components/schemas/CredentialsRequest'

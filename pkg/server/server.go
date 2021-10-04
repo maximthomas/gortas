@@ -8,7 +8,7 @@ import (
 	cors "github.com/rs/cors/wrapper/gin"
 )
 
-func setupRouter(conf config.Config) *gin.Engine {
+func SetupRouter(conf config.Config) *gin.Engine {
 	router := gin.Default()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   conf.Server.Cors.AllowedOrigins,
@@ -19,51 +19,24 @@ func setupRouter(conf config.Config) *gin.Engine {
 	ru := middleware.NewRequestURIMiddleware()
 
 	router.Use(c, ru)
-
-	var loginController = controller.NewLoginController(conf)
-	var idmController = controller.NewIDMController(conf)
-	var pwlessCtrl = controller.NewPasswordlessServicesController(conf)
+	var authController = controller.NewAuthController()
 
 	v1 := router.Group("/gortas/v1")
 	{
-		login := v1.Group("/login")
+		// TODO remove login route and login controller
+		auth := v1.Group("/auth")
 		{
-			route := "/:realm/:chain"
-			login.GET(route, func(context *gin.Context) {
-				realmId := context.Param("realm")
-				authChainId := context.Param("chain")
-				loginController.Login(realmId, authChainId, context)
-			})
-			login.POST(route, func(context *gin.Context) {
-				realmId := context.Param("realm")
-				authChainId := context.Param("chain")
-				loginController.Login(realmId, authChainId, context)
-			})
+			route := "/:realm/:flow"
+			auth.GET(route, authController.Auth)
+			auth.POST(route, authController.Auth)
 		}
-		idm := v1.Group("/idm")
-		am := middleware.NewAuthenticatedMiddleware(conf.Session)
-		idm.Use(am)
-		{
-			idm.GET("", idmController.Profile)
-			otpQR := idm.Group("/otp/qr")
-			{
-				otpQR.GET("", pwlessCtrl.RegisterGenerateQR)
-				otpQR.POST("", pwlessCtrl.RegisterConfirmQR)
-			}
-		}
-		service := v1.Group("/service")
-		{
-			otpQrLogin := service.Group("/otp/qr/login")
-			otpQrLogin.POST("", pwlessCtrl.AuthQR)
-		}
-
 	}
 	return router
 }
 
 func RunServer() {
 	ac := config.GetConfig()
-	router := setupRouter(ac)
+	router := SetupRouter(ac)
 	err := router.Run(":" + "8080")
 	if err != nil {
 		panic(err)

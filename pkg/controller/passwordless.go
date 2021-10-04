@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/maximthomas/gortas/pkg/repo"
@@ -19,6 +19,7 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+//TODO refactor passwordless architecture
 type PasswordlessServicesController struct {
 	sr     repo.SessionRepository
 	logger logrus.FieldLogger
@@ -152,17 +153,17 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 	}
 
 	//authorise session
-	var lss auth.LoginSessionState
-	err = json.Unmarshal([]byte(session.Properties["lss"]), &lss)
+	var fs state.FlowState
+	err = json.Unmarshal([]byte(session.Properties["fs"]), &fs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
 
 	moduleFound := false
-	for _, m := range lss.Modules {
-		if m.Type == "qr" && m.State == auth.InProgress {
-			m.SharedState["qrUserId"] = authQRRequest.UID
+	for _, m := range fs.Modules {
+		if m.Type == "qr" && m.Status == state.IN_PROGRESS {
+			m.State["qrUserId"] = authQRRequest.UID
 			moduleFound = true
 			break
 		}
@@ -172,12 +173,12 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
-	lssJSON, err := json.Marshal(lss)
+	fsJSON, err := json.Marshal(fs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
-	session.Properties["lss"] = string(lssJSON)
+	session.Properties["fs"] = string(fsJSON)
 	err = pc.sr.UpdateSession(session)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})

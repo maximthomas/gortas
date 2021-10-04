@@ -1,18 +1,22 @@
+// +build integration
+
 package repo
 
 import (
 	"context"
-	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/stretchr/testify/assert"
 )
 
 const testSessionID = "c48abbfc-93f9-46d6-b568-5a9d8394a156"
 
 func TestGetSession(t *testing.T) {
+
 	repo := getRepo(t, true)
 	t.Run("test get session", func(t *testing.T) {
 		sess, err := repo.GetSession(testSessionID)

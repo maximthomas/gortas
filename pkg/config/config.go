@@ -28,13 +28,13 @@ type Authentication struct {
 
 type Realm struct {
 	ID            string
-	Modules       map[string]Module    `yaml:"modules"`
-	AuthChains    map[string]AuthChain `yaml:"authChains"`
-	UserDataStore UserDataStore        `yaml:"userDataStore"`
+	Modules       map[string]Module   `yaml:"modules"`
+	AuthFlows     map[string]AuthFlow `yaml:"authFlows"`
+	UserDataStore UserDataStore       `yaml:"userDataStore"`
 }
 
-type AuthChain struct {
-	Modules []ChainModule `yaml:"modules"`
+type AuthFlow struct {
+	Modules []FlowModule `yaml:"modules"`
 }
 
 type UserDataStore struct {
@@ -48,7 +48,7 @@ type Module struct {
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
 }
 
-type ChainModule struct {
+type FlowModule struct {
 	ID         string                 `yaml:"id"`
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
 }
@@ -171,4 +171,8 @@ func InitConfig() error {
 
 func GetConfig() Config {
 	return config
+}
+
+func SetConfig(newConfig Config) {
+	config = newConfig
 }
