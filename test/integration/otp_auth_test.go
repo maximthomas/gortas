@@ -174,8 +174,9 @@ func executeRequest(t *testing.T, r *http.Request, res interface{}) *http.Respon
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, r)
 	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
-	reponse := recorder.Body.String()
-	err := json.Unmarshal([]byte(reponse), res)
+	response := recorder.Body.String()
+	fmt.Println(response)
+	err := json.Unmarshal([]byte(response), res)
 	assert.NoError(t, err)
 	return recorder.Result()
 }

@@ -241,11 +241,12 @@ func newOTP(base BaseAuthModule) AuthModule {
 		},
 		{
 			Name:     "action",
-			Type:     callbacks.TypeOptions,
+			Type:     callbacks.TypeActions,
 			Required: true,
 			Value:    "check",
 			Properties: map[string]string{
-				"values": "check|send",
+				"values":        "check|send", //TODO add Camel case
+				"skipVerifyFor": "send",
 			},
 		},
 	}

@@ -7,6 +7,7 @@ const (
 	TypeHttpStatus = "httpstatus"
 	TypeAutoSubmit = "autosubmit"
 	TypeOptions    = "options"
+	TypeActions    = "actions"
 )
 
 type Callback struct {

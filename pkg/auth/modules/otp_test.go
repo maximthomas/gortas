@@ -40,7 +40,7 @@ func TestProcess(t *testing.T) {
 	//check action callback
 	actionCb := cbs[1]
 	assert.Equal(t, "action", actionCb.Name)
-	assert.Equal(t, callbacks.TypeOptions, actionCb.Type)
+	assert.Equal(t, callbacks.TypeActions, actionCb.Type)
 }
 
 func TestGenerateOTP(t *testing.T) {
