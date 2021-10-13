@@ -199,7 +199,8 @@ func updateFlowState(fs *state.FlowState) error {
 }
 
 func GetFlow(realmId string, flowName string, flowId string) (*Flow, error) {
-	sds := config.GetConfig().Session.DataStore
+	c := config.GetConfig()
+	sds := c.Session.DataStore
 	session, err := sds.Repo.GetSession(flowId)
 	var fs state.FlowState
 	if err != nil {
@@ -218,8 +219,6 @@ func GetFlow(realmId string, flowName string, flowId string) (*Flow, error) {
 			return nil, errors.New("session property fs does not exsit")
 		}
 	}
-
-	c := config.GetConfig()
 
 	return &Flow{
 		fs:     fs,

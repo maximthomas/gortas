@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	keyAdditionalFields = "additionalfileds"
+	keyAdditionalFields = "additionalFields"
 	keyPrimaryField     = "primaryField"
 	keyUsePassword      = "usePassword"
 )

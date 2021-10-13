@@ -24,6 +24,7 @@ func (a *AuthController) Auth(c *gin.Context) {
 	fn := c.Param("flow")
 
 	var cbReq callbacks.Request
+	var fId string
 	if c.Request.Method == http.MethodPost {
 		err := c.ShouldBindJSON(&cbReq)
 		if err != nil {
@@ -31,10 +32,10 @@ func (a *AuthController) Auth(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 			return
 		}
-	}
-	fId := cbReq.FlowId
-	if fId == "" {
-		fId, _ = c.Cookie(state.FlowCookieName)
+		fId = cbReq.FlowId
+		if fId == "" {
+			fId, _ = c.Cookie(state.FlowCookieName)
+		}
 	}
 
 	f, err := auth.GetFlow(rn, fn, fId)

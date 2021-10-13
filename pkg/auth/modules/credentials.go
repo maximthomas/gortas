@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"reflect"
 	"regexp"
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
@@ -13,9 +12,9 @@ import (
 
 type Credentials struct {
 	BaseAuthModule
-	primaryField      Field
-	additinonalFields []Field
-	credentialsState  *credentialsState
+	PrimaryField     Field
+	AdditionalFields []Field
+	credentialsState *credentialsState
 }
 
 type credentialsState struct {
@@ -59,7 +58,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 	//fill state values
 
 	for _, cb := range inCbs {
-		if cb.Name == cm.primaryField.Name {
+		if cb.Name == cm.PrimaryField.Name {
 			cm.credentialsState.UserID = cb.Value
 		} else {
 			cm.credentialsState.Properties[cb.Name] = cb.Value
@@ -108,21 +107,14 @@ func init() {
 }
 
 func newCredentials(base BaseAuthModule) AuthModule {
-	var pf Field
-	if pfProp, ok := base.Properties[keyPrimaryField]; ok {
-		pfObj := reflect.ValueOf(pfProp)
-		pfPtr := &Field{}
-		_ = mapstructure.Decode(pfObj.Interface(), pfPtr)
-		if pfPtr == nil {
-			panic("registration module primary field not defined")
-		}
-		err := pfPtr.initField()
-		if err != nil {
-			panic(err)
-		}
-		pf = *pfPtr
-	} else {
-		pf = Field{
+	var cm Credentials
+	err := mapstructure.Decode(base.Properties, &cm)
+	if err != nil {
+		panic(err) //TODO add error processing
+	}
+
+	if cm.PrimaryField.Name == "" {
+		cm.PrimaryField = Field{
 			Name:     "login",
 			Prompt:   "Login",
 			Required: true,
@@ -134,32 +126,14 @@ func newCredentials(base BaseAuthModule) AuthModule {
 	}
 	_ = mapstructure.Decode(base.State, &cs)
 
-	cm := &Credentials{
-		base,
-		pf,
-		nil,
-		&cs,
-	}
+	cm.BaseAuthModule = base
+	cm.credentialsState = &cs
 
-	if af, ok := base.Properties[keyAdditionalFields]; ok {
-		afObj := reflect.ValueOf(af)
-		afs := make([]Field, afObj.Len())
-		for i := 0; i < afObj.Len(); i++ {
-			adf := &Field{}
-			_ = mapstructure.Decode(afObj.Index(i).Interface(), adf)
-			err := adf.initField()
-			if err != nil {
-				panic(err)
-			}
-			afs[i] = *adf
-		}
-		cm.additinonalFields = afs
-	}
-	cbLen := len(cm.additinonalFields) + 1
+	cbLen := len(cm.AdditionalFields) + 1
 
 	adcbs := make([]callbacks.Callback, cbLen)
-	if cm.additinonalFields != nil {
-		for i, af := range cm.additinonalFields {
+	if cm.AdditionalFields != nil {
+		for i, af := range cm.AdditionalFields {
 			adcbs[i+1] = callbacks.Callback{
 				Name:       af.Name,
 				Type:       callbacks.TypeText,
@@ -170,6 +144,7 @@ func newCredentials(base BaseAuthModule) AuthModule {
 			}
 		}
 	}
+	pf := cm.PrimaryField
 	adcbs[0] = callbacks.Callback{
 		Name:       pf.Name,
 		Type:       callbacks.TypeText,
@@ -180,5 +155,5 @@ func newCredentials(base BaseAuthModule) AuthModule {
 	}
 
 	(&cm.BaseAuthModule).Callbacks = adcbs
-	return cm
+	return &cm
 }

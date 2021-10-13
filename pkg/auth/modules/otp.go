@@ -245,7 +245,7 @@ func newOTP(base BaseAuthModule) AuthModule {
 			Required: true,
 			Value:    "check",
 			Properties: map[string]string{
-				"values":        "check|send", //TODO add Camel case
+				"values":        "send|check", //TODO add Camel case
 				"skipVerifyFor": "send",
 			},
 		},
