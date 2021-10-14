@@ -7,10 +7,30 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"io"
 	"math/big"
+
+	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/pkg/errors"
 )
+
+func EncryptWithConfig(message string) (encmess string, err error) {
+	encKey := config.GetConfig().EncryptionKey
+	key, err := base64.StdEncoding.DecodeString(encKey)
+	if err != nil {
+		return "", errors.Wrap(err, "error encrypt wuth config")
+	}
+	return Encrypt(key, message)
+}
+
+func DecryptWithConfig(message string) (encmess string, err error) {
+	encKey := config.GetConfig().EncryptionKey
+	key, err := base64.StdEncoding.DecodeString(encKey)
+	if err != nil {
+		return "", errors.Wrap(err, "error encrypt wuth config")
+	}
+	return Decrypt(key, message)
+}
 
 func Encrypt(key []byte, message string) (encmess string, err error) {
 	plainText := []byte(message)

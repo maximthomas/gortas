@@ -1,7 +1,10 @@
 package modules
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
@@ -9,6 +12,11 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/modules/otp"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/crypt"
+	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,6 +49,33 @@ func TestProcess(t *testing.T) {
 	actionCb := cbs[1]
 	assert.Equal(t, "action", actionCb.Name)
 	assert.Equal(t, callbacks.TypeActions, actionCb.Type)
+}
+
+func TestProcess_MagicLink(t *testing.T) {
+	key := make([]byte, 32)
+	rand.Read(key)
+	keyStr := base64.StdEncoding.EncodeToString(key)
+	conf := config.Config{}
+	conf.Session.DataStore.Repo = repo.NewInMemorySessionRepository(logrus.New())
+	conf.EncryptionKey = keyStr
+	config.SetConfig(conf)
+
+	sessionId := "test_session"
+	encrypted, err := crypt.EncryptWithConfig(sessionId)
+	assert.NoError(t, err)
+	sess := models.Session{}
+	sess.Properties = make(map[string]string, 1)
+	sess.Properties["fs"] = "{}"
+	sess.ID = sessionId
+	conf.Session.DataStore.Repo.CreateSession(sess)
+
+	m := getOTPModule(t)
+	m.req = httptest.NewRequest("GET", "http://localhost/gortas?code="+encrypted, nil)
+	m.OtpCheckMagicLink = true
+	var fs state.FlowState
+	st, _, err := m.Process(&fs)
+	assert.NoError(t, err)
+	assert.Equal(t, state.PASS, st)
 }
 
 func TestGenerateOTP(t *testing.T) {

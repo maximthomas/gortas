@@ -2,6 +2,7 @@ package modules
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/modules/otp"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/crypt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -31,6 +33,7 @@ type OTP struct {
 	OtpResendSec       int
 	OtpRetryCount      int
 	OtpMessageTemplate string
+	OtpCheckMagicLink  bool
 	otpState           *otpState
 	otpSender          otp.Sender
 }
@@ -48,6 +51,36 @@ type otpSenderProperties struct {
 
 func (lm *OTP) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	defer lm.updateState()
+
+	if lm.OtpCheckMagicLink && lm.req.URL.Query().Get("code") != "" {
+		code := lm.req.URL.Query().Get("code")
+		sessionId, err := crypt.DecryptWithConfig(code)
+		if err != nil {
+			return state.FAIL, lm.Callbacks, err
+		}
+		sess, err := config.GetConfig().Session.DataStore.Repo.GetSession(sessionId)
+		if err != nil {
+			return state.FAIL, lm.Callbacks, err
+		}
+		var oldFlowState state.FlowState
+		err = json.Unmarshal([]byte(sess.Properties["fs"]), &oldFlowState)
+		if err != nil {
+			return state.FAIL, lm.Callbacks, err
+		}
+		fs.UserId = oldFlowState.UserId
+		for k, v := range oldFlowState.SharedState {
+			fs.SharedState[k] = v
+		}
+
+		for i, m := range oldFlowState.Modules {
+			fs.Modules[i].State = m.State
+		}
+
+		return state.PASS, lm.Callbacks, err
+	} else if lm.OtpCheckMagicLink {
+		return state.FAIL, lm.Callbacks, err
+	}
+
 	lm.generateAndSendOTP(fs.UserId)
 	return state.IN_PROGRESS, lm.Callbacks, err
 }

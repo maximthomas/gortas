@@ -20,6 +20,7 @@ type Config struct {
 	Logger         *logrus.Logger
 	Session        Session `yaml:"session"`
 	Server         Server  `yaml:"server"`
+	EncryptionKey  string  `yaml:"encryptionKey"`
 }
 
 type Authentication struct {
@@ -51,6 +52,7 @@ type Module struct {
 type FlowModule struct {
 	ID         string                 `yaml:"id"`
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
+	Criteria   string                 `yaml:"criteria"`
 }
 
 type Session struct {

@@ -2,8 +2,9 @@ package repo
 
 import (
 	"errors"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/models"
@@ -71,7 +72,7 @@ func (sr *InMemorySessionRepository) cleanupExpired() {
 	}
 }
 
-func NewInMemorySessionRepository(logger logrus.FieldLogger) SessionRepository {
+func NewInMemorySessionRepository(logger *logrus.Logger) SessionRepository {
 	if logger == nil {
 		logger = logrus.New()
 	}

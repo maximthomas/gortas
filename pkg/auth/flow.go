@@ -34,6 +34,7 @@ func (f *Flow) Process(cbReq callbacks.Request, r *http.Request, w http.Response
 	realm := conf.Authentication.Realms[f.fs.Realm]
 	inCbs := cbReq.Callbacks
 	var outCbs []callbacks.Callback
+modules:
 	for moduleIndex, moduleInfo := range f.fs.Modules {
 		switch moduleInfo.Status {
 		// TODO v2 match module names in a callback request
@@ -87,15 +88,26 @@ func (f *Flow) Process(cbReq callbacks.Request, r *http.Request, w http.Response
 				}
 				return cbResp, err
 			case state.PASS:
+				if moduleInfo.Criteria == "sufficient" { //TODO refactor move to function
+					break modules
+				}
 				continue
 			case state.FAIL:
+				if moduleInfo.Criteria == "sufficient" { //TODO refactor move to function
+					continue
+				}
 				return cbResp, autherrors.NewAuthFailed("")
 			}
 		}
 	}
 	authSucceeded := true
 	for _, moduleInfo := range f.fs.Modules {
-		if moduleInfo.Status != state.PASS {
+
+		if moduleInfo.Criteria == "sufficient" { //TODO refactor move to function
+			if moduleInfo.Status == state.PASS {
+				break
+			}
+		} else if moduleInfo.Status != state.PASS {
 			authSucceeded = false
 			break
 		}
@@ -249,6 +261,7 @@ func createNewFlowState(realm config.Realm, flowName string, flow config.AuthFlo
 			fs.Modules[i].Properties[k] = v
 		}
 		fs.Modules[i].State = make(map[string]interface{})
+		fs.Modules[i].Criteria = chainModule.Criteria
 	}
 	return fs
 }

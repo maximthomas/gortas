@@ -24,6 +24,7 @@ type FlowStateModuleInfo struct {
 	Properties FlowStateModuleProperties
 	Status     ModuleStatus
 	State      map[string]interface{}
+	Criteria   string
 }
 
 type FlowStateModuleProperties map[string]interface{}
