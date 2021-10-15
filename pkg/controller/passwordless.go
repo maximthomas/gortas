@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/middleware"
 
@@ -154,7 +155,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 
 	//authorise session
 	var fs state.FlowState
-	err = json.Unmarshal([]byte(session.Properties["fs"]), &fs)
+	err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
@@ -178,7 +179,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
-	session.Properties["fs"] = string(fsJSON)
+	session.Properties[constants.FlowStateSessionProperty] = string(fsJSON)
 	err = pc.sr.UpdateSession(session)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})

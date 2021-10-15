@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
+	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/modules/otp"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
@@ -52,7 +53,8 @@ type otpSenderProperties struct {
 func (lm *OTP) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	defer lm.updateState()
 
-	if lm.OtpCheckMagicLink && lm.req.URL.Query().Get("code") != "" {
+	//TODO add check expired date
+	if lm.OtpCheckMagicLink && lm.req.URL.Query().Get("code") != "" { //TODO refactor move to function and code to constant
 		code := lm.req.URL.Query().Get("code")
 		sessionId, err := crypt.DecryptWithConfig(code)
 		if err != nil {
@@ -63,7 +65,7 @@ func (lm *OTP) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []callba
 			return state.FAIL, lm.Callbacks, err
 		}
 		var oldFlowState state.FlowState
-		err = json.Unmarshal([]byte(sess.Properties["fs"]), &oldFlowState)
+		err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &oldFlowState)
 		if err != nil {
 			return state.FAIL, lm.Callbacks, err
 		}

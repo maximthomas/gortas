@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
+	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/modules/otp"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
@@ -65,7 +66,7 @@ func TestProcess_MagicLink(t *testing.T) {
 	assert.NoError(t, err)
 	sess := models.Session{}
 	sess.Properties = make(map[string]string, 1)
-	sess.Properties["fs"] = "{}"
+	sess.Properties[constants.FlowStateSessionProperty] = "{}"
 	sess.ID = sessionId
 	conf.Session.DataStore.Repo.CreateSession(sess)
 

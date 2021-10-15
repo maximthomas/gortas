@@ -1,8 +1,10 @@
 package auth
 
 import (
-	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"testing"
+
+	"github.com/maximthomas/gortas/pkg/auth/callbacks"
+	"github.com/maximthomas/gortas/pkg/auth/constants"
 
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
@@ -20,14 +22,14 @@ func init() {
 	s := models.Session{
 		ID: testFlowId,
 		Properties: map[string]string{
-			"fs": "{}",
+			constants.FlowStateSessionProperty: "{}",
 		},
 	}
 	_, _ = sr.CreateSession(s)
 	corruptedSession := models.Session{
 		ID: corruptedFlowId,
 		Properties: map[string]string{
-			"fs": "bad",
+			constants.FlowStateSessionProperty: "bad",
 		},
 	}
 	_, _ = sr.CreateSession(corruptedSession)

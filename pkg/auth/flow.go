@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
+	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/modules"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
@@ -19,8 +20,6 @@ import (
 
 	autherrors "github.com/maximthomas/gortas/pkg/auth/errors"
 )
-
-const FLOWSTATE_PROP = "fs"
 
 type Flow struct {
 	fs     state.FlowState
@@ -88,12 +87,12 @@ modules:
 				}
 				return cbResp, err
 			case state.PASS:
-				if moduleInfo.Criteria == "sufficient" { //TODO refactor move to function
+				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
 					break modules
 				}
 				continue
 			case state.FAIL:
-				if moduleInfo.Criteria == "sufficient" { //TODO refactor move to function
+				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
 					continue
 				}
 				return cbResp, autherrors.NewAuthFailed("")
@@ -103,7 +102,7 @@ modules:
 	authSucceeded := true
 	for _, moduleInfo := range f.fs.Modules {
 
-		if moduleInfo.Criteria == "sufficient" { //TODO refactor move to function
+		if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
 			if moduleInfo.Status == state.PASS {
 				break
 			}
@@ -197,10 +196,10 @@ func updateFlowState(fs *state.FlowState) error {
 			ID:         fs.Id,
 			Properties: make(map[string]string),
 		}
-		session.Properties[FLOWSTATE_PROP] = string(sessionProp)
+		session.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
 		_, err = sr.CreateSession(session)
 	} else {
-		session.Properties[FLOWSTATE_PROP] = string(sessionProp)
+		session.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
 		err = sr.UpdateSession(session)
 	}
 	if err != nil {
@@ -226,7 +225,7 @@ func GetFlow(realmId string, flowName string, flowId string) (*Flow, error) {
 		}
 		fs = createNewFlowState(realm, flowName, flow)
 	} else {
-		err = json.Unmarshal([]byte(session.Properties[FLOWSTATE_PROP]), &fs)
+		err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
 		if err != nil {
 			return nil, errors.New("session property fs does not exsit")
 		}
