@@ -9,7 +9,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/maximthomas/gortas/pkg/auth"
+	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
 )
@@ -88,7 +88,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 }
 
 func getSessionIDFromRequest(c *gin.Context) string {
-	sessionCookie, err := c.Request.Cookie(auth.SessionCookieName)
+	sessionCookie, err := c.Request.Cookie(state.SessionCookieName)
 	if err == nil {
 		return sessionCookie.Value
 	}

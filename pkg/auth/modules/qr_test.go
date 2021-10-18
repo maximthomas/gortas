@@ -1,4 +1,4 @@
-package authmodules
+package modules
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/auth"
+	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,10 +19,10 @@ func TestQR(t *testing.T) {
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("GET", "/login", nil)
 
-		lss := &auth.LoginSessionState{}
-		lss.SessionId = uuid.New().String()
+		lss := &state.FlowState{}
+		lss.Id = uuid.New().String()
 
-		status, cbs, err := q.Process(lss, c)
+		status, cbs, err := q.Process(lss)
 		img, ok := cbs[0].Properties["image"]
 		assert.True(t, ok)
 		assert.NotEmpty(t, img)
@@ -34,11 +34,11 @@ func TestQR(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &auth.LoginSessionState{SharedState: map[string]string{}}
-		lss.SessionId = uuid.New().String()
-		q.BaseAuthModule.sharedState["qrUserId"] = "ivan"
-		ms, _, err := q.ProcessCallbacks(q.callbacks, lss, c)
-		assert.Equal(t, auth.Pass, ms)
+		lss := &state.FlowState{SharedState: map[string]string{}}
+		lss.Id = uuid.New().String()
+		q.BaseAuthModule.State["qrUserId"] = "ivan"
+		ms, _, err := q.ProcessCallbacks(q.Callbacks, lss)
+		assert.Equal(t, state.PASS, ms)
 		assert.NoError(t, err)
 	})
 
@@ -47,12 +47,12 @@ func TestQR(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &auth.LoginSessionState{SharedState: map[string]string{}}
-		lss.SessionId = uuid.New().String()
-		ms, cbs, err := q.ProcessCallbacks(q.callbacks, lss, c)
-		assert.Equal(t, auth.InProgress, ms)
+		lss := &state.FlowState{SharedState: map[string]string{}}
+		lss.Id = uuid.New().String()
+		ms, cbs, err := q.ProcessCallbacks(q.Callbacks, lss)
+		assert.Equal(t, state.IN_PROGRESS, ms)
 		assert.NoError(t, err)
-		image, _ := cbs[0].Properties["image"]
+		image := cbs[0].Properties["image"]
 		assert.NotEmpty(t, image)
 	})
 
@@ -60,10 +60,12 @@ func TestQR(t *testing.T) {
 
 func getQRModule() *QR {
 	b := BaseAuthModule{
-		properties: map[string]interface{}{
+		Properties: map[string]interface{}{
 			"qrTimeout": 10,
 		},
-		sharedState: map[string]interface{}{},
+		State: map[string]interface{}{},
 	}
-	return NewQRModule(b)
+	m := newQRModule(b)
+	q, _ := m.(*QR)
+	return q
 }

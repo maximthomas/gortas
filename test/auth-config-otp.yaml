@@ -2,37 +2,41 @@ authentication:
   realms:
     users:
       modules:
-        login:
-          type: "login"
+        otp:
+          type: "otp"
           properties:
-        registration:
-          type: "registration"
+            otpLength: 4
+            useLetters:         false
+            useDigits:          true
+            otpTimeoutSec:      180
+            otpResendSec:       90
+            otpRetryCount:      5
+            otpMessageTemplate: Code {{.OTP}} valid for {{.ValidFor}} min
+            sender:
+              senderType: "test"
+              properties:
+                host: "localhost"
+                port: 1234
+
+        email:
+          type: "credentials"
           properties:
-            additionalFileds:
-              - dataStore: "name"
-                prompt: "Name"
-              - dataStore: "email"
-                prompt: "Email"
+            primaryField: 
+              name: "email"
+              prompt: "Email"
+              required: true
 
       authFlows:
-        login:
+        otp:
           modules:
-            - id: "login"
+            - id: "email"
               properties:
-        registration:
-          modules:
-            - id: "registration"
+            - id: "otp"
               properties:
 
+            
       userDataStore:
-        type: "mongodb"
-        properties:
-          url:  "mongodb://root:changeme@localhost:27017"
-          database:   "users"
-          collection: "users"
-          userAttributes:
-            - "name"
-            - "email"
+        type: "inMemory"
 
 session:
   type: "stateless" #could be also stateful, implement later
@@ -49,16 +53,11 @@ session:
       iU9srFFwmlMCIFPUbMixqHUHi6BzuLDXpDz15+gWarO3Io+NoCCUFbdBAiEAinVf
       Lnb+YDP3L5ZzSNF92P9yBQaopFCifjrUqSS85uw=
       -----END RSA PRIVATE KEY-----
+
   dataStore:
-    type: "mongo"
-    properties:
-      url: "mongodb://root:changeme@localhost:27017"
-      database:   "session"
-      collection: "sessions"
+    type: "inMemory"
 
 server:
   cors:
     allowedOrigins:
       - http://localhost:3000
-
-

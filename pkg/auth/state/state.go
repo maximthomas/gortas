@@ -1,4 +1,4 @@
-package auth
+package state
 
 import (
 	"encoding/json"
@@ -8,25 +8,28 @@ import (
 
 //import "encoding/json"
 
-type LoginSessionState struct {
-	Modules     []LoginSessionStateModuleInfo
+type FlowState struct {
+	Modules     []FlowStateModuleInfo
 	SharedState map[string]string
 	UserId      string
-	SessionId   string
-	RedirectURI string
-}
-
-type LoginSessionStateModuleInfo struct {
 	Id          string
-	Type        string
-	Properties  LoginSessionStateModuleProperties
-	State       ModuleState
-	SharedState map[string]interface{}
+	RedirectURI string
+	Realm       string
+	Name        string
 }
 
-type LoginSessionStateModuleProperties map[string]interface{}
+type FlowStateModuleInfo struct {
+	Id         string
+	Type       string
+	Properties FlowStateModuleProperties
+	Status     ModuleStatus
+	State      map[string]interface{}
+	Criteria   string
+}
 
-func (mp LoginSessionStateModuleProperties) MarshalJSON() ([]byte, error) {
+type FlowStateModuleProperties map[string]interface{}
+
+func (mp FlowStateModuleProperties) MarshalJSON() ([]byte, error) {
 	var cp = make(map[string]interface{})
 	for k, v := range mp {
 		cp[k] = convertInterface(v)
@@ -74,20 +77,20 @@ func convertInterface(v interface{}) interface{} {
 	return res
 }
 
-func (l *LoginSessionState) UpdateModuleInfo(mIndex int, mInfo LoginSessionStateModuleInfo) {
-	l.Modules[mIndex] = mInfo
+func (f *FlowState) UpdateModuleInfo(mIndex int, mInfo FlowStateModuleInfo) {
+	f.Modules[mIndex] = mInfo
 }
 
-type ModuleState int
+type ModuleStatus int
 
 const (
-	Fail ModuleState = -1 + iota
-	Start
-	InProgress //callbacks requested
-	Pass
+	FAIL ModuleStatus = -1 + iota
+	START
+	IN_PROGRESS //callbacks requested
+	PASS
 )
 
 const (
-	AuthCookieName    = "GortasAuthSession"
+	FlowCookieName    = "GortasAuthFlow"
 	SessionCookieName = "GortasSession"
 )

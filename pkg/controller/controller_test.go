@@ -43,13 +43,13 @@ var (
 					},
 				},
 
-				AuthChains: map[string]config.AuthChain{
-					"default": {Modules: []config.ChainModule{
+				AuthFlows: map[string]config.AuthFlow{
+					"default": {Modules: []config.FlowModule{
 						{
 							ID: "login",
 						},
 					}},
-					"register": {Modules: []config.ChainModule{
+					"register": {Modules: []config.FlowModule{
 						{
 							ID: "registration",
 							Properties: map[string]interface{}{
@@ -57,7 +57,7 @@ var (
 							},
 						},
 					}},
-					"sso": {Modules: []config.ChainModule{}},
+					"sso": {Modules: []config.FlowModule{}},
 				},
 				UserDataStore: config.UserDataStore{
 					Repo: repo.NewInMemoryUserRepository(),

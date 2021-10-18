@@ -1,4 +1,4 @@
-package authmodules
+package modules
 
 import (
 	"log"
@@ -6,8 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/maximthomas/gortas/pkg/auth"
+	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,9 +16,9 @@ func TestHydra(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, loginChallenge, req.URL.Query()["login_challenge"][0])
-		if req.Method == http.MethodGet && "/oauth2/auth/requests/login" == req.URL.Path {
+		if req.Method == http.MethodGet && req.URL.Path == "/oauth2/auth/requests/login" {
 
-			rw.Write([]byte(`{
+			_, _ = rw.Write([]byte(`{
 				"skip": false,
 				"subject": "user-id",
 				"client": {"id": "test_client"},
@@ -29,34 +28,34 @@ func TestHydra(t *testing.T) {
 				"context": {}
 			}`))
 			return
-		} else if req.Method == http.MethodPut && "/oauth2/auth/requests/login/accept" == req.URL.Path {
-			rw.Write([]byte(`{
+		} else if req.Method == http.MethodPut && req.URL.Path == "/oauth2/auth/requests/login/accept" {
+			_, _ = rw.Write([]byte(`{
 				"redirect_to": "https://hydra/"
 			}`))
 			return
 		}
 
-		rw.Write([]byte(`{"ok":"ok"}`))
+		_, _ = rw.Write([]byte(`{"ok":"ok"}`))
 	}))
 
 	defer server.Close()
 
 	b := BaseAuthModule{
-		properties: map[string]interface{}{
+		Properties: map[string]interface{}{
 			"uri": server.URL,
 		},
 	}
-	h := NewHydraModule(b)
+	am := newHydraModule(b)
+	h, _ := am.(*Hydra)
+
 	assert.Equal(t, server.URL, h.URI)
 
 	t.Run("Test process", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("GET", "/login?login_challenge="+loginChallenge, nil)
+		h.req = httptest.NewRequest("GET", "/login?login_challenge="+loginChallenge, nil)
+		h.w = httptest.NewRecorder()
+		fs := &state.FlowState{}
 
-		lss := &auth.LoginSessionState{}
-
-		status, cbs, err := h.Process(lss, c)
+		status, cbs, err := h.Process(fs)
 
 		assert.NoError(t, err)
 
@@ -64,15 +63,14 @@ func TestHydra(t *testing.T) {
 	})
 
 	t.Run("Test PostProcess", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("GET", "/login?login_challenge="+loginChallenge, nil)
+		h.req = httptest.NewRequest("GET", "/login?login_challenge="+loginChallenge, nil)
+		h.w = httptest.NewRecorder()
 
-		lss := &auth.LoginSessionState{}
+		fs := &state.FlowState{}
 
-		err := h.PostProcess("sess", lss, c)
+		err := h.PostProcess(fs)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "https://hydra/", lss.RedirectURI)
+		assert.Equal(t, "https://hydra/", fs.RedirectURI)
 	})
 }

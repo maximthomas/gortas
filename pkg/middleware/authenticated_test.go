@@ -3,19 +3,20 @@ package middleware
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/repo"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/models"
 )
 
@@ -67,7 +68,7 @@ func TestMiddleware(t *testing.T) {
 			c.Keys = make(map[string]interface{})
 			c.Request = httptest.NewRequest("GET", "/login", nil)
 			authCookie := &http.Cookie{
-				Name:  auth.SessionCookieName,
+				Name:  state.SessionCookieName,
 				Value: tt.sessionId,
 			}
 			c.Request.AddCookie(authCookie)
@@ -95,7 +96,7 @@ func TestGetSessionFormRequest(t *testing.T) {
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("GET", "/", nil)
 		authCookie := &http.Cookie{
-			Name:  auth.SessionCookieName,
+			Name:  state.SessionCookieName,
 			Value: sess.ID,
 		}
 		c.Request.AddCookie(authCookie)

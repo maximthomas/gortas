@@ -9,12 +9,12 @@ import (
 )
 
 func TestExecute(t *testing.T) {
-	args := []string{"version", "--config", "../auth-config.yaml"}
+	args := []string{"version", "--config", "../test/auth-config-dev.yaml"}
 	rootCmd.SetArgs(args)
 	err := rootCmd.Execute()
 	assert.NoError(t, err)
 	conf := config.GetConfig()
 	r := conf.Authentication.Realms["users"]
-	assert.True(t, len(r.AuthChains) > 0)
+	assert.True(t, len(r.AuthFlows) > 0)
 
 }

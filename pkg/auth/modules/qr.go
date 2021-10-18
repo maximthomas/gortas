@@ -1,4 +1,4 @@
-package authmodules
+package modules
 
 import (
 	"crypto/rand"
@@ -7,10 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/maximthomas/gortas/pkg/auth"
+	"github.com/maximthomas/gortas/pkg/auth/callbacks"
+	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/crypt"
-	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -19,71 +18,71 @@ type QR struct {
 	qrTimeout int64
 }
 
-func (q *QR) Process(lss *auth.LoginSessionState, _ *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
+func (q *QR) Process(lss *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 
 	var qrT int64
-	qrTf, ok := q.sharedState["qrT"].(float64)
+	qrTf, ok := q.State["qrT"].(float64)
 	if ok {
 		qrT = int64(qrTf)
 	} else {
 		seconds := time.Now().Unix()
 		qrT = seconds / q.qrTimeout
-		q.sharedState["qrT"] = qrT
+		q.State["qrT"] = qrT
 	}
 
-	image, err := q.generateQRImage(lss.SessionId, qrT)
+	image, err := q.generateQRImage(lss.Id, qrT)
 	if err != nil {
-		return auth.Fail, q.callbacks, err
+		return state.FAIL, q.Callbacks, err
 	}
 
-	q.callbacks[0].Properties["image"] = image
-	return auth.InProgress, q.callbacks, err
+	q.Callbacks[0].Properties["image"] = image
+	return state.IN_PROGRESS, q.Callbacks, err
 }
 
-func (q *QR) ProcessCallbacks(_ []models.Callback, lss *auth.LoginSessionState, _ *gin.Context) (ms auth.ModuleState, cbs []models.Callback, err error) {
+func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 
-	uid, ok := q.BaseAuthModule.sharedState["qrUserId"].(string)
+	uid, ok := q.BaseAuthModule.State["qrUserId"].(string)
 	if !ok {
 		//check if qr is outdated
 		var qrT int64
-		qrTf, ok := q.sharedState["qrT"].(float64)
+		qrTf, ok := q.State["qrT"].(float64)
 		seconds := time.Now().Unix()
 		if ok {
 			qrT = int64(qrTf)
 		} else {
 			qrT = seconds / q.qrTimeout
-			q.sharedState["qrT"] = qrT
+			q.State["qrT"] = qrT
 		}
 
 		newQrT := seconds / q.qrTimeout
 		if newQrT > qrT {
-			q.sharedState["qrT"] = newQrT
+			q.State["qrT"] = newQrT
 		}
 
-		image, err := q.generateQRImage(lss.SessionId, qrT)
+		image, err := q.generateQRImage(lss.Id, qrT)
 		if err != nil {
-			return auth.Fail, cbs, err
+			return state.FAIL, cbs, err
 		}
 
-		q.callbacks[0].Properties["image"] = image
+		q.Callbacks[0].Properties["image"] = image
 
-		return auth.InProgress, q.callbacks, err
+		return state.IN_PROGRESS, q.Callbacks, err
 	}
 	lss.UserId = uid
-	return auth.Pass, cbs, err
+	return state.PASS, cbs, err
 
 }
 
-func (q *QR) ValidateCallbacks(_ []models.Callback) error {
+func (q *QR) ValidateCallbacks(_ []callbacks.Callback) error {
 	return nil
 }
 
-func (q *QR) PostProcess(_ string, _ *auth.LoginSessionState, _ *gin.Context) error {
+func (q *QR) PostProcess(_ *state.FlowState) error {
 	return nil
 }
 
 func (q *QR) getSecret() (secret string, err error) {
-	secret, ok := q.sharedState["secret"].(string)
+	secret, ok := q.State["secret"].(string)
 	if !ok {
 		key := make([]byte, 32)
 		_, err := rand.Read(key)
@@ -91,7 +90,7 @@ func (q *QR) getSecret() (secret string, err error) {
 			return secret, err
 		}
 		secret = base64.StdEncoding.EncodeToString([]byte(key))
-		q.sharedState["secret"] = secret
+		q.State["secret"] = secret
 	}
 	return secret, err
 }
@@ -114,18 +113,22 @@ func (q *QR) generateQRImage(sessId string, qrT int64) (string, error) {
 	return image, nil
 }
 
-func NewQRModule(base BaseAuthModule) *QR {
-	(&base).callbacks = []models.Callback{
+func init() {
+	RegisterModule("qr", newQRModule)
+}
+
+func newQRModule(base BaseAuthModule) AuthModule {
+	(&base).Callbacks = []callbacks.Callback{
 		{
 			Name:       "qr",
-			Type:       "image",
+			Type:       callbacks.TypeImage,
 			Prompt:     "Enter QR code",
 			Value:      "",
 			Properties: map[string]string{},
 		},
 		{
 			Name: "submit",
-			Type: "autosubmit",
+			Type: callbacks.TypeAutoSubmit,
 			Properties: map[string]string{
 				"interval": "5",
 			},
@@ -133,7 +136,7 @@ func NewQRModule(base BaseAuthModule) *QR {
 	}
 
 	qrTimeout := 30
-	if qrTimeoutProp, ok := base.properties["qrTimeout"]; ok {
+	if qrTimeoutProp, ok := base.Properties["qrTimeout"]; ok {
 		qrTimeout = qrTimeoutProp.(int)
 	}
 	return &QR{

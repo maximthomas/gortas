@@ -7,9 +7,30 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"io"
+	"math/big"
+
+	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/pkg/errors"
 )
+
+func EncryptWithConfig(message string) (encmess string, err error) {
+	encKey := config.GetConfig().EncryptionKey
+	key, err := base64.StdEncoding.DecodeString(encKey)
+	if err != nil {
+		return "", errors.Wrap(err, "error encrypt wuth config")
+	}
+	return Encrypt(key, message)
+}
+
+func DecryptWithConfig(message string) (encmess string, err error) {
+	encKey := config.GetConfig().EncryptionKey
+	key, err := base64.StdEncoding.DecodeString(encKey)
+	if err != nil {
+		return "", errors.Wrap(err, "error encrypt wuth config")
+	}
+	return Decrypt(key, message)
+}
 
 func Encrypt(key []byte, message string) (encmess string, err error) {
 	plainText := []byte(message)
@@ -63,4 +84,27 @@ func MD5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func RandomString(length int, useLetters bool, useDigits bool) (string, error) {
+	var runes string
+	if useLetters {
+		runes += "abcdefghijklmnopqrstuvwxyz"
+	}
+	if useDigits {
+		runes += "0123456789"
+	}
+
+	if runes == "" {
+		return "", errors.New("at least letters or numbers should be specified")
+	}
+	ret := make([]byte, length)
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(runes))))
+		if err != nil {
+			return "", err
+		}
+		ret[i] = runes[num.Int64()]
+	}
+	return string(ret), nil
 }
