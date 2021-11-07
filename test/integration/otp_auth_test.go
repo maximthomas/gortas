@@ -8,14 +8,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/constants"
+	"github.com/maximthomas/gortas/pkg/auth/modules/otp"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/crypt"
 	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/maximthomas/gortas/pkg/server"
 	"github.com/sirupsen/logrus"
@@ -40,7 +41,7 @@ var (
 							"otpTimeoutSec":      180,
 							"otpResendSec":       90,
 							"otpRetryCount":      5,
-							"OtpMessageTemplate": "Code {{.OTP}} valid for {{.ValidFor}} min",
+							"OtpMessageTemplate": "Code {{.OTP}} valid for {{.ValidFor}} min, link code {{.MagicLink}}",
 							"sender": map[string]interface{}{
 								"senderType": "test",
 								"properties": map[string]interface{}{
@@ -210,10 +211,13 @@ func TestOTPAuthMagicLink(t *testing.T) {
 	assert.Equal(t, "otp", cbReq.Callbacks[0].Name)
 	assert.Equal(t, "action", cbReq.Callbacks[1].Name)
 
-	code, err := crypt.EncryptWithConfig(flowId)
+	ms, err := otp.GetSender("test", make(map[string]interface{}, 0))
 	assert.NoError(t, err)
+	ts := ms.(*otp.TestSender)
+	msg := ts.Messages[validPhone]
+	msgCode := strings.Split(msg, "link code")
 
-	request = httptest.NewRequest("GET", authUrl+"?code="+code, nil)
+	request = httptest.NewRequest("GET", authUrl+"?code="+strings.TrimSpace(msgCode[1]), nil)
 	request.AddCookie(flowCookie)
 	cbReq = &callbacks.Request{}
 	resp = executeRequest(t, request, cbReq)

@@ -34,6 +34,8 @@ func GetSender(id string, props map[string]interface{}) (Sender, error) {
 	return s, err
 }
 
+var ts *TestSender
+
 type TestSender struct {
 	Host     string
 	Port     int
@@ -45,13 +47,17 @@ func init() {
 }
 
 func NewTestSender(props map[string]interface{}) (Sender, error) {
-	var ts TestSender
-	err := mapstructure.Decode(props, &ts)
+	if ts != nil {
+		return ts, nil
+	}
+	var newTs TestSender
+	err := mapstructure.Decode(props, &newTs)
 	if err != nil {
 		return nil, err
 	}
+	ts = &newTs
 	ts.Messages = make(map[string]string)
-	return &ts, nil
+	return ts, nil
 }
 
 func (ts *TestSender) Send(to string, text string) error {

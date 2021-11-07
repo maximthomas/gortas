@@ -60,9 +60,9 @@ func TestProcess_MagicLink(t *testing.T) {
 	conf.Session.DataStore.Repo = repo.NewInMemorySessionRepository(logrus.New())
 	conf.EncryptionKey = keyStr
 	config.SetConfig(conf)
-
 	sessionId := "test_session"
-	encrypted, err := crypt.EncryptWithConfig(sessionId)
+	code := sessionId + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
+	encrypted, err := crypt.EncryptWithConfig(code)
 	assert.NoError(t, err)
 	sess := models.Session{}
 	sess.Properties = make(map[string]string, 1)
@@ -208,17 +208,23 @@ func TestProcessCallbacks_CodeValid(t *testing.T) {
 }
 
 func TestGetMessage(t *testing.T) {
+	fs := &state.FlowState{
+		Id: "test",
+	}
 	m := getOTPModule(t)
 	m.otpState.Otp = "1234"
-	msg, err := m.getMessage()
+	msg, err := m.getMessage(fs)
 	assert.NoError(t, err)
 	const expectedMessage = "Code 1234 valid for 03:00 min"
 	assert.Equal(t, expectedMessage, msg)
 }
 
 func TestSend(t *testing.T) {
+	fs := &state.FlowState{
+		Id: "test",
+	}
 	m := getOTPModule(t)
-	err := m.send("1")
+	err := m.send(fs)
 	assert.NoError(t, err)
 	ts := m.otpSender.(*otp.TestSender)
 	assert.Equal(t, 1, len(ts.Messages))
