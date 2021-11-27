@@ -13,7 +13,7 @@ func SetupRouter(conf config.Config) *gin.Engine {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   conf.Server.Cors.AllowedOrigins,
 		AllowCredentials: true,
-		Debug:            true,
+		Debug:            gin.IsDebugging(),
 	})
 
 	ru := middleware.NewRequestURIMiddleware()

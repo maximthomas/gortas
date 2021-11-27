@@ -8,12 +8,12 @@ authentication:
         registration:
           type: "registration"
           properties:
-            additionalFileds:
+            primaryField:
+              dataStore: "email"
+              prompt: "Email"
+            additionalFields:
               - dataStore: "name"
                 prompt: "Name"
-              - dataStore: "email"
-                prompt: "Email"
-
       authFlows:
         login:
           modules:
@@ -35,7 +35,7 @@ authentication:
             - "email"
 
 session:
-  type: "stateless" #could be also stateful, implement later
+  type: "stateless" #could be also stateful
   expires: 60000
   jwt:
     issuer: 'http://gortas'

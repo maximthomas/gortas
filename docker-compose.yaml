@@ -2,43 +2,20 @@ version: '3.7'
 
 services:
   gortas:
-    build:
-      context: .
+    image: maximthomas/gortas:latest
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - mongo
     environment:
       SESSION_DATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
       AUTHENTICATION_REALMS_USERS_USERDATASTORE_PROPERTIES_URL: "mongodb://root:changeme@mongo:27017"
 
-  gortas-ui:
-    build: 
-      dockerfile: ui.Dockerfile
-      context: .
-    ports:
-     - 3000:80
-
   mongo:
     image: mongo:latest
     restart: always
     ports: 
-      - 27017:27017
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: changeme
-
-  # mongo-express:
-  #   image: mongo-express
-  #   restart: always
-  #   ports:
-  #     - 8081:8081
-  #   environment:
-  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
-  #     ME_CONFIG_MONGODB_ADMINPASSWORD: changeme
-  smtp:
-    image: mailhog/mailhog:latest
-    restart: always
-    ports: 
-      - 1025:1025
-      - 8025:8025

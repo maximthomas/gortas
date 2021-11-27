@@ -23,3 +23,6 @@ quicktest:
 
 vet:
 	go vet ./...
+
+docker:
+	docker build -f Dockerfile -t maximthomas/gortas .
