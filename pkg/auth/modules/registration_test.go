@@ -22,9 +22,9 @@ const (
 
 func TestNewRegistrationModule(t *testing.T) {
 	rm := getNewRegistrationModule(t)
-	assert.Equal(t, "login", rm.primaryField.Name)
-	assert.Equal(t, 1, len(rm.afs))
-	assert.Equal(t, true, rm.usePassword)
+	assert.Equal(t, "login", rm.PrimaryField.Name)
+	assert.Equal(t, 1, len(rm.AdditionalFields))
+	assert.Equal(t, true, rm.UsePassword)
 }
 
 func TestRegistration_Process_InvalidLogin(t *testing.T) {
@@ -180,13 +180,13 @@ func getNewRegistrationModule(t *testing.T) *Registration {
 	var b = BaseAuthModule{
 		l: config.GetConfig().Logger.WithField("module", "registration"),
 		Properties: map[string]interface{}{
-			keyPrimaryField: Field{
+			"primaryField": Field{
 				Name:       "login",
 				Prompt:     "Email",
 				Required:   true,
 				Validation: "^\\w{4,}$",
 			},
-			keyAdditionalFields: []Field{{
+			"additionalFields": []Field{{
 				Name:     "name",
 				Prompt:   "Name",
 				Required: true,

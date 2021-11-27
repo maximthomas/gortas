@@ -130,13 +130,13 @@ func getCredentialsModule(t *testing.T) *Credentials {
 	var b = BaseAuthModule{
 		l: logrus.New().WithField("module", "credentials"),
 		Properties: map[string]interface{}{
-			keyPrimaryField: Field{
+			"primaryField": Field{
 				Name:       "login",
 				Prompt:     "Email",
 				Required:   true,
 				Validation: emailRegexp,
 			},
-			keyAdditionalFields: []Field{{
+			"additionalFields": []Field{{
 				Name:     "name",
 				Prompt:   "Name",
 				Required: true,

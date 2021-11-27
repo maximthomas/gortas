@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"reflect"
-
 	"regexp"
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
@@ -12,19 +10,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	keyAdditionalFields = "additionalFields"
-	keyPrimaryField     = "primaryField"
-	keyUsePassword      = "usePassword"
-)
-
 //TODO add password format
 //TODO add confirmation password callback
 type Registration struct {
 	BaseAuthModule
-	primaryField Field
-	usePassword  bool
-	afs          []Field
+	PrimaryField     Field
+	UsePassword      bool
+	AdditionalFields []Field
 }
 
 func (f *Field) initField() error {
@@ -79,7 +71,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 
 	for _, cb := range inCbs {
 		switch cb.Name {
-		case rm.primaryField.Name:
+		case rm.PrimaryField.Name:
 			username = cb.Value
 		case "password":
 			password = cb.Value
@@ -127,60 +119,21 @@ func init() {
 }
 
 func newRegistrationModule(base BaseAuthModule) AuthModule {
-	var pf Field
-	if pfProp, ok := base.Properties[keyPrimaryField]; ok {
-		pfObj := reflect.ValueOf(pfProp)
-		pfPtr := &Field{}
-		_ = mapstructure.Decode(pfObj.Interface(), pfPtr)
-		if pfPtr == nil {
-			panic("registration module primary field not defined")
-		}
-		err := pfPtr.initField()
-		if err != nil {
-			panic(err)
-		}
-		pf = *pfPtr
-	} else {
-		pf = Field{
-			Name:     "login",
-			Prompt:   "Login",
-			Required: true,
-		}
+	var rm Registration
+	rm.UsePassword = true //default value
+	err := mapstructure.Decode(base.Properties, &rm)
+	if err != nil {
+		panic(err) //TODO add error processing
 	}
+	rm.BaseAuthModule = base
 
-	var usePassword = true
-	if usePasswordProp, ok := base.Properties[keyUsePassword]; ok {
-		usePassword = usePasswordProp.(bool)
-	}
-
-	rm := &Registration{
-		base,
-		pf,
-		usePassword,
-		nil,
-	}
-
-	if af, ok := base.Properties[keyAdditionalFields]; ok {
-		afObj := reflect.ValueOf(af)
-		afs := make([]Field, afObj.Len())
-		for i := 0; i < afObj.Len(); i++ {
-			adf := &Field{}
-			_ = mapstructure.Decode(afObj.Index(i).Interface(), adf)
-			err := adf.initField()
-			if err != nil {
-				panic(err)
-			}
-			afs[i] = *adf
-		}
-		rm.afs = afs
-	}
-	cbLen := len(rm.afs) + 1
-	if usePassword {
+	cbLen := len(rm.AdditionalFields) + 1
+	if rm.UsePassword {
 		cbLen++
 	}
 	adcbs := make([]callbacks.Callback, cbLen)
-	if rm.afs != nil {
-		for i, af := range rm.afs {
+	if rm.AdditionalFields != nil {
+		for i, af := range rm.AdditionalFields {
 			adcbs[i+1] = callbacks.Callback{
 				Name:       af.Name,
 				Type:       callbacks.TypeText,
@@ -192,14 +145,14 @@ func newRegistrationModule(base BaseAuthModule) AuthModule {
 		}
 	}
 	adcbs[0] = callbacks.Callback{
-		Name:       pf.Name,
+		Name:       rm.PrimaryField.Name,
 		Type:       callbacks.TypeText,
-		Prompt:     pf.Prompt,
+		Prompt:     rm.PrimaryField.Prompt,
 		Value:      "",
 		Required:   true,
-		Validation: pf.Validation,
+		Validation: rm.PrimaryField.Validation,
 	}
-	if rm.usePassword {
+	if rm.UsePassword {
 		adcbs[cbLen-1] = callbacks.Callback{
 			Name:     "password",
 			Type:     callbacks.TypePassword,
@@ -209,5 +162,5 @@ func newRegistrationModule(base BaseAuthModule) AuthModule {
 		}
 	}
 	(&rm.BaseAuthModule).Callbacks = adcbs
-	return rm
+	return &rm
 }
