@@ -174,6 +174,10 @@ func (f *Flow) createSession(realm config.Realm) (sessId string, err error) {
 				"realm":  realm.ID,
 			},
 		}
+		for k, v := range user.Properties {
+			newSession.Properties[k] = v
+		}
+
 		newSession, err = sc.DataStore.Repo.CreateSession(newSession)
 		if err != nil {
 			return sessId, err

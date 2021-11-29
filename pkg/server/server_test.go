@@ -87,7 +87,7 @@ func init() {
 }
 
 func TestSetupRouter(t *testing.T) {
-	assert.Equal(t, 2, len(router.Routes()))
+	assert.Equal(t, 3, len(router.Routes()))
 }
 
 const target = "http://localhost/gortas/v1/auth/staff/default"

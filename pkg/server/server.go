@@ -20,6 +20,7 @@ func SetupRouter(conf config.Config) *gin.Engine {
 
 	router.Use(c, ru)
 	var authController = controller.NewAuthController()
+	var sessionController = controller.NewSessionController()
 
 	v1 := router.Group("/gortas/v1")
 	{
@@ -28,6 +29,10 @@ func SetupRouter(conf config.Config) *gin.Engine {
 			route := "/:realm/:flow"
 			auth.GET(route, authController.Auth)
 			auth.POST(route, authController.Auth)
+		}
+		session := v1.Group("/session")
+		{
+			session.GET("/", sessionController.SessionInfo)
 		}
 	}
 	return router

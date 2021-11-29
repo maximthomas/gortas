@@ -116,7 +116,6 @@ func TestOTPAuth(t *testing.T) {
 	const validPhone = "5551112233"
 
 	//init auth
-	assert.Equal(t, 2, len(router.Routes()))
 	request := httptest.NewRequest("GET", authUrl, nil)
 	cbReq := &callbacks.Request{}
 	resp := executeRequest(t, request, cbReq)
@@ -165,11 +164,17 @@ func TestOTPAuth(t *testing.T) {
 	//send valid OTP
 	session, _ := config.GetConfig().Session.DataStore.Repo.GetSession(cookieVal)
 	var fs state.FlowState
-	json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+	err := json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+	if err != nil {
+		panic(err)
+	}
 	fs.Modules[2].State["otp"] = "1234"
 	sd, _ := json.Marshal(fs)
 	session.Properties[constants.FlowStateSessionProperty] = string(sd)
-	config.GetConfig().Session.DataStore.Repo.UpdateSession(session)
+	err = config.GetConfig().Session.DataStore.Repo.UpdateSession(session)
+	if err != nil {
+		panic(err)
+	}
 
 	requestBody = fmt.Sprintf(`{"callbacks":[{"name":"otp", "value": "%v"},{"name":"action", "value": "%v"}]}`, "1234", "check")
 	request = httptest.NewRequest("POST", authUrl, bytes.NewBuffer([]byte(requestBody)))
