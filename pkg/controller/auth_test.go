@@ -94,10 +94,11 @@ func TestGenerateResponse(t *testing.T) {
 			name: "auth succeed",
 			cbResp: callbacks.Response{
 				Token: "test-token",
+				Type:  "Bearer",
 			},
 			err:            nil,
 			expectedStatus: 200,
-			expectedBody:   `{"token":"test-token"}`,
+			expectedBody:   `{"token":"test-token","type":"Bearer"}`,
 			expectedCookies: []cookie{
 				{
 					name:  "GortasSession",

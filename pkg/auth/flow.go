@@ -130,6 +130,7 @@ modules:
 		}
 		cbResp = callbacks.Response{
 			Token: sessID,
+			Type:  "Bearer",
 		}
 		err = conf.Session.DataStore.Repo.DeleteSession(f.fs.Id)
 		if err != nil {

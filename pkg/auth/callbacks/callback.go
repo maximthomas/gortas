@@ -34,5 +34,6 @@ type Response struct {
 	Module    string     `json:"module,omitempty"`
 	Callbacks []Callback `json:"callbacks,omitempty"`
 	Token     string     `json:"token,omitempty"`
+	Type      string     `json:"type,omitempty"` //returns token type
 	FlowId    string     `json:"flowId,omitempty"`
 }
