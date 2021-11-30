@@ -32,7 +32,7 @@ func SetupRouter(conf config.Config) *gin.Engine {
 		}
 		session := v1.Group("/session")
 		{
-			session.GET("/", sessionController.SessionInfo)
+			session.GET("", sessionController.SessionInfo)
 		}
 	}
 	return router

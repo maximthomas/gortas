@@ -128,10 +128,14 @@ modules:
 		if err != nil {
 			return cbResp, errors.Wrap(err, "error creating session")
 		}
-
 		cbResp = callbacks.Response{
 			Token: sessID,
 		}
+		err = conf.Session.DataStore.Repo.DeleteSession(f.fs.Id)
+		if err != nil {
+			f.logger.Warnf("error clearing session %s %v", f.fs.Id, err)
+		}
+
 		return cbResp, err
 	}
 

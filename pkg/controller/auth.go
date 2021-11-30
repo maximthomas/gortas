@@ -53,11 +53,14 @@ func (a *AuthController) Auth(c *gin.Context) {
 func (a *AuthController) generateResponse(c *gin.Context, cbResp callbacks.Response, err error) {
 	if err != nil {
 		logrus.Errorf("authentication error %v", err)
+		deleteCookie(state.FlowCookieName, c)
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "fail"})
 		return
 	}
+
 	if cbResp.Token != "" {
 		setCookie(state.SessionCookieName, cbResp.Token, c)
+		deleteCookie(state.FlowCookieName, c)
 		c.JSON(http.StatusOK, cbResp)
 	} else if cbResp.FlowId != "" {
 		status := http.StatusOK
@@ -93,6 +96,10 @@ func (a *AuthController) generateResponse(c *gin.Context, cbResp callbacks.Respo
 
 func setCookie(name, value string, c *gin.Context) {
 	c.SetCookie(name, value, 0, "/", "", false, true)
+}
+
+func deleteCookie(name string, c *gin.Context) {
+	c.SetCookie(name, "", -1, "/", "", false, true)
 }
 
 func NewAuthController() *AuthController {
