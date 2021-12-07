@@ -65,3 +65,5 @@ docker-compose up
 This command will create services:
 1. `gortas` - authentication API service
 1. `mongo` - Mongo database for user and session storage
+
+Further reading: [Quick Start](https://github.com/maximthomas/gortas/wiki/Quick-Start)
