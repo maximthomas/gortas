@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/sirupsen/logrus"
@@ -28,47 +29,44 @@ var (
 		},
 	))
 	ac = config.Authentication{
-		Realms: map[string]config.Realm{
-			"staff": {
-				Modules: map[string]config.Module{
-					"login": {Type: "login"},
-					"registration": {
-						Type: "registration",
-						Properties: map[string]interface{}{
-							"additionalFields": []map[interface{}]interface{}{{
-								"dataStore": "name",
-								"prompt":    "Name",
-							}},
-						},
-					},
-				},
 
-				AuthFlows: map[string]config.AuthFlow{
-					"default": {Modules: []config.FlowModule{
-						{
-							ID: "login",
-						},
+		Modules: map[string]config.Module{
+			"login": {Type: "login"},
+			"registration": {
+				Type: "registration",
+				Properties: map[string]interface{}{
+					"additionalFields": []map[interface{}]interface{}{{
+						"dataStore": "name",
+						"prompt":    "Name",
 					}},
-					"register": {Modules: []config.FlowModule{
-						{
-							ID: "registration",
-							Properties: map[string]interface{}{
-								"testProp": "testVal",
-							},
-						},
-					}},
-					"sso": {Modules: []config.FlowModule{}},
-				},
-				UserDataStore: config.UserDataStore{
-					Repo: repo.NewInMemoryUserRepository(),
 				},
 			},
+		},
+
+		AuthFlows: map[string]config.AuthFlow{
+			"default": {Modules: []config.FlowModule{
+				{
+					ID: "login",
+				},
+			}},
+			"register": {Modules: []config.FlowModule{
+				{
+					ID: "registration",
+					Properties: map[string]interface{}{
+						"testProp": "testVal",
+					},
+				},
+			}},
+			"sso": {Modules: []config.FlowModule{}},
 		},
 	}
 	logger = logrus.New()
 	conf   = config.Config{
 		Authentication: ac,
-		Logger:         logger,
+		UserDataStore: config.UserDataStore{
+			Repo: repo.NewInMemoryUserRepository(),
+		},
+		Logger: logger,
 		Session: config.Session{
 			Type:    "stateless",
 			Expires: 60000,

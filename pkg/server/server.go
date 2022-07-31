@@ -26,7 +26,7 @@ func SetupRouter(conf config.Config) *gin.Engine {
 	{
 		auth := v1.Group("/auth")
 		{
-			route := "/:realm/:flow"
+			route := "/:flow"
 			auth.GET(route, authController.Auth)
 			auth.POST(route, authController.Auth)
 		}

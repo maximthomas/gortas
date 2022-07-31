@@ -30,7 +30,6 @@ type Flow struct {
 //goes through flow state authentication modules, requests and processes callbacks
 func (f *Flow) Process(cbReq callbacks.Request, r *http.Request, w http.ResponseWriter) (cbResp callbacks.Response, err error) {
 	conf := config.GetConfig()
-	realm := conf.Authentication.Realms[f.fs.Realm]
 	inCbs := cbReq.Callbacks
 	var outCbs []callbacks.Callback
 modules:
@@ -38,7 +37,7 @@ modules:
 		switch moduleInfo.Status {
 		// TODO v2 match module names in a callback request
 		case state.START, state.IN_PROGRESS:
-			instance, err := modules.GetAuthModule(moduleInfo, realm, r, w)
+			instance, err := modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, errors.Wrapf(err, "error getting auth module %v", moduleInfo)
 			}
@@ -114,7 +113,7 @@ modules:
 
 	if authSucceeded {
 		for _, moduleInfo := range f.fs.Modules {
-			am, err := modules.GetAuthModule(moduleInfo, realm, r, w)
+			am, err := modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error getting auth module for postprocess")
 			}
@@ -124,7 +123,7 @@ modules:
 			}
 		}
 
-		sessID, err := f.createSession(realm)
+		sessID, err := f.createSession()
 		if err != nil {
 			return cbResp, errors.Wrap(err, "error creating session")
 		}
@@ -143,13 +142,13 @@ modules:
 	return
 }
 
-func (f *Flow) createSession(realm config.Realm) (sessId string, err error) {
+func (f *Flow) createSession() (sessId string, err error) {
 	sc := config.GetConfig().Session
 	if f.fs.UserId == "" {
 		return sessId, errors.New("user id is not set")
 	}
 
-	user, userExists := realm.UserDataStore.Repo.GetUser(f.fs.UserId)
+	user, userExists := config.GetConfig().UserDataStore.Repo.GetUser(f.fs.UserId)
 
 	var sessionID string
 	if sc.Type == "stateless" {
@@ -161,7 +160,6 @@ func (f *Flow) createSession(realm config.Realm) (sessId string, err error) {
 		claims["iat"] = time.Now().Unix()
 		claims["iss"] = sc.Jwt.Issuer
 		claims["sub"] = f.fs.UserId
-		claims["realm"] = realm.ID
 		if userExists {
 			claims["props"] = user.Properties
 		}
@@ -176,7 +174,6 @@ func (f *Flow) createSession(realm config.Realm) (sessId string, err error) {
 			Properties: map[string]string{
 				"userId": user.ID,
 				"sub":    user.ID,
-				"realm":  realm.ID,
 			},
 		}
 		for k, v := range user.Properties {
@@ -218,21 +215,17 @@ func updateFlowState(fs *state.FlowState) error {
 
 }
 
-func GetFlow(realmId string, flowName string, flowId string) (*Flow, error) {
+func GetFlow(flowName string, flowId string) (*Flow, error) {
 	c := config.GetConfig()
 	sds := c.Session.DataStore
 	session, err := sds.Repo.GetSession(flowId)
 	var fs state.FlowState
 	if err != nil {
-		realm, ok := config.GetConfig().Authentication.Realms[realmId]
-		if !ok {
-			return nil, errors.Errorf("realm %v not found", realmId)
-		}
-		flow, ok := realm.AuthFlows[flowName]
+		flow, ok := c.Authentication.AuthFlows[flowName]
 		if !ok {
 			return nil, errors.Errorf("auth flow %v not found", flowName)
 		}
-		fs = createNewFlowState(realm, flowName, flow)
+		fs = createNewFlowState(flowName, flow)
 	} else {
 		err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
 		if err != nil {
@@ -247,19 +240,20 @@ func GetFlow(realmId string, flowName string, flowId string) (*Flow, error) {
 }
 
 // createNewFlowState - creates new flow state from the Realm and AuthFlow settings, generates new flow Id and fill module properties
-func createNewFlowState(realm config.Realm, flowName string, flow config.AuthFlow) state.FlowState {
+func createNewFlowState(flowName string, flow config.AuthFlow) state.FlowState {
+	c := config.GetConfig()
+
 	fs := state.FlowState{
 		Modules:     make([]state.FlowStateModuleInfo, len(flow.Modules)),
 		SharedState: make(map[string]string),
 		UserId:      "",
 		Id:          uuid.New().String(),
-		Realm:       realm.ID,
 		Name:        flowName,
 	}
 
 	for i, chainModule := range flow.Modules {
 		fs.Modules[i].Id = chainModule.ID
-		realmModule := realm.Modules[chainModule.ID]
+		realmModule := c.Authentication.Modules[chainModule.ID]
 		fs.Modules[i].Type = realmModule.Type
 		fs.Modules[i].Properties = make(state.FlowStateModuleProperties)
 		for k, v := range realmModule.Properties {

@@ -1,40 +1,38 @@
 authentication:
-  realms:
-    users:
+  modules:
+    login:
+      type: "login"
+      properties:
+    registration:
+      type: "registration"
+      properties:
+        primaryField:
+          dataStore: "email"
+          name: "email"
+          prompt: "Email"
+        additionalFields:
+          - dataStore: "name"
+            prompt: "Name"
+            name: "name"
+  authFlows:
+    login:
       modules:
-        login:
-          type: "login"
+        - id: "login"
           properties:
-        registration:
-          type: "registration"
+    registration:
+      modules:
+        - id: "registration"
           properties:
-            primaryField:
-              dataStore: "email"
-              name: "email"
-              prompt: "Email"
-            additionalFields:
-              - dataStore: "name"
-                prompt: "Name"
-                name: "name"
-      authFlows:
-        login:
-          modules:
-            - id: "login"
-              properties:
-        registration:
-          modules:
-            - id: "registration"
-              properties:
 
-      userDataStore:
-        type: "mongodb"
-        properties:
-          url:  "mongodb://root:changeme@localhost:27017"
-          database:   "users"
-          collection: "users"
-          userAttributes:
-            - "name"
-            - "email"
+userDataStore:
+  type: "mongodb"
+  properties:
+    url:  "mongodb://root:changeme@localhost:27017"
+    database:   "users"
+    collection: "users"
+    userAttributes:
+      - "name"
+      - "email"
 
 session:
   type: "stateful" #could be also stateful

@@ -31,41 +31,37 @@ var publicKey = &privateKey.PublicKey
 var ur = repo.NewInMemoryUserRepository()
 var (
 	authConf = config.Authentication{
-		Realms: map[string]config.Realm{
-			"staff": {
-				ID: "staff",
-				Modules: map[string]config.Module{
-					"login":    {Type: "login"},
-					"kerberos": {Type: "kerberos"},
-					"qr":       {Type: "qr"},
+		Modules: map[string]config.Module{
+			"login":    {Type: "login"},
+			"kerberos": {Type: "kerberos"},
+			"qr":       {Type: "qr"},
+		},
+		AuthFlows: map[string]config.AuthFlow{
+			"default": {Modules: []config.FlowModule{
+				{
+					ID: "login",
 				},
-				AuthFlows: map[string]config.AuthFlow{
-					"default": {Modules: []config.FlowModule{
-						{
-							ID: "login",
-						},
-					}},
-					"kerberos": {Modules: []config.FlowModule{
-						{
-							ID: "kerberos",
-						},
-					}},
-					"qr": {Modules: []config.FlowModule{
-						{
-							ID: "qr",
-						},
-					}},
+			}},
+			"kerberos": {Modules: []config.FlowModule{
+				{
+					ID: "kerberos",
 				},
-				UserDataStore: config.UserDataStore{
-					Repo: ur,
+			}},
+			"qr": {Modules: []config.FlowModule{
+				{
+					ID: "qr",
 				},
-			},
+			}},
 		},
 	}
+
 	logger = logrus.New()
 	conf   = config.Config{
 		Authentication: authConf,
-		Logger:         logger,
+		UserDataStore: config.UserDataStore{
+			Repo: ur,
+		},
+		Logger: logger,
 		Session: config.Session{
 			Type:    "stateless",
 			Expires: 60000,
@@ -90,11 +86,11 @@ func TestSetupRouter(t *testing.T) {
 	assert.Equal(t, 3, len(router.Routes()))
 }
 
-const target = "http://localhost/gortas/v1/auth/staff/default"
+const target = "http://localhost/gortas/v1/auth/default"
 
 func TestLogin(t *testing.T) {
 	t.Run("Test not existing realm", func(t *testing.T) {
-		request := httptest.NewRequest("GET", "http://localhost/gortas/v1/auth/staff/bad", nil)
+		request := httptest.NewRequest("GET", "http://localhost/gortas/v1/auth/bad", nil)
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
 		assert.Equal(t, 401, recorder.Result().StatusCode)

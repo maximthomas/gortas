@@ -106,13 +106,15 @@ func TestCredentiaslPostProcess(t *testing.T) {
 			"name": testName,
 		},
 	}
-	_, ok := cm.realm.UserDataStore.Repo.GetUser(testEmail)
+
+	ur := config.GetConfig().UserDataStore.Repo
+	_, ok := ur.GetUser(testEmail)
 	assert.False(t, ok, "User does not exists")
 	fs := &state.FlowState{}
 	err := cm.PostProcess(fs)
 	assert.NoError(t, err)
 
-	user, ok := cm.realm.UserDataStore.Repo.GetUser(testEmail)
+	user, ok := ur.GetUser(testEmail)
 	assert.True(t, ok, "user exists")
 	assert.Equal(t, testEmail, user.ID)
 	assert.Equal(t, testName, user.Properties["name"])
@@ -125,6 +127,12 @@ func TestGetCredentialsModule(t *testing.T) {
 }
 
 func getCredentialsModule(t *testing.T) *Credentials {
+	conf := config.Config{
+		UserDataStore: config.UserDataStore{
+			Repo: repo.NewInMemoryUserRepository(),
+		},
+	}
+	config.SetConfig(conf)
 
 	const emailRegexp = "^([a-z0-9_-]+)(@[a-z0-9-]+)(\\.[a-z]+|\\.[a-z]+\\.[a-z]+)?$"
 	var b = BaseAuthModule{
@@ -141,14 +149,6 @@ func getCredentialsModule(t *testing.T) *Credentials {
 				Prompt:   "Name",
 				Required: true,
 			},
-			},
-		},
-		realm: config.Realm{
-			ID:        "",
-			Modules:   nil,
-			AuthFlows: nil,
-			UserDataStore: config.UserDataStore{
-				Repo: repo.NewInMemoryUserRepository(),
 			},
 		},
 		State: make(map[string]interface{}),

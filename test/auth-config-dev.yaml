@@ -1,45 +1,43 @@
 authentication:
-  realms:
-    users:
+  modules:
+    login:
+      type: "login"
+      properties:
+    
+    registration:
+      type: "registration"
+      properties:
+        additionalFileds:
+          - dataStore: "name"
+            prompt: "Name"
+    qr:
+      type: "qr"
+    
+    kerberos:
+      type: "kerberos"
+      properties:
+        keyTabFile: ""
+        servicePrincipal: ""
+
+  authFlows:
+    login:
       modules:
-        login:
-          type: "login"
+        - id: "login"
           properties:
-        
-        registration:
-          type: "registration"
+    registration:
+      modules:
+        - id: "registration"
           properties:
-            additionalFileds:
-              - dataStore: "name"
-                prompt: "Name"
-        qr:
-          type: "qr"
-        
-        kerberos:
-          type: "kerberos"
-          properties:
-            keyTabFile: ""
-            servicePrincipal: ""
+    qr:
+      modules:
+        - id: "qr"
 
-      authFlows:
-        login:
-          modules:
-            - id: "login"
-              properties:
-        registration:
-          modules:
-            - id: "registration"
-              properties:
-        qr:
-          modules:
-            - id: "qr"
-
-        kerberos:
-          modules:
-            - id: "kerberos"
-            
-      userDataStore:
-        type: "inMemory"
+    kerberos:
+      modules:
+        - id: "kerberos"
+        
+userDataStore:
+  type: "inMemory"
 
 session:
   type: "stateless" #could be also stateful, implement later

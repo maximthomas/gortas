@@ -8,7 +8,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,10 +34,9 @@ func RegisterModule(mt string, constructor func(BaseAuthModule) AuthModule) {
 
 type moduleConstructor = func(base BaseAuthModule) AuthModule
 
-func GetAuthModule(mi state.FlowStateModuleInfo, realm config.Realm, req *http.Request, w http.ResponseWriter) (AuthModule, error) {
+func GetAuthModule(mi state.FlowStateModuleInfo, req *http.Request, w http.ResponseWriter) (AuthModule, error) {
 	base := BaseAuthModule{
 		Properties: mi.Properties,
-		realm:      realm,
 		State:      mi.State,
 		req:        req,
 		w:          w,
@@ -56,16 +54,11 @@ func GetAuthModule(mi state.FlowStateModuleInfo, realm config.Realm, req *http.R
 
 type BaseAuthModule struct {
 	Properties map[string]interface{}
-	realm      config.Realm
 	Callbacks  []callbacks.Callback
 	State      map[string]interface{}
 	req        *http.Request
 	w          http.ResponseWriter
 	l          *logrus.Entry
-}
-
-func (b BaseAuthModule) getUserRepo() repo.UserRepository {
-	return b.realm.UserDataStore.Repo
 }
 
 func (b BaseAuthModule) ValidateCallbacks(cbs []callbacks.Callback) error {

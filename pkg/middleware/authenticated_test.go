@@ -65,7 +65,7 @@ func TestMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(recorder)
-			c.Keys = make(map[string]interface{})
+			c.Keys = make(map[string]any)
 			c.Request = httptest.NewRequest("GET", "/login", nil)
 			authCookie := &http.Cookie{
 				Name:  state.SessionCookieName,
