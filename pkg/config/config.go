@@ -18,20 +18,16 @@ import (
 type Config struct {
 	Authentication Authentication
 	Logger         *logrus.Logger
-	Session        Session `yaml:"session"`
-	Server         Server  `yaml:"server"`
-	EncryptionKey  string  `yaml:"encryptionKey"`
+	Session        Session       `yaml:"session"`
+	Server         Server        `yaml:"server"`
+	EncryptionKey  string        `yaml:"encryptionKey"`
+	UserDataStore  UserDataStore `yaml:"userDataStore"`
 }
 
 type Authentication struct {
-	Realms map[string]Realm `yaml:"realms"`
-}
-
-type Realm struct {
-	ID            string
-	Modules       map[string]Module   `yaml:"modules"`
-	AuthFlows     map[string]AuthFlow `yaml:"authFlows"`
-	UserDataStore UserDataStore       `yaml:"userDataStore"`
+	ID        string
+	Modules   map[string]Module   `yaml:"modules"`
+	AuthFlows map[string]AuthFlow `yaml:"authFlows"`
 }
 
 type AuthFlow struct {
@@ -100,37 +96,34 @@ func InitConfig() error {
 		configLogger.Errorf("Fatal error config file: %s \n", err)
 		panic(err)
 	}
-	for id, realm := range auth.Realms {
-		realm.ID = id
-		if realm.UserDataStore.Type == "ldap" {
-			prop := realm.UserDataStore.Properties
-			ur := &repo.UserLdapRepository{}
-			err := mapstructure.Decode(prop, ur)
-			if err != nil {
-				configLogger.Fatal(err)
-				return err
-			}
-			realm.UserDataStore.Repo = ur
-		} else if realm.UserDataStore.Type == "mongodb" {
-			prop := realm.UserDataStore.Properties
-			params := make(map[string]interface{})
-			err := mapstructure.Decode(&prop, &params)
-			if err != nil {
-				configLogger.Fatal(err)
-				return err
-			}
-			url, _ := params["url"].(string)
-			db, _ := params["database"].(string)
-			col, _ := params["collection"].(string)
-			ur, err := repo.NewUserMongoRepository(url, db, col)
-			if err != nil {
-				panic(err)
-			}
-			realm.UserDataStore.Repo = ur
-		} else {
-			realm.UserDataStore.Repo = repo.NewInMemoryUserRepository()
+
+	if config.UserDataStore.Type == "ldap" {
+		prop := config.UserDataStore.Properties
+		ur := &repo.UserLdapRepository{}
+		err := mapstructure.Decode(prop, ur)
+		if err != nil {
+			configLogger.Fatal(err)
+			return err
 		}
-		auth.Realms[id] = realm
+		config.UserDataStore.Repo = ur
+	} else if config.UserDataStore.Type == "mongodb" {
+		prop := config.UserDataStore.Properties
+		params := make(map[string]interface{})
+		err := mapstructure.Decode(&prop, &params)
+		if err != nil {
+			configLogger.Fatal(err)
+			return err
+		}
+		url, _ := params["url"].(string)
+		db, _ := params["database"].(string)
+		col, _ := params["collection"].(string)
+		ur, err := repo.NewUserMongoRepository(url, db, col)
+		if err != nil {
+			panic(err)
+		}
+		config.UserDataStore.Repo = ur
+	} else {
+		config.UserDataStore.Repo = repo.NewInMemoryUserRepository()
 	}
 
 	if config.Session.Type == "stateless" {

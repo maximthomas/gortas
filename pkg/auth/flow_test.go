@@ -34,48 +34,43 @@ func init() {
 	}
 	_, _ = sr.CreateSession(corruptedSession)
 	ac := config.Authentication{
-		Realms: map[string]config.Realm{
-			"users": {
-				ID: "users",
-				Modules: map[string]config.Module{
-					"login": {Type: "login"},
-					"registration": {
-						Type: "registration",
-						Properties: map[string]interface{}{
-							"additionalFields": []map[interface{}]interface{}{{
-								"dataStore": "name",
-								"prompt":    "Name",
-							}},
-						},
-					},
-				},
-
-				AuthFlows: map[string]config.AuthFlow{
-					"login": {Modules: []config.FlowModule{
-						{
-							ID: "login",
-						},
+		Modules: map[string]config.Module{
+			"login": {Type: "login"},
+			"registration": {
+				Type: "registration",
+				Properties: map[string]interface{}{
+					"additionalFields": []map[interface{}]interface{}{{
+						"dataStore": "name",
+						"prompt":    "Name",
 					}},
-					"register": {Modules: []config.FlowModule{
-						{
-							ID: "registration",
-							Properties: map[string]interface{}{
-								"testProp": "testVal",
-							},
-						},
-					}},
-					"sso": {Modules: []config.FlowModule{}},
-				},
-				UserDataStore: config.UserDataStore{
-					Repo: repo.NewInMemoryUserRepository(),
 				},
 			},
+		},
+
+		AuthFlows: map[string]config.AuthFlow{
+			"login": {Modules: []config.FlowModule{
+				{
+					ID: "login",
+				},
+			}},
+			"register": {Modules: []config.FlowModule{
+				{
+					ID: "registration",
+					Properties: map[string]interface{}{
+						"testProp": "testVal",
+					},
+				},
+			}},
+			"sso": {Modules: []config.FlowModule{}},
 		},
 	}
 
 	conf := config.Config{
 		Authentication: ac,
-		Logger:         logger,
+		UserDataStore: config.UserDataStore{
+			Repo: repo.NewInMemoryUserRepository(),
+		},
+		Logger: logger,
 		Session: config.Session{
 			Type:      "stateful",
 			DataStore: config.SessionDataStore{Repo: sr},
@@ -94,17 +89,16 @@ func TestGetFlow(t *testing.T) {
 		checkError func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
 		checkFlow  func(t assert.TestingT, f *Flow)
 	}{
-		{name: "existing realm and flow", realm: "users", flowName: "login", checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
-		{name: "non existing realm existing flow", realm: "bad", flowName: "login", checkError: assert.Error, checkFlow: func(t assert.TestingT, f *Flow) { assert.Nil(t, f) }},
-		{name: "existing realm non existing flow", realm: "users", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, f *Flow) { assert.Nil(t, f) }},
+		{name: "existing flow", flowName: "login", checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
+		{name: "non existing flow", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, f *Flow) { assert.Nil(t, f) }},
 		{name: "existing flowId", flowId: testFlowId, checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
 		{name: "corrupted flowId", flowId: corruptedFlowId, checkError: assert.Error, checkFlow: func(t assert.TestingT, f *Flow) { assert.Nil(t, f) }},
-		{name: "non existing flowId", realm: "users", flowName: "login", flowId: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
+		{name: "non existing flowId", flowName: "login", flowId: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := GetFlow(tt.realm, tt.flowName, tt.flowId)
+			f, err := GetFlow(tt.flowName, tt.flowId)
 			tt.checkError(t, err)
 			tt.checkFlow(t, f)
 		})
@@ -112,7 +106,7 @@ func TestGetFlow(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-	f, _ := GetFlow("users", "login", "")
+	f, _ := GetFlow("login", "")
 	var cbReq callbacks.Request
 	cbResp, err := f.Process(cbReq, nil, nil)
 	assert.NoError(t, err)

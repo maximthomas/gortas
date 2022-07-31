@@ -56,7 +56,7 @@ func TestGetModuleFromRegistry(t *testing.T) {
 		Id:   "simple",
 		Type: "simple",
 	}
-	m, err := GetAuthModule(mi, config.Realm{}, nil, nil)
+	m, err := GetAuthModule(mi, nil, nil)
 	assert.NoError(t, err)
 
 	_, ok := m.(*SimpleModule)

@@ -28,66 +28,62 @@ var publicKey = &privateKey.PublicKey
 var ur = repo.NewInMemoryUserRepository()
 var (
 	authConf = config.Authentication{
-		Realms: map[string]config.Realm{
-			"users": {
-				ID: "users",
-				Modules: map[string]config.Module{
-					"otp": {
-						Type: "otp",
-						Properties: map[string]interface{}{
-							"otpLength":          4,
-							"useLetters":         false,
-							"useDigits":          true,
-							"otpTimeoutSec":      180,
-							"otpResendSec":       90,
-							"otpRetryCount":      5,
-							"OtpMessageTemplate": "Code {{.OTP}} valid for {{.ValidFor}} min, link code {{.MagicLink}}",
-							"sender": map[string]interface{}{
-								"senderType": "test",
-								"properties": map[string]interface{}{
-									"host": "localhost",
-									"port": 1234,
-								},
-							},
-						}},
-					"phone": {
-						Type: "credentials",
-						Properties: map[string]interface{}{
-							"primaryField": map[string]interface{}{
-								"Name":       "phone",
-								"Prompt":     "Phone",
-								"Required":   true,
-								"Validation": "^\\d{4,20}$",
-							},
-						}},
-				},
-				AuthFlows: map[string]config.AuthFlow{
-					"otp": {Modules: []config.FlowModule{
-						{
-							ID: "otp",
-							Properties: map[string]interface{}{
-								"OtpCheckMagicLink": true,
-							},
-							Criteria: constants.CriteriaSufficient,
+		Modules: map[string]config.Module{
+			"otp": {
+				Type: "otp",
+				Properties: map[string]interface{}{
+					"otpLength":          4,
+					"useLetters":         false,
+					"useDigits":          true,
+					"otpTimeoutSec":      180,
+					"otpResendSec":       90,
+					"otpRetryCount":      5,
+					"OtpMessageTemplate": "Code {{.OTP}} valid for {{.ValidFor}} min, link code {{.MagicLink}}",
+					"sender": map[string]interface{}{
+						"senderType": "test",
+						"properties": map[string]interface{}{
+							"host": "localhost",
+							"port": 1234,
 						},
-						{
-							ID: "phone",
-						},
-						{
-							ID: "otp",
-						},
-					}},
+					},
+				}},
+			"phone": {
+				Type: "credentials",
+				Properties: map[string]interface{}{
+					"primaryField": map[string]interface{}{
+						"Name":       "phone",
+						"Prompt":     "Phone",
+						"Required":   true,
+						"Validation": "^\\d{4,20}$",
+					},
+				}},
+		},
+		AuthFlows: map[string]config.AuthFlow{
+			"otp": {Modules: []config.FlowModule{
+				{
+					ID: "otp",
+					Properties: map[string]interface{}{
+						"OtpCheckMagicLink": true,
+					},
+					Criteria: constants.CriteriaSufficient,
 				},
-				UserDataStore: config.UserDataStore{
-					Repo: ur,
+				{
+					ID: "phone",
 				},
-			},
+				{
+					ID: "otp",
+				},
+			}},
 		},
 	}
+
 	logger = logrus.New()
 	conf   = config.Config{
 		Authentication: authConf,
-		Logger:         logger,
+		UserDataStore: config.UserDataStore{
+			Repo: ur,
+		},
+		Logger: logger,
 		Session: config.Session{
 			Type:    "stateless",
 			Expires: 60000,
@@ -110,7 +106,7 @@ func init() {
 }
 func TestOTPAuth(t *testing.T) {
 
-	const authUrl = "http://localhost/gortas/v1/auth/users/otp"
+	const authUrl = "http://localhost/gortas/v1/auth/otp"
 
 	const badPhone = "123"
 	const validPhone = "5551112233"
@@ -187,7 +183,7 @@ func TestOTPAuth(t *testing.T) {
 }
 
 func TestOTPAuthMagicLink(t *testing.T) {
-	const authUrl = "http://localhost/gortas/v1/auth/users/otp"
+	const authUrl = "http://localhost/gortas/v1/auth/otp"
 	const validPhone = "5551112233"
 
 	request := httptest.NewRequest("GET", authUrl, nil)

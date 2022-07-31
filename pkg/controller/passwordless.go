@@ -46,8 +46,7 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	}
 	s := si.(models.Session)
 	uid := s.GetUserID()
-	realm := s.GetRealm()
-	ur := pc.conf.Authentication.Realms[realm].UserDataStore.Repo
+	ur := pc.conf.UserDataStore.Repo
 
 	_, ok = ur.GetUser(uid)
 	if !ok {
@@ -75,8 +74,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	}
 	s := si.(models.Session)
 	uid := s.GetUserID()
-	realm := s.GetRealm()
-	ur := pc.conf.Authentication.Realms[realm].UserDataStore.Repo
+	ur := pc.conf.UserDataStore.Repo
 
 	user, ok := ur.GetUser(uid)
 	if !ok {
@@ -103,7 +101,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	requestURI := middleware.GetRequestURI(c)
 	authURI := strings.ReplaceAll(requestURI, "/idm/otp/qr", "/service/otp/qr/login")
 
-	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "realm": realm, "authURI": authURI})
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "authURI": authURI})
 }
 
 func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
@@ -127,7 +125,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	ur := pc.conf.Authentication.Realms[authQRRequest.Realm].UserDataStore.Repo
+	ur := pc.conf.UserDataStore.Repo
 	user, ok := ur.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})

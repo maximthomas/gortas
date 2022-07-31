@@ -1,42 +1,40 @@
 authentication:
-  realms:
-    users:
+  modules:
+    otp:
+      type: "otp"
+      properties:
+        otpLength: 4
+        useLetters:         false
+        useDigits:          true
+        otpTimeoutSec:      180
+        otpResendSec:       90
+        otpRetryCount:      5
+        otpMessageTemplate: Code {{.OTP}} valid for {{.ValidFor}} min
+        sender:
+          senderType: "test"
+          properties:
+            host: "localhost"
+            port: 1234
+
+    email:
+      type: "credentials"
+      properties:
+        primaryField: 
+          name: "email"
+          prompt: "Email"
+          required: true
+
+  authFlows:
+    otp:
       modules:
-        otp:
-          type: "otp"
+        - id: "email"
           properties:
-            otpLength: 4
-            useLetters:         false
-            useDigits:          true
-            otpTimeoutSec:      180
-            otpResendSec:       90
-            otpRetryCount:      5
-            otpMessageTemplate: Code {{.OTP}} valid for {{.ValidFor}} min
-            sender:
-              senderType: "test"
-              properties:
-                host: "localhost"
-                port: 1234
-
-        email:
-          type: "credentials"
+        - id: "otp"
           properties:
-            primaryField: 
-              name: "email"
-              prompt: "Email"
-              required: true
 
-      authFlows:
-        otp:
-          modules:
-            - id: "email"
-              properties:
-            - id: "otp"
-              properties:
-
-            
-      userDataStore:
-        type: "inMemory"
+        
+userDataStore:
+  type: "inMemory"
 
 session:
   type: "stateless" #could be also stateful

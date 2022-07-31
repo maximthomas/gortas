@@ -5,6 +5,7 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -80,7 +81,8 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		}
 	}
 
-	_, exists := rm.realm.UserDataStore.Repo.GetUser(username)
+	ur := config.GetConfig().UserDataStore.Repo
+	_, exists := ur.GetUser(username)
 	if exists {
 		(&errCbs[0]).Error = "User exists"
 		return state.IN_PROGRESS, errCbs, nil
@@ -91,12 +93,12 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		Properties: fields,
 	}
 
-	_, err = rm.realm.UserDataStore.Repo.CreateUser(user)
+	_, err = ur.CreateUser(user)
 	if err != nil {
 		return state.FAIL, cbs, err
 	}
 
-	err = rm.realm.UserDataStore.Repo.SetPassword(user.ID, password)
+	err = ur.SetPassword(user.ID, password)
 	if err != nil {
 		return state.FAIL, cbs, err
 	}

@@ -1,36 +1,34 @@
 authentication:
-  realms:
-    users:
+  modules:
+    login:
+      type: "login"
+      properties:
+    registration:
+      type: "registration"
+      properties:
+        additionalFileds:
+          - dataStore: "name"
+            prompt: "Name"
+    hydra:
+      type: "hydra"
+      properties:
+        uri: "https://localhost:4445"
+        skipTLS: true #disable in production!
+
+  authFlows:
+    login:
       modules:
-        login:
-          type: "login"
+        - id: "hydra"
+        - id: "login"
           properties:
-        registration:
-          type: "registration"
+    registration:
+      modules:
+        - id: "hydra"
+        - id: "registration"
           properties:
-            additionalFileds:
-              - dataStore: "name"
-                prompt: "Name"
-        hydra:
-          type: "hydra"
-          properties:
-            uri: "https://localhost:4445"
-            skipTLS: true #disable in production!
 
-      authFlows:
-        login:
-          modules:
-            - id: "hydra"
-            - id: "login"
-              properties:
-        registration:
-          modules:
-            - id: "hydra"
-            - id: "registration"
-              properties:
-
-      userDataStore:
-        type: "inMemory"
+userDataStore:
+  type: "inMemory"
 
 session:
   type: "stateless" #could be also stateful, implement later

@@ -5,6 +5,7 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -83,7 +84,8 @@ func (cm *Credentials) PostProcess(fs *state.FlowState) error {
 		ID:         cm.credentialsState.UserID,
 		Properties: cm.credentialsState.Properties,
 	}
-	ur := cm.realm.UserDataStore.Repo
+	c := config.GetConfig()
+	ur := c.UserDataStore.Repo
 	user, ok := ur.GetUser(moduleUser.ID)
 	var err error
 	if !ok {

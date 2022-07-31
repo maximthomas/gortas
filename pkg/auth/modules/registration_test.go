@@ -165,9 +165,10 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 		status, _, err := rm.ProcessCallbacks(inCbs, lss)
 		assert.NoError(t, err)
 		assert.Equal(t, state.PASS, status)
-		_, ok := rm.getUserRepo().GetUser(userName)
+		ur := config.GetConfig().UserDataStore.Repo
+		_, ok := ur.GetUser(userName)
 		assert.True(t, ok)
-		pValid := rm.getUserRepo().ValidatePassword(userName, password)
+		pValid := ur.ValidatePassword(userName, password)
 		assert.True(t, pValid)
 
 	})
@@ -176,6 +177,9 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 func getNewRegistrationModule(t *testing.T) *Registration {
 	config.SetConfig(config.Config{
 		Logger: logrus.New(),
+		UserDataStore: config.UserDataStore{
+			Repo: repo.NewInMemoryUserRepository(),
+		},
 	})
 	var b = BaseAuthModule{
 		l: config.GetConfig().Logger.WithField("module", "registration"),
@@ -191,14 +195,6 @@ func getNewRegistrationModule(t *testing.T) *Registration {
 				Prompt:   "Name",
 				Required: true,
 			},
-			},
-		},
-		realm: config.Realm{
-			ID:        "",
-			Modules:   nil,
-			AuthFlows: nil,
-			UserDataStore: config.UserDataStore{
-				Repo: repo.NewInMemoryUserRepository(),
 			},
 		},
 	}

@@ -20,7 +20,6 @@ type AuthController struct {
 
 // Auth gin handler function
 func (a *AuthController) Auth(c *gin.Context) {
-	rn := c.Param("realm")
 	fn := c.Param("flow")
 
 	var cbReq callbacks.Request
@@ -38,7 +37,7 @@ func (a *AuthController) Auth(c *gin.Context) {
 		}
 	}
 
-	f, err := auth.GetFlow(rn, fn, fId)
+	f, err := auth.GetFlow(fn, fId)
 	if err != nil {
 		logrus.Errorf("error getting flow %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err.Error()})
