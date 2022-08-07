@@ -19,20 +19,20 @@ func SetupRouter(conf config.Config) *gin.Engine {
 	ru := middleware.NewRequestURIMiddleware()
 
 	router.Use(c, ru)
-	var authController = controller.NewAuthController()
-	var sessionController = controller.NewSessionController()
+	var ac = controller.NewAuthController()
+	var sc = controller.NewSessionController()
 
 	v1 := router.Group("/gortas/v1")
 	{
 		auth := v1.Group("/auth")
 		{
 			route := "/:flow"
-			auth.GET(route, authController.Auth)
-			auth.POST(route, authController.Auth)
+			auth.GET(route, ac.Auth)
+			auth.POST(route, ac.Auth)
 		}
 		session := v1.Group("/session")
 		{
-			session.GET("", sessionController.SessionInfo)
+			session.GET("", sc.SessionInfo)
 		}
 	}
 	return router

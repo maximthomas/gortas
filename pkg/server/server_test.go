@@ -30,34 +30,30 @@ var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 var publicKey = &privateKey.PublicKey
 var ur = repo.NewInMemoryUserRepository()
 var (
-	authConf = config.Authentication{
-		Modules: map[string]config.Module{
-			"login":    {Type: "login"},
-			"kerberos": {Type: "kerberos"},
-			"qr":       {Type: "qr"},
-		},
-		AuthFlows: map[string]config.AuthFlow{
-			"default": {Modules: []config.FlowModule{
-				{
-					ID: "login",
-				},
-			}},
-			"kerberos": {Modules: []config.FlowModule{
-				{
-					ID: "kerberos",
-				},
-			}},
-			"qr": {Modules: []config.FlowModule{
-				{
-					ID: "qr",
-				},
-			}},
-		},
+	flows = map[string]config.Flow{
+		"default": {Modules: []config.Module{
+			{
+				ID:   "login",
+				Type: "login",
+			},
+		}},
+		"kerberos": {Modules: []config.Module{
+			{
+				ID:   "kerberos",
+				Type: "kerberos",
+			},
+		}},
+		"qr": {Modules: []config.Module{
+			{
+				ID:   "qr",
+				Type: "qr",
+			},
+		}},
 	}
 
 	logger = logrus.New()
 	conf   = config.Config{
-		Authentication: authConf,
+		Flows: flows,
 		UserDataStore: config.UserDataStore{
 			Repo: ur,
 		},

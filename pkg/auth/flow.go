@@ -94,7 +94,7 @@ modules:
 				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
 					continue
 				}
-				return cbResp, autherrors.NewAuthFailed("")
+				return cbResp, autherrors.NewAuthFailed("auth failed")
 			}
 		}
 	}
@@ -215,17 +215,17 @@ func updateFlowState(fs *state.FlowState) error {
 
 }
 
-func GetFlow(flowName string, flowId string) (*Flow, error) {
+func GetFlow(name string, id string) (*Flow, error) {
 	c := config.GetConfig()
 	sds := c.Session.DataStore
-	session, err := sds.Repo.GetSession(flowId)
+	session, err := sds.Repo.GetSession(id)
 	var fs state.FlowState
 	if err != nil {
-		flow, ok := c.Authentication.AuthFlows[flowName]
+		flow, ok := c.Flows[name]
 		if !ok {
-			return nil, errors.Errorf("auth flow %v not found", flowName)
+			return nil, errors.Errorf("auth flow %v not found", name)
 		}
-		fs = createNewFlowState(flowName, flow)
+		fs = createNewFlowState(name, flow)
 	} else {
 		err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
 		if err != nil {
@@ -240,8 +240,7 @@ func GetFlow(flowName string, flowId string) (*Flow, error) {
 }
 
 // createNewFlowState - creates new flow state from the Realm and AuthFlow settings, generates new flow Id and fill module properties
-func createNewFlowState(flowName string, flow config.AuthFlow) state.FlowState {
-	c := config.GetConfig()
+func createNewFlowState(flowName string, flow config.Flow) state.FlowState {
 
 	fs := state.FlowState{
 		Modules:     make([]state.FlowStateModuleInfo, len(flow.Modules)),
@@ -251,19 +250,18 @@ func createNewFlowState(flowName string, flow config.AuthFlow) state.FlowState {
 		Name:        flowName,
 	}
 
-	for i, chainModule := range flow.Modules {
-		fs.Modules[i].Id = chainModule.ID
-		realmModule := c.Authentication.Modules[chainModule.ID]
-		fs.Modules[i].Type = realmModule.Type
+	for i, module := range flow.Modules {
+		fs.Modules[i].Id = module.ID
+		fs.Modules[i].Type = module.Type
 		fs.Modules[i].Properties = make(state.FlowStateModuleProperties)
-		for k, v := range realmModule.Properties {
+		for k, v := range module.Properties {
 			fs.Modules[i].Properties[k] = v
 		}
-		for k, v := range chainModule.Properties {
+		for k, v := range module.Properties {
 			fs.Modules[i].Properties[k] = v
 		}
 		fs.Modules[i].State = make(map[string]interface{})
-		fs.Modules[i].Criteria = chainModule.Criteria
+		fs.Modules[i].Criteria = module.Criteria
 	}
 	return fs
 }

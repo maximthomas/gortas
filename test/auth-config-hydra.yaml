@@ -1,31 +1,28 @@
-authentication:
-  modules:
-    login:
-      type: "login"
-      properties:
-    registration:
-      type: "registration"
-      properties:
-        additionalFileds:
-          - dataStore: "name"
-            prompt: "Name"
-    hydra:
-      type: "hydra"
-      properties:
-        uri: "https://localhost:4445"
-        skipTLS: true #disable in production!
+flows:
+  login:
+    modules:
+      - id: "hydra"
+        type: "hydra"
+          properties:
+            uri: "https://localhost:4445"
+            skipTLS: true #disable in production!
+      - id: "login"
+        type: "login"
+        properties:
 
-  authFlows:
-    login:
-      modules:
-        - id: "hydra"
-        - id: "login"
-          properties:
-    registration:
-      modules:
-        - id: "hydra"
-        - id: "registration"
-          properties:
+  registration:
+    modules:
+      - id: "hydra"
+        type: "hydra"
+        properties:
+          uri: "https://localhost:4445"
+          skipTLS: true #disable in production!
+      - id: "registration"
+        type: "registration"
+        properties:
+          additionalFileds:
+            - dataStore: "name"
+              prompt: "Name"
 
 userDataStore:
   type: "inMemory"

@@ -16,22 +16,16 @@ import (
 )
 
 type Config struct {
-	Authentication Authentication
-	Logger         *logrus.Logger
-	Session        Session       `yaml:"session"`
-	Server         Server        `yaml:"server"`
-	EncryptionKey  string        `yaml:"encryptionKey"`
-	UserDataStore  UserDataStore `yaml:"userDataStore"`
+	Logger        *logrus.Logger
+	Flows         map[string]Flow `yaml:"flows"`
+	Session       Session         `yaml:"session"`
+	Server        Server          `yaml:"server"`
+	EncryptionKey string          `yaml:"encryptionKey"`
+	UserDataStore UserDataStore   `yaml:"userDataStore"`
 }
 
-type Authentication struct {
-	ID        string
-	Modules   map[string]Module   `yaml:"modules"`
-	AuthFlows map[string]AuthFlow `yaml:"authFlows"`
-}
-
-type AuthFlow struct {
-	Modules []FlowModule `yaml:"modules"`
+type Flow struct {
+	Modules []Module `yaml:"modules"`
 }
 
 type UserDataStore struct {
@@ -41,12 +35,8 @@ type UserDataStore struct {
 }
 
 type Module struct {
-	Type       string                 `yaml:"type"`
-	Properties map[string]interface{} `yaml:"properties,omitempty"`
-}
-
-type FlowModule struct {
 	ID         string                 `yaml:"id"`
+	Type       string                 `yaml:"type"`
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
 	Criteria   string                 `yaml:"criteria"`
 }
@@ -89,7 +79,6 @@ func InitConfig() error {
 	var configLogger = logger.WithField("module", "config")
 
 	err := viper.Unmarshal(&config)
-	auth := &config.Authentication
 
 	config.Logger = logger
 	if err != nil { // Handle errors reading the config file
@@ -159,7 +148,7 @@ func InitConfig() error {
 		config.Session.DataStore.Repo = repo.NewInMemorySessionRepository(logger)
 	}
 
-	configLogger.Infof("got configuration %+v\n", auth)
+	configLogger.Infof("got configuration %+v\n", config)
 
 	return nil
 }

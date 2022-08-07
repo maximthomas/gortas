@@ -1,28 +1,22 @@
-authentication:
-  modules:
-    login:
-      type: "login"
-      properties:
-    registration:
-      type: "registration"
-      properties:
-        primaryField:
-          dataStore: "email"
-          name: "email"
-          prompt: "Email"
-        additionalFields:
-          - dataStore: "name"
-            prompt: "Name"
-            name: "name"
-  authFlows:
-    login:
-      modules:
-        - id: "login"
-          properties:
-    registration:
-      modules:
-        - id: "registration"
-          properties:
+flows:
+  login:
+    modules:
+      - id: "login"
+        type: "login"
+        properties:
+  registration:
+    modules:
+      - id: "registration"
+        type: "registration"
+        properties:
+          primaryField:
+            dataStore: "email"
+            name: "email"
+            prompt: "Email"
+          additionalFields:
+            - dataStore: "name"
+              prompt: "Name"
+              name: "name"
 
 userDataStore:
   type: "mongodb"
