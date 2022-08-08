@@ -88,7 +88,7 @@ modules:
 			moduleInfo.Status = newState
 
 			fs.UpdateModuleInfo(moduleIndex, moduleInfo)
-			err = updateFlowState(&fs)
+			err = f.updateFlowState(&fs)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error update flowstate")
 			}
@@ -204,7 +204,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 	return sessionID, nil
 }
 
-func updateFlowState(fs *state.FlowState) error {
+func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 	sessionProp, err := json.Marshal(*fs)
 	if err != nil {
 		return errors.Wrap(err, "error marshalling flow sate")
