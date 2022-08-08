@@ -13,7 +13,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 )
 
-//Hydra ORY Hydra authentication module
+// Hydra ORY Hydra authentication module
 type Hydra struct {
 	BaseAuthModule
 	URI    string //hydra URI

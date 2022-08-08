@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -21,32 +22,47 @@ import (
 	autherrors "github.com/maximthomas/gortas/pkg/auth/errors"
 )
 
-type Flow struct {
-	fs     state.FlowState
+type FlowProcessor interface {
+	Process(flowName string, cbReq callbacks.Request, r *http.Request, w http.ResponseWriter) (cbResp callbacks.Response, err error)
+}
+
+type flowProcessor struct {
 	logger logrus.FieldLogger
 }
 
-//Process responsible for the authentication process
-//goes through flow state authentication modules, requests and processes callbacks
-func (f *Flow) Process(cbReq callbacks.Request, r *http.Request, w http.ResponseWriter) (cbResp callbacks.Response, err error) {
-	conf := config.GetConfig()
+func NewFlowProcessor() FlowProcessor {
+	return &flowProcessor{
+		logger: config.GetConfig().Logger.WithField("module", "FlowProcessor"),
+	}
+}
+
+// Process responsible for the authentication process
+// goes through flow state authentication modules, requests and processes callbacks
+func (f *flowProcessor) Process(flowName string, cbReq callbacks.Request, r *http.Request, w http.ResponseWriter) (cbResp callbacks.Response, err error) {
+
+	fs, err := f.getFlowState(flowName, cbReq.FlowId)
+	if err != nil {
+		return cbResp, fmt.Errorf("Process: error getting flow state %w", err)
+	}
+	//TODO extract process callbacks to a separate function
+
 	inCbs := cbReq.Callbacks
 	var outCbs []callbacks.Callback
 modules:
-	for moduleIndex, moduleInfo := range f.fs.Modules {
+	for moduleIndex, moduleInfo := range fs.Modules {
 		switch moduleInfo.Status {
 		// TODO v2 match module names in a callback request
 		case state.START, state.IN_PROGRESS:
 			instance, err := modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
-				return cbResp, errors.Wrapf(err, "error getting auth module %v", moduleInfo)
+				return cbResp, fmt.Errorf("Process: error getting auth module %v %w", moduleInfo, err)
 			}
 			var newState state.ModuleStatus
 
 			switch moduleInfo.Status {
 			case state.START:
 				{
-					newState, outCbs, err = instance.Process(&f.fs)
+					newState, outCbs, err = instance.Process(&fs)
 					if err != nil {
 						return cbResp, err
 					}
@@ -62,7 +78,7 @@ modules:
 					if err != nil {
 						return cbResp, err
 					}
-					newState, outCbs, err = instance.ProcessCallbacks(inCbs, &f.fs)
+					newState, outCbs, err = instance.ProcessCallbacks(inCbs, &fs)
 					if err != nil {
 						return cbResp, err
 					}
@@ -71,8 +87,8 @@ modules:
 			}
 			moduleInfo.Status = newState
 
-			f.fs.UpdateModuleInfo(moduleIndex, moduleInfo)
-			err = updateFlowState(&f.fs)
+			fs.UpdateModuleInfo(moduleIndex, moduleInfo)
+			err = updateFlowState(&fs)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error update flowstate")
 			}
@@ -82,7 +98,7 @@ modules:
 				cbResp := callbacks.Response{
 					Callbacks: outCbs,
 					Module:    moduleInfo.Id,
-					FlowId:    f.fs.Id,
+					FlowId:    fs.Id,
 				}
 				return cbResp, err
 			case state.PASS:
@@ -99,7 +115,7 @@ modules:
 		}
 	}
 	authSucceeded := true
-	for _, moduleInfo := range f.fs.Modules {
+	for _, moduleInfo := range fs.Modules {
 
 		if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
 			if moduleInfo.Status == state.PASS {
@@ -112,18 +128,18 @@ modules:
 	}
 
 	if authSucceeded {
-		for _, moduleInfo := range f.fs.Modules {
+		for _, moduleInfo := range fs.Modules {
 			am, err := modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error getting auth module for postprocess")
 			}
-			err = am.PostProcess(&f.fs)
+			err = am.PostProcess(&fs)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error while postprocess")
 			}
 		}
 
-		sessID, err := f.createSession()
+		sessID, err := f.createSession(fs)
 		if err != nil {
 			return cbResp, errors.Wrap(err, "error creating session")
 		}
@@ -131,9 +147,9 @@ modules:
 			Token: sessID,
 			Type:  "Bearer",
 		}
-		err = conf.Session.DataStore.Repo.DeleteSession(f.fs.Id)
+		err = config.GetConfig().Session.DataStore.Repo.DeleteSession(fs.Id)
 		if err != nil {
-			f.logger.Warnf("error clearing session %s %v", f.fs.Id, err)
+			f.logger.Warnf("error clearing session %s %v", fs.Id, err)
 		}
 
 		return cbResp, err
@@ -142,13 +158,13 @@ modules:
 	return
 }
 
-func (f *Flow) createSession() (sessId string, err error) {
+func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {
 	sc := config.GetConfig().Session
-	if f.fs.UserId == "" {
+	if fs.UserId == "" {
 		return sessId, errors.New("user id is not set")
 	}
 
-	user, userExists := config.GetConfig().UserDataStore.Repo.GetUser(f.fs.UserId)
+	user, userExists := config.GetConfig().UserDataStore.Repo.GetUser(fs.UserId)
 
 	var sessionID string
 	if sc.Type == "stateless" {
@@ -159,7 +175,7 @@ func (f *Flow) createSession() (sessId string, err error) {
 		claims["jti"] = sc.Jwt.PrivateKeyID
 		claims["iat"] = time.Now().Unix()
 		claims["iss"] = sc.Jwt.Issuer
-		claims["sub"] = f.fs.UserId
+		claims["sub"] = fs.UserId
 		if userExists {
 			claims["props"] = user.Properties
 		}
@@ -215,7 +231,7 @@ func updateFlowState(fs *state.FlowState) error {
 
 }
 
-func GetFlow(name string, id string) (*Flow, error) {
+func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, error) {
 	c := config.GetConfig()
 	sds := c.Session.DataStore
 	session, err := sds.Repo.GetSession(id)
@@ -223,24 +239,21 @@ func GetFlow(name string, id string) (*Flow, error) {
 	if err != nil {
 		flow, ok := c.Flows[name]
 		if !ok {
-			return nil, errors.Errorf("auth flow %v not found", name)
+			return fs, errors.Errorf("auth flow %v not found", name)
 		}
-		fs = createNewFlowState(name, flow)
+		fs = f.newFlowState(name, flow)
 	} else {
 		err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
 		if err != nil {
-			return nil, errors.New("session property fs does not exsit")
+			return fs, errors.New("session property fs does not exsit")
 		}
 	}
 
-	return &Flow{
-		fs:     fs,
-		logger: c.Logger.WithField("module", "Flow"),
-	}, nil
+	return fs, nil
 }
 
 // createNewFlowState - creates new flow state from the Realm and AuthFlow settings, generates new flow Id and fill module properties
-func createNewFlowState(flowName string, flow config.Flow) state.FlowState {
+func (f *flowProcessor) newFlowState(flowName string, flow config.Flow) state.FlowState {
 
 	fs := state.FlowState{
 		Modules:     make([]state.FlowStateModuleInfo, len(flow.Modules)),

@@ -85,18 +85,6 @@ func TestSetupRouter(t *testing.T) {
 const target = "http://localhost/gortas/v1/auth/default"
 
 func TestLogin(t *testing.T) {
-	t.Run("Test not existing realm", func(t *testing.T) {
-		request := httptest.NewRequest("GET", "http://localhost/gortas/v1/auth/bad", nil)
-		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, request)
-		assert.Equal(t, 401, recorder.Result().StatusCode)
-		var respJson = make(map[string]interface{})
-		err := json.Unmarshal(recorder.Body.Bytes(), &respJson)
-		assert.NoError(t, err)
-		msg := respJson["message"].(string)
-		assert.Equal(t, "auth flow bad not found", msg)
-
-	})
 
 	t.Run("Test start authentication", func(t *testing.T) {
 		request := httptest.NewRequest("GET", target, nil)
@@ -356,7 +344,7 @@ func doLogin(login string, password string) (sessionId string) {
 	return sessionId
 }
 
-//helper functions
+// helper functions
 func getCookieValue(name string, c []*http.Cookie) (string, error) {
 
 	for _, cookie := range c {

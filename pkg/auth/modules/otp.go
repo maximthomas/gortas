@@ -214,7 +214,7 @@ func (lm *OTP) send(fs *state.FlowState) error {
 
 }
 
-//TODO add authentication link
+// TODO add authentication link
 func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
 	tmpl, err := template.New("message").Parse(lm.OtpMessageTemplate)
 	if err != nil {
@@ -265,7 +265,7 @@ func (lm *OTP) incrementRetries() {
 	lm.otpState.Retries++
 }
 
-//TODO deal with retry count and retries to eliminate confusion
+// TODO deal with retry count and retries to eliminate confusion
 func (lm *OTP) getRetryCount() int {
 	return lm.OtpRetryCount - lm.otpState.Retries
 }

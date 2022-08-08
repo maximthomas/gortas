@@ -14,7 +14,6 @@ type FlowState struct {
 	UserId      string
 	Id          string
 	RedirectURI string
-	Realm       string
 	Name        string
 }
 
