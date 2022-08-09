@@ -5,6 +5,7 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/constants"
+	"github.com/maximthomas/gortas/pkg/auth/state"
 
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/models"
@@ -33,40 +34,33 @@ func init() {
 		},
 	}
 	_, _ = sr.CreateSession(corruptedSession)
-	ac := config.Authentication{
-		Modules: map[string]config.Module{
-			"login": {Type: "login"},
-			"registration": {
-				Type: "registration",
+
+	flows := map[string]config.Flow{
+		"login": {Modules: []config.Module{
+			{
+				ID:   "login",
+				Type: "login",
+			},
+		}},
+		"register": {Modules: []config.Module{
+			{
+				ID: "registration",
 				Properties: map[string]interface{}{
+					"testProp": "testVal",
 					"additionalFields": []map[interface{}]interface{}{{
 						"dataStore": "name",
 						"prompt":    "Name",
-					}},
+					},
+					},
 				},
 			},
 		},
-
-		AuthFlows: map[string]config.AuthFlow{
-			"login": {Modules: []config.FlowModule{
-				{
-					ID: "login",
-				},
-			}},
-			"register": {Modules: []config.FlowModule{
-				{
-					ID: "registration",
-					Properties: map[string]interface{}{
-						"testProp": "testVal",
-					},
-				},
-			}},
-			"sso": {Modules: []config.FlowModule{}},
 		},
+		"sso": {Modules: []config.Module{}},
 	}
 
 	conf := config.Config{
-		Authentication: ac,
+		Flows: flows,
 		UserDataStore: config.UserDataStore{
 			Repo: repo.NewInMemoryUserRepository(),
 		},
@@ -79,36 +73,36 @@ func init() {
 	config.SetConfig(conf)
 }
 
-func TestGetFlow(t *testing.T) {
-
+func TestGetFlowState(t *testing.T) {
+	fp := flowProcessor{}
 	tests := []struct {
 		name       string
 		realm      string
 		flowName   string
 		flowId     string
 		checkError func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
-		checkFlow  func(t assert.TestingT, f *Flow)
+		checkFlow  func(t assert.TestingT, fs state.FlowState)
 	}{
-		{name: "existing flow", flowName: "login", checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
-		{name: "non existing flow", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, f *Flow) { assert.Nil(t, f) }},
-		{name: "existing flowId", flowId: testFlowId, checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
-		{name: "corrupted flowId", flowId: corruptedFlowId, checkError: assert.Error, checkFlow: func(t assert.TestingT, f *Flow) { assert.Nil(t, f) }},
-		{name: "non existing flowId", flowName: "login", flowId: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, f *Flow) { assert.NotNil(t, f) }},
+		{name: "existing flow", flowName: "login", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "non existing flow", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.Id == "") }},
+		{name: "existing flowId", flowId: testFlowId, checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "corrupted flowId", flowId: corruptedFlowId, checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.Id == "") }},
+		{name: "non existing flowId", flowName: "login", flowId: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := GetFlow(tt.flowName, tt.flowId)
+			fs, err := fp.getFlowState(tt.flowName, tt.flowId)
 			tt.checkError(t, err)
-			tt.checkFlow(t, f)
+			tt.checkFlow(t, fs)
 		})
 	}
 }
 
 func TestProcess(t *testing.T) {
-	f, _ := GetFlow("login", "")
+	fp := NewFlowProcessor()
 	var cbReq callbacks.Request
-	cbResp, err := f.Process(cbReq, nil, nil)
+	cbResp, err := fp.Process("login", cbReq, nil, nil)
 	assert.NoError(t, err)
 	assert.True(t, len(cbResp.Callbacks) > 0)
 	assert.Equal(t, "login", cbResp.Module)
@@ -121,7 +115,8 @@ func TestProcess(t *testing.T) {
 	}
 	cbReq.Callbacks[0].Value = "test"
 	cbReq.Callbacks[1].Value = "test"
-	cbResp, err = f.Process(cbReq, nil, nil)
+	cbReq.FlowId = cbResp.FlowId
+	cbResp, err = fp.Process("login", cbReq, nil, nil)
 	assert.NoError(t, err)
 	assert.True(t, len(cbResp.Callbacks) > 0)
 	assert.Equal(t, "login", cbResp.Module)
@@ -131,7 +126,7 @@ func TestProcess(t *testing.T) {
 	//valid login and password
 	cbReq.Callbacks[0].Value = "user1"
 	cbReq.Callbacks[1].Value = "password"
-	cbResp, err = f.Process(cbReq, nil, nil)
+	cbResp, err = fp.Process("login", cbReq, nil, nil)
 	assert.NoError(t, err)
 	assert.True(t, len(cbResp.Callbacks) == 0)
 	assert.Empty(t, cbResp.FlowId)

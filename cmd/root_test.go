@@ -14,6 +14,6 @@ func TestExecute(t *testing.T) {
 	err := rootCmd.Execute()
 	assert.NoError(t, err)
 	conf := config.GetConfig()
-	assert.True(t, len(conf.Authentication.AuthFlows) > 0)
+	assert.True(t, len(conf.Flows) > 0)
 
 }

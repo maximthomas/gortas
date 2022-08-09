@@ -27,9 +27,43 @@ var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 var publicKey = &privateKey.PublicKey
 var ur = repo.NewInMemoryUserRepository()
 var (
-	authConf = config.Authentication{
-		Modules: map[string]config.Module{
-			"otp": {
+	flows = map[string]config.Flow{
+		"otp": {Modules: []config.Module{
+			{
+				ID:       "otp_link",
+				Type:     "otp",
+				Criteria: constants.CriteriaSufficient,
+				Properties: map[string]interface{}{
+					"otpCheckMagicLink":  true,
+					"otpLength":          4,
+					"useLetters":         false,
+					"useDigits":          true,
+					"otpTimeoutSec":      180,
+					"otpResendSec":       90,
+					"otpRetryCount":      5,
+					"OtpMessageTemplate": "Code {{.OTP}} valid for {{.ValidFor}} min, link code {{.MagicLink}}",
+					"sender": map[string]interface{}{
+						"senderType": "test",
+						"properties": map[string]interface{}{
+							"host": "localhost",
+							"port": 1234,
+						},
+					},
+				}},
+			{
+				ID:   "phone",
+				Type: "credentials",
+				Properties: map[string]interface{}{
+					"primaryField": map[string]interface{}{
+						"Name":       "phone",
+						"Prompt":     "Phone",
+						"Required":   true,
+						"Validation": "^\\d{4,20}$",
+					},
+				},
+			},
+			{
+				ID:   "otp",
 				Type: "otp",
 				Properties: map[string]interface{}{
 					"otpLength":          4,
@@ -46,40 +80,14 @@ var (
 							"port": 1234,
 						},
 					},
-				}},
-			"phone": {
-				Type: "credentials",
-				Properties: map[string]interface{}{
-					"primaryField": map[string]interface{}{
-						"Name":       "phone",
-						"Prompt":     "Phone",
-						"Required":   true,
-						"Validation": "^\\d{4,20}$",
-					},
-				}},
-		},
-		AuthFlows: map[string]config.AuthFlow{
-			"otp": {Modules: []config.FlowModule{
-				{
-					ID: "otp",
-					Properties: map[string]interface{}{
-						"OtpCheckMagicLink": true,
-					},
-					Criteria: constants.CriteriaSufficient,
 				},
-				{
-					ID: "phone",
-				},
-				{
-					ID: "otp",
-				},
-			}},
-		},
+			},
+		}},
 	}
 
 	logger = logrus.New()
 	conf   = config.Config{
-		Authentication: authConf,
+		Flows: flows,
 		UserDataStore: config.UserDataStore{
 			Repo: ur,
 		},

@@ -28,41 +28,32 @@ var (
 			Bytes: x509.MarshalPKCS1PublicKey(publicKey),
 		},
 	))
-	ac = config.Authentication{
-
-		Modules: map[string]config.Module{
-			"login": {Type: "login"},
-			"registration": {
+	flows = map[string]config.Flow{
+		"default": {Modules: []config.Module{
+			{
+				ID:   "login",
+				Type: "login",
+			},
+		}},
+		"register": {Modules: []config.Module{
+			{
+				ID:   "registration",
 				Type: "registration",
 				Properties: map[string]interface{}{
+					"testProp": "testVal",
 					"additionalFields": []map[interface{}]interface{}{{
 						"dataStore": "name",
 						"prompt":    "Name",
 					}},
 				},
 			},
-		},
-
-		AuthFlows: map[string]config.AuthFlow{
-			"default": {Modules: []config.FlowModule{
-				{
-					ID: "login",
-				},
-			}},
-			"register": {Modules: []config.FlowModule{
-				{
-					ID: "registration",
-					Properties: map[string]interface{}{
-						"testProp": "testVal",
-					},
-				},
-			}},
-			"sso": {Modules: []config.FlowModule{}},
-		},
+		}},
+		"sso": {Modules: []config.Module{}},
 	}
+
 	logger = logrus.New()
 	conf   = config.Config{
-		Authentication: ac,
+		Flows: flows,
 		UserDataStore: config.UserDataStore{
 			Repo: repo.NewInMemoryUserRepository(),
 		},

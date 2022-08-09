@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//AuthController rest controller for authentication
+// AuthController rest controller for authentication
 type AuthController struct {
 	logger logrus.FieldLogger
 }
@@ -36,17 +36,10 @@ func (a *AuthController) Auth(c *gin.Context) {
 			fId, _ = c.Cookie(state.FlowCookieName)
 		}
 	}
-
-	f, err := auth.GetFlow(fn, fId)
-	if err != nil {
-		logrus.Errorf("error getting flow %v", err)
-		c.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err.Error()})
-		return
-	}
-
-	cbResp, err := f.Process(cbReq, c.Request, c.Writer)
+	(&cbReq).FlowId = fId
+	fp := auth.NewFlowProcessor()
+	cbResp, err := fp.Process(fn, cbReq, c.Request, c.Writer)
 	a.generateResponse(c, cbResp, err)
-
 }
 
 func (a *AuthController) generateResponse(c *gin.Context, cbResp callbacks.Response, err error) {
