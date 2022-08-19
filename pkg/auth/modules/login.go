@@ -53,16 +53,18 @@ func init() {
 func newLoginPassword(base BaseAuthModule) AuthModule {
 	(&base).Callbacks = []callbacks.Callback{
 		{
-			Name:   "login",
-			Type:   callbacks.TypeText,
-			Prompt: "Login",
-			Value:  "",
+			Name:     "login",
+			Type:     callbacks.TypeText,
+			Prompt:   "Login",
+			Value:    "",
+			Required: true,
 		},
 		{
-			Name:   "password",
-			Type:   callbacks.TypePassword,
-			Prompt: "Password",
-			Value:  "",
+			Name:     "password",
+			Type:     callbacks.TypePassword,
+			Prompt:   "Password",
+			Value:    "",
+			Required: true,
 		},
 	}
 	return &LoginPassword{

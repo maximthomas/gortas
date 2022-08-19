@@ -25,6 +25,7 @@ func TestNewRegistrationModule(t *testing.T) {
 	assert.Equal(t, "login", rm.PrimaryField.Name)
 	assert.Equal(t, 1, len(rm.AdditionalFields))
 	assert.Equal(t, true, rm.UsePassword)
+	assert.Equal(t, true, rm.UseRepeatPassword)
 }
 
 func TestRegistration_Process_InvalidLogin(t *testing.T) {
@@ -53,7 +54,7 @@ func TestRegistration_Process_InvalidLogin(t *testing.T) {
 			fs := &state.FlowState{}
 			ms, cbs, err := rm.ProcessCallbacks(inCbs, fs)
 			assert.NoError(t, err)
-			assert.Equal(t, 3, len(cbs))
+			assert.Equal(t, 4, len(cbs))
 			assert.Equal(t, tt.emailError, cbs[0].Error)
 			assert.Equal(t, tt.nameError, cbs[1].Error)
 			assert.Equal(t, state.IN_PROGRESS, ms)
@@ -71,7 +72,7 @@ func TestRegistration_Process(t *testing.T) {
 		lss := &state.FlowState{}
 		status, cbs, err := rm.Process(lss)
 		log.Print(status, cbs, err)
-		assert.Equal(t, 3, len(cbs))
+		assert.Equal(t, 4, len(cbs))
 		assert.NoError(t, err)
 		assert.Equal(t, state.IN_PROGRESS, status)
 		assert.Equal(t, http.StatusOK, recorder.Code)
@@ -135,11 +136,44 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 				Name:  "password",
 				Value: password,
 			},
+			{
+				Name:  "repeatPassword",
+				Value: password,
+			},
 		}
 		status, cbs, err := rm.ProcessCallbacks(inCbs, lss)
 		assert.NoError(t, err)
 		assert.Equal(t, state.IN_PROGRESS, status)
 		assert.Equal(t, "User exists", cbs[0].Error)
+	})
+
+	t.Run("test passwords do not match", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(recorder)
+		c.Request = httptest.NewRequest("POST", "/login", nil)
+		lss := &state.FlowState{}
+		inCbs := []callbacks.Callback{
+			{
+				Name:  "login",
+				Value: userName,
+			},
+			{
+				Name:  "name",
+				Value: "John Doe",
+			},
+			{
+				Name:  "password",
+				Value: password,
+			},
+			{
+				Name:  "repeatPassword",
+				Value: "bad",
+			},
+		}
+		status, cbs, err := rm.ProcessCallbacks(inCbs, lss)
+		assert.NoError(t, err)
+		assert.Equal(t, state.IN_PROGRESS, status)
+		assert.Equal(t, "Passwords do not match", cbs[3].Error)
 	})
 
 	t.Run("test successful registration", func(t *testing.T) {
@@ -159,6 +193,10 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 			},
 			{
 				Name:  "password",
+				Value: password,
+			},
+			{
+				Name:  "repeatPassword",
 				Value: password,
 			},
 		}

@@ -9,6 +9,9 @@ flows:
       - id: "registration"
         type: "registration"
         properties:
+          primaryField: 
+            name: "login"
+            prompt: "Login"
           additionalFileds:
             - dataStore: "name"
               prompt: "Name"

@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -45,7 +45,7 @@ func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callba
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return state.FAIL, h.Callbacks, err
 	}
@@ -98,7 +98,7 @@ func (h *Hydra) PostProcess(fs *state.FlowState) error {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
