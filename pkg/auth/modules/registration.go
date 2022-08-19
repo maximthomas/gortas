@@ -11,13 +11,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//TODO add password format
-//TODO add confirmation password callback
+// TODO add password format
+// TODO add confirmation password callback
 type Registration struct {
 	BaseAuthModule
-	PrimaryField     Field
-	UsePassword      bool
-	AdditionalFields []Field
+	PrimaryField      Field
+	UsePassword       bool
+	UseRepeatPassword bool
+	AdditionalFields  []Field
 }
 
 func (f *Field) initField() error {
@@ -67,6 +68,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 
 	var username string
 	var password string
+	var repeatPassword string
 
 	fields := make(map[string]string, len(inCbs)-2)
 
@@ -76,9 +78,16 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 			username = cb.Value
 		case "password":
 			password = cb.Value
+		case "repeatPassword":
+			repeatPassword = cb.Value
 		default:
 			fields[cb.Name] = cb.Value
 		}
+	}
+
+	if repeatPassword != password {
+		(&errCbs[len(inCbs)-1]).Error = "Passwords do not match"
+		return state.IN_PROGRESS, errCbs, nil
 	}
 
 	ur := config.GetConfig().UserDataStore.Repo
@@ -123,6 +132,7 @@ func init() {
 func newRegistrationModule(base BaseAuthModule) AuthModule {
 	var rm Registration
 	rm.UsePassword = true //default value
+	rm.UseRepeatPassword = true
 	err := mapstructure.Decode(base.Properties, &rm)
 	if err != nil {
 		panic(err) //TODO add error processing
@@ -133,6 +143,11 @@ func newRegistrationModule(base BaseAuthModule) AuthModule {
 	if rm.UsePassword {
 		cbLen++
 	}
+
+	if rm.UseRepeatPassword {
+		cbLen++
+	}
+
 	adcbs := make([]callbacks.Callback, cbLen)
 	if rm.AdditionalFields != nil {
 		for i, af := range rm.AdditionalFields {
@@ -155,7 +170,7 @@ func newRegistrationModule(base BaseAuthModule) AuthModule {
 		Validation: rm.PrimaryField.Validation,
 	}
 	if rm.UsePassword {
-		adcbs[cbLen-1] = callbacks.Callback{
+		adcbs[cbLen-2] = callbacks.Callback{
 			Name:     "password",
 			Type:     callbacks.TypePassword,
 			Prompt:   "Password",
@@ -163,6 +178,16 @@ func newRegistrationModule(base BaseAuthModule) AuthModule {
 			Required: true,
 		}
 	}
+	if rm.UseRepeatPassword {
+		adcbs[cbLen-1] = callbacks.Callback{
+			Name:     "repeatPassword",
+			Type:     callbacks.TypePassword,
+			Prompt:   "Repeat password",
+			Value:    "",
+			Required: true,
+		}
+	}
+
 	(&rm.BaseAuthModule).Callbacks = adcbs
 	return &rm
 }
