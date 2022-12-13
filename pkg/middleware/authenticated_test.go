@@ -11,13 +11,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/session"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/models"
 )
 
 func TestMiddleware(t *testing.T) {
@@ -34,7 +33,7 @@ func TestMiddleware(t *testing.T) {
 			PublicKey:     publicKey,
 		},
 		DataStore: config.SessionDataStore{
-			Repo:       repo.NewInMemorySessionRepository(nil),
+			Repo:       session.NewInMemorySessionRepository(nil),
 			Type:       "",
 			Properties: nil,
 		},
@@ -83,7 +82,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestGetSessionFormRequest(t *testing.T) {
 	sessID := uuid.New().String()
-	sess := models.Session{
+	sess := session.Session{
 		ID: sessID,
 
 		Properties: map[string]string{

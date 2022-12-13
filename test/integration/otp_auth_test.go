@@ -19,6 +19,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/maximthomas/gortas/pkg/server"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -101,7 +102,7 @@ var (
 				PublicKey:    publicKey,
 				PrivateKeyID: "dummy",
 			},
-			DataStore: config.SessionDataStore{Repo: repo.NewInMemorySessionRepository(logger)},
+			DataStore: config.SessionDataStore{Repo: session.NewInMemorySessionRepository(logger)},
 		},
 		EncryptionKey: "Gb8l9wSZzEjeL2FTRG0k6bBnw7AZ/rBCcZfDDGLVreY=",
 	}

@@ -10,19 +10,18 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/middleware"
+	"github.com/maximthomas/gortas/pkg/session"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/sirupsen/logrus"
 	"github.com/skip2/go-qrcode"
 )
 
-//TODO v2 refactor passwordless architecture
+// TODO v2 refactor passwordless architecture
 type PasswordlessServicesController struct {
-	sr     repo.SessionRepository
+	sr     session.SessionRepository
 	logger logrus.FieldLogger
 	conf   config.Config
 }
@@ -44,7 +43,7 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 		return
 	}
-	s := si.(models.Session)
+	s := si.(session.Session)
 	uid := s.GetUserID()
 	ur := pc.conf.UserDataStore.Repo
 
@@ -72,7 +71,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 		return
 	}
-	s := si.(models.Session)
+	s := si.(session.Session)
 	uid := s.GetUserID()
 	ur := pc.conf.UserDataStore.Repo
 

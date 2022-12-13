@@ -22,6 +22,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,7 +67,7 @@ var (
 				PublicKey:    publicKey,
 				PrivateKeyID: "dummy",
 			},
-			DataStore: config.SessionDataStore{Repo: repo.NewInMemorySessionRepository(logger)},
+			DataStore: config.SessionDataStore{Repo: session.NewInMemorySessionRepository(logger)},
 		},
 	}
 	router *gin.Engine

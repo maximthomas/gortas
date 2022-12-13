@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/session"
 )
 
 func NewAuthenticatedMiddleware(s config.Session) gin.HandlerFunc {
@@ -29,7 +29,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 			return
 		}
-		var session models.Session
+		var sess session.Session
 		var err error
 		if a.sc.Type == "stateless" {
 			claims := jwt.MapClaims{}
@@ -64,24 +64,24 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 				sessionProps[key] = strVal
 			}
 
-			session = models.Session{
+			sess = session.Session{
 				ID:         sessionID,
 				Properties: sessionProps,
 			}
 		} else {
-			session, err = a.sc.DataStore.Repo.GetSession(sessionID)
+			sess, err = a.sc.DataStore.Repo.GetSession(sessionID)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 				return
 			}
 		}
-		uid := session.GetUserID()
+		uid := sess.GetUserID()
 		if uid == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Session is not valid"})
 			return
 		}
 
-		c.Set("session", session)
+		c.Set("session", sess)
 
 		c.Next()
 	}

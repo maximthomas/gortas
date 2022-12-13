@@ -1,13 +1,13 @@
-package repo
+package session
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
+
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/models"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -20,7 +20,7 @@ type MongoSessionRepository struct {
 }
 
 type mongoRepoSession struct {
-	models.Session `bson:",inline"`
+	Session `bson:",inline"`
 }
 
 func NewMongoSessionRepository(uri, db, c string) (*MongoSessionRepository, error) {
@@ -53,7 +53,7 @@ func NewMongoSessionRepository(uri, db, c string) (*MongoSessionRepository, erro
 
 }
 
-func (sr *MongoSessionRepository) CreateSession(session models.Session) (models.Session, error) {
+func (sr *MongoSessionRepository) CreateSession(session Session) (Session, error) {
 	if session.ID == "" {
 		session.ID = uuid.New().String()
 	}
@@ -88,8 +88,8 @@ func (sr *MongoSessionRepository) DeleteSession(id string) error {
 	return nil
 }
 
-func (sr *MongoSessionRepository) GetSession(id string) (models.Session, error) {
-	var session models.Session
+func (sr *MongoSessionRepository) GetSession(id string) (Session, error) {
+	var session Session
 	collection := sr.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -105,7 +105,7 @@ func (sr *MongoSessionRepository) GetSession(id string) (models.Session, error) 
 	return repoSession.Session, nil
 }
 
-func (sr *MongoSessionRepository) UpdateSession(session models.Session) error {
+func (sr *MongoSessionRepository) UpdateSession(session Session) error {
 	collection := sr.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()

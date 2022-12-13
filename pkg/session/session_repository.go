@@ -1,4 +1,4 @@
-package repo
+package session
 
 import (
 	"errors"
@@ -7,22 +7,21 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/models"
 )
 
 type SessionRepository interface {
-	CreateSession(session models.Session) (models.Session, error)
+	CreateSession(session Session) (Session, error)
 	DeleteSession(id string) error
-	GetSession(id string) (models.Session, error)
-	UpdateSession(session models.Session) error
+	GetSession(id string) (Session, error)
+	UpdateSession(session Session) error
 }
 
 type InMemorySessionRepository struct {
-	sessions map[string]models.Session
+	sessions map[string]Session
 	logger   logrus.FieldLogger
 }
 
-func (sr *InMemorySessionRepository) CreateSession(session models.Session) (models.Session, error) {
+func (sr *InMemorySessionRepository) CreateSession(session Session) (Session, error) {
 	if session.ID == "" {
 		session.ID = uuid.New().String()
 	}
@@ -40,15 +39,15 @@ func (sr *InMemorySessionRepository) DeleteSession(id string) error {
 	}
 }
 
-func (sr *InMemorySessionRepository) GetSession(id string) (models.Session, error) {
+func (sr *InMemorySessionRepository) GetSession(id string) (Session, error) {
 	if session, ok := sr.sessions[id]; ok {
 		return session, nil
 	} else {
-		return models.Session{}, errors.New("session does not exist")
+		return Session{}, errors.New("session does not exist")
 	}
 }
 
-func (sr *InMemorySessionRepository) UpdateSession(session models.Session) error {
+func (sr *InMemorySessionRepository) UpdateSession(session Session) error {
 	if _, ok := sr.sessions[session.ID]; ok {
 		sr.sessions[session.ID] = session
 		return nil
@@ -77,7 +76,7 @@ func NewInMemorySessionRepository(logger *logrus.Logger) SessionRepository {
 		logger = logrus.New()
 	}
 	repo := &InMemorySessionRepository{
-		sessions: make(map[string]models.Session),
+		sessions: make(map[string]Session),
 		logger:   logger.WithField("module", "InMemorySessionRepository"),
 	}
 

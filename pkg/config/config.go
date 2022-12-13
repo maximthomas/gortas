@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/spf13/viper"
 
 	"github.com/sirupsen/logrus"
@@ -57,7 +58,7 @@ type SessionJWT struct {
 }
 
 type SessionDataStore struct {
-	Repo       repo.SessionRepository
+	Repo       session.SessionRepository
 	Type       string
 	Properties map[string]string
 }
@@ -139,13 +140,13 @@ func InitConfig() error {
 		url, _ := params["url"]
 		db, _ := params["database"]
 		col, _ := params["collection"]
-		config.Session.DataStore.Repo, err = repo.NewMongoSessionRepository(url, db, col)
+		config.Session.DataStore.Repo, err = session.NewMongoSessionRepository(url, db, col)
 		if err != nil {
 			configLogger.Fatal(err)
 			return err
 		}
 	} else {
-		config.Session.DataStore.Repo = repo.NewInMemorySessionRepository(logger)
+		config.Session.DataStore.Repo = session.NewInMemorySessionRepository(logger)
 	}
 
 	configLogger.Infof("got configuration %+v\n", config)

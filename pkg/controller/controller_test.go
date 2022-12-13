@@ -8,6 +8,7 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/sirupsen/logrus"
 )
 
@@ -67,7 +68,7 @@ var (
 				PublicKey:  publicKey,
 			},
 			DataStore: config.SessionDataStore{
-				Repo: repo.NewInMemorySessionRepository(logger),
+				Repo: session.NewInMemorySessionRepository(logger),
 			},
 		},
 	}
