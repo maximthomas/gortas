@@ -15,8 +15,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/crypt"
-	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,14 +56,14 @@ func TestProcess_MagicLink(t *testing.T) {
 	rand.Read(key)
 	keyStr := base64.StdEncoding.EncodeToString(key)
 	conf := config.Config{}
-	conf.Session.DataStore.Repo = repo.NewInMemorySessionRepository(logrus.New())
+	conf.Session.DataStore.Repo = session.NewInMemorySessionRepository(logrus.New())
 	conf.EncryptionKey = keyStr
 	config.SetConfig(conf)
 	sessionId := "test_session"
 	code := sessionId + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
 	encrypted, err := crypt.EncryptWithConfig(code)
 	assert.NoError(t, err)
-	sess := models.Session{}
+	sess := session.Session{}
 	sess.Properties = make(map[string]string, 1)
 	sess.Properties[constants.FlowStateSessionProperty] = "{}"
 	sess.ID = sessionId

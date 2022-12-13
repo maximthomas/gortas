@@ -1,6 +1,7 @@
+//go:build integration
 // +build integration
 
-package repo
+package user
 
 import (
 	"context"

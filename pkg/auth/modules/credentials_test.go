@@ -6,7 +6,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -129,7 +129,7 @@ func TestGetCredentialsModule(t *testing.T) {
 func getCredentialsModule(t *testing.T) *Credentials {
 	conf := config.Config{
 		UserDataStore: config.UserDataStore{
-			Repo: repo.NewInMemoryUserRepository(),
+			Repo: user.NewInMemoryUserRepository(),
 		},
 	}
 	config.SetConfig(conf)

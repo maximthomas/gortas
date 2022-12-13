@@ -6,7 +6,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
@@ -97,7 +97,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		return state.IN_PROGRESS, errCbs, nil
 	}
 
-	user := models.User{
+	user := user.User{
 		ID:         username,
 		Properties: fields,
 	}

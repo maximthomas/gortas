@@ -1,9 +1,8 @@
-package repo
+package user
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/maximthomas/gortas/pkg/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,7 +14,7 @@ type UserRestRepository struct {
 	client   http.Client
 }
 
-func (ur *UserRestRepository) GetUser(id string) (user models.User, exists bool) {
+func (ur *UserRestRepository) GetUser(id string) (user User, exists bool) {
 
 	resp, err := ur.client.Get(ur.endpoint + "/users/" + id)
 	if err != nil {
@@ -47,7 +46,7 @@ func (ur *UserRestRepository) GetUser(id string) (user models.User, exists bool)
 
 func (ur *UserRestRepository) ValidatePassword(id, password string) (valid bool) {
 
-	pr := models.Password{
+	pr := Password{
 		Password: password,
 	}
 
@@ -74,7 +73,7 @@ func (ur *UserRestRepository) ValidatePassword(id, password string) (valid bool)
 		log.Printf("error validating password: %v", err)
 		return valid
 	}
-	var vpr models.ValidatePasswordResult
+	var vpr ValidatePasswordResult
 
 	err = json.Unmarshal(body, &vpr)
 	if err != nil {
@@ -88,11 +87,11 @@ func (ur *UserRestRepository) ValidatePassword(id, password string) (valid bool)
 	return valid
 }
 
-func (ur *UserRestRepository) CreateUser(user models.User) (models.User, error) {
+func (ur *UserRestRepository) CreateUser(user User) (User, error) {
 	return user, nil
 }
 
-func (ur *UserRestRepository) UpdateUser(user models.User) error {
+func (ur *UserRestRepository) UpdateUser(user User) error {
 	return nil
 }
 func (ur *UserRestRepository) SetPassword(id, password string) error {

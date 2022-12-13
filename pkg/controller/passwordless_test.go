@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +42,7 @@ func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
 		{
 			"no valid user in session",
 			args{
-				session: models.Session{
+				session: session.Session{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Time{},
 					Properties: map[string]string{
@@ -58,7 +58,7 @@ func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
 		{
 			"valid user in session",
 			args{
-				session: models.Session{
+				session: session.Session{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Time{},
 					Properties: map[string]string{
@@ -115,7 +115,7 @@ func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
 		{
 			"no valid user in session",
 			args{
-				session: models.Session{
+				session: session.Session{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Time{},
 					Properties: map[string]string{
@@ -131,7 +131,7 @@ func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
 		{
 			"valid user in session",
 			args{
-				session: models.Session{
+				session: session.Session{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Time{},
 					Properties: map[string]string{
@@ -165,7 +165,7 @@ func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
 
 func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 	t.Skip() //TODO implement test
-	badSess := models.Session{
+	badSess := session.Session{
 		ID:         uuid.New().String(),
 		CreatedAt:  time.Now(),
 		Properties: nil,
@@ -188,7 +188,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		RedirectURI: "",
 	}
 	lssBytes, _ := json.Marshal(lss)
-	validSess := models.Session{
+	validSess := session.Session{
 		ID:        uuid.New().String(),
 		CreatedAt: time.Now(),
 		Properties: map[string]string{

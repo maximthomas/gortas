@@ -15,7 +15,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/modules"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -185,7 +185,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 		sessionID = ss
 	} else {
 		sessionID = uuid.New().String()
-		newSession := models.Session{
+		newSession := session.Session{
 			ID: sessionID,
 			Properties: map[string]string{
 				"userId": user.ID,
@@ -212,17 +212,17 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 
 	sr := config.GetConfig().Session.DataStore.Repo
 
-	session, err := sr.GetSession(fs.Id)
+	sess, err := sr.GetSession(fs.Id)
 	if err != nil {
-		session = models.Session{
+		sess = session.Session{
 			ID:         fs.Id,
 			Properties: make(map[string]string),
 		}
-		session.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
-		_, err = sr.CreateSession(session)
+		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
+		_, err = sr.CreateSession(sess)
 	} else {
-		session.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
-		err = sr.UpdateSession(session)
+		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
+		err = sr.UpdateSession(sess)
 	}
 	if err != nil {
 		return err

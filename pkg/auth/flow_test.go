@@ -6,10 +6,10 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,15 +19,15 @@ const corruptedFlowId = "corrupted-flow-id"
 
 func init() {
 	logger := logrus.New()
-	sr := repo.NewInMemorySessionRepository(logger)
-	s := models.Session{
+	sr := session.NewInMemorySessionRepository(logger)
+	s := session.Session{
 		ID: testFlowId,
 		Properties: map[string]string{
 			constants.FlowStateSessionProperty: "{}",
 		},
 	}
 	_, _ = sr.CreateSession(s)
-	corruptedSession := models.Session{
+	corruptedSession := session.Session{
 		ID: corruptedFlowId,
 		Properties: map[string]string{
 			constants.FlowStateSessionProperty: "bad",
@@ -62,7 +62,7 @@ func init() {
 	conf := config.Config{
 		Flows: flows,
 		UserDataStore: config.UserDataStore{
-			Repo: repo.NewInMemoryUserRepository(),
+			Repo: user.NewInMemoryUserRepository(),
 		},
 		Logger: logger,
 		Session: config.Session{

@@ -1,26 +1,24 @@
-package repo
+package user
 
 import (
 	"github.com/google/uuid"
-
-	"github.com/maximthomas/gortas/pkg/models"
 )
 
 type UserRepository interface {
-	GetUser(id string) (models.User, bool)
+	GetUser(id string) (User, bool)
 	ValidatePassword(id, password string) bool
-	CreateUser(user models.User) (models.User, error)
-	UpdateUser(user models.User) error
+	CreateUser(user User) (User, error)
+	UpdateUser(user User) error
 	SetPassword(id, password string) error
 }
 
 type InMemoryUserRepository struct {
-	Users     []models.User
+	Users     []User
 	Realm     string
 	passwords map[string]string
 }
 
-func (ur *InMemoryUserRepository) GetUser(id string) (user models.User, exists bool) {
+func (ur *InMemoryUserRepository) GetUser(id string) (user User, exists bool) {
 	for _, u := range ur.Users {
 		if u.ID == id {
 			user = u
@@ -43,7 +41,7 @@ func (ur *InMemoryUserRepository) ValidatePassword(id, password string) (valid b
 	return valid
 }
 
-func (ur *InMemoryUserRepository) CreateUser(user models.User) (models.User, error) {
+func (ur *InMemoryUserRepository) CreateUser(user User) (User, error) {
 	if user.ID == "" {
 		user.ID = uuid.New().String()
 	}
@@ -51,10 +49,10 @@ func (ur *InMemoryUserRepository) CreateUser(user models.User) (models.User, err
 	return user, nil
 }
 
-func (ur *InMemoryUserRepository) UpdateUser(user models.User) error {
+func (ur *InMemoryUserRepository) UpdateUser(usr User) error {
 	for i, u := range ur.Users {
-		if u.ID == user.ID {
-			ur.Users[i] = user
+		if u.ID == usr.ID {
+			ur.Users[i] = usr
 			break
 		}
 	}
@@ -69,7 +67,7 @@ func (ur *InMemoryUserRepository) SetPassword(id, password string) error {
 func NewInMemoryUserRepository() UserRepository {
 
 	ds := &InMemoryUserRepository{}
-	ds.Users = []models.User{
+	ds.Users = []User{
 		{
 			ID:    "user1",
 			Realm: "users",

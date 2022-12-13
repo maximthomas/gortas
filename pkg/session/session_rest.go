@@ -1,9 +1,8 @@
-package repo
+package session
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/maximthomas/gortas/pkg/models"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,8 +13,8 @@ type RestSessionRepository struct {
 	client   http.Client
 }
 
-func (sr *RestSessionRepository) CreateSession(session models.Session) (models.Session, error) {
-	var newSession models.Session
+func (sr *RestSessionRepository) CreateSession(session Session) (Session, error) {
+	var newSession Session
 	sessBytes, err := json.Marshal(session)
 	if err != nil {
 		return newSession, err
@@ -53,6 +52,6 @@ func (sr *RestSessionRepository) DeleteSession(id string) error {
 	return err
 }
 
-func (sr *RestSessionRepository) UpdateSession(id string, session models.Session) error {
+func (sr *RestSessionRepository) UpdateSession(id string, session Session) error {
 	return nil
 }

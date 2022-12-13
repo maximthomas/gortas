@@ -1,18 +1,18 @@
 package controller
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
-	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
-	"github.com/maximthomas/gortas/pkg/repo"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
+	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/stretchr/testify/assert"
 )
 
 func setupConfig(sessRepoType string) {
@@ -23,7 +23,7 @@ func setupConfig(sessRepoType string) {
 			Type:    sessRepoType,
 			Expires: 60000,
 			DataStore: config.SessionDataStore{
-				Repo:       repo.NewInMemorySessionRepository(logger),
+				Repo:       session.NewInMemorySessionRepository(logger),
 				Type:       "in_memory",
 				Properties: nil,
 			},
@@ -37,7 +37,7 @@ func setupConfig(sessRepoType string) {
 		},
 	}
 	config.SetConfig(conf)
-	statefulSession := models.Session{
+	statefulSession := session.Session{
 		ID: "testSessionId",
 		Properties: map[string]string{
 			"sub":    "user1",
