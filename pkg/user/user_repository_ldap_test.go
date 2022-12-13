@@ -1,10 +1,9 @@
-package repo
+package user
 
 import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/models"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +57,7 @@ func TestCreateUser(t *testing.T) {
 
 	userID := uuid.New().String()
 
-	user := models.User{
+	user := User{
 		ID: userID,
 	}
 	user, err := ur.CreateUser(user)

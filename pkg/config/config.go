@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/spf13/viper"
 
 	"github.com/sirupsen/logrus"
@@ -32,7 +32,7 @@ type Flow struct {
 type UserDataStore struct {
 	Type       string                 `yaml:"type"`
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
-	Repo       repo.UserRepository
+	Repo       user.UserRepository
 }
 
 type Module struct {
@@ -89,7 +89,7 @@ func InitConfig() error {
 
 	if config.UserDataStore.Type == "ldap" {
 		prop := config.UserDataStore.Properties
-		ur := &repo.UserLdapRepository{}
+		ur := &user.UserLdapRepository{}
 		err := mapstructure.Decode(prop, ur)
 		if err != nil {
 			configLogger.Fatal(err)
@@ -107,13 +107,13 @@ func InitConfig() error {
 		url, _ := params["url"].(string)
 		db, _ := params["database"].(string)
 		col, _ := params["collection"].(string)
-		ur, err := repo.NewUserMongoRepository(url, db, col)
+		ur, err := user.NewUserMongoRepository(url, db, col)
 		if err != nil {
 			panic(err)
 		}
 		config.UserDataStore.Repo = ur
 	} else {
-		config.UserDataStore.Repo = repo.NewInMemoryUserRepository()
+		config.UserDataStore.Repo = user.NewInMemoryUserRepository()
 	}
 
 	if config.Session.Type == "stateless" {

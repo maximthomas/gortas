@@ -6,7 +6,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/models"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
@@ -80,7 +80,7 @@ func (cm *Credentials) ValidateCallbacks(cbs []callbacks.Callback) error {
 }
 
 func (cm *Credentials) PostProcess(fs *state.FlowState) error {
-	moduleUser := models.User{
+	moduleUser := user.User{
 		ID:         cm.credentialsState.UserID,
 		Properties: cm.credentialsState.Properties,
 	}

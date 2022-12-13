@@ -1,15 +1,15 @@
-package repo
+package user
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"time"
 )
 
 type UserMongoRepository struct {
@@ -19,12 +19,12 @@ type UserMongoRepository struct {
 }
 
 type mongoRepoUser struct {
-	models.User `bson:",inline"`
-	Password    string `json:"password,omitempty"`
+	User     `bson:",inline"`
+	Password string `json:"password,omitempty"`
 }
 
-func (ur *UserMongoRepository) GetUser(id string) (models.User, bool) {
-	var user models.User
+func (ur *UserMongoRepository) GetUser(id string) (User, bool) {
+	var user User
 	collection := ur.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -62,7 +62,7 @@ func (ur *UserMongoRepository) ValidatePassword(id, password string) bool {
 	return valid
 }
 
-func (ur *UserMongoRepository) CreateUser(user models.User) (models.User, error) {
+func (ur *UserMongoRepository) CreateUser(user User) (User, error) {
 	if user.ID == "" {
 		user.ID = uuid.New().String()
 	}
@@ -82,7 +82,7 @@ func (ur *UserMongoRepository) CreateUser(user models.User) (models.User, error)
 	return user, nil
 }
 
-func (ur *UserMongoRepository) UpdateUser(user models.User) error {
+func (ur *UserMongoRepository) UpdateUser(user User) error {
 	collection := ur.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()

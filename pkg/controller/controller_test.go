@@ -7,8 +7,8 @@ import (
 	"encoding/pem"
 
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 )
 
@@ -56,7 +56,7 @@ var (
 	conf   = config.Config{
 		Flows: flows,
 		UserDataStore: config.UserDataStore{
-			Repo: repo.NewInMemoryUserRepository(),
+			Repo: user.NewInMemoryUserRepository(),
 		},
 		Logger: logger,
 		Session: config.Session{

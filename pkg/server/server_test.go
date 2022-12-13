@@ -21,14 +21,14 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/stretchr/testify/assert"
 )
 
 var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 var publicKey = &privateKey.PublicKey
-var ur = repo.NewInMemoryUserRepository()
+var ur = user.NewInMemoryUserRepository()
 var (
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{

@@ -7,9 +7,9 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -62,7 +62,7 @@ func init() {
 	conf := config.Config{
 		Flows: flows,
 		UserDataStore: config.UserDataStore{
-			Repo: repo.NewInMemoryUserRepository(),
+			Repo: user.NewInMemoryUserRepository(),
 		},
 		Logger: logger,
 		Session: config.Session{

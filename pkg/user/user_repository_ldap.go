@@ -1,4 +1,4 @@
-package repo
+package user
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/maximthomas/gortas/pkg/models"
 )
 
 type UserLdapRepository struct {
@@ -55,7 +54,7 @@ func (ur *UserLdapRepository) getLdapEntry(id string, conn *ldap.Conn) (*ldap.En
 	return result.Entries[0], nil
 }
 
-func (ur *UserLdapRepository) GetUser(id string) (user models.User, exists bool) {
+func (ur *UserLdapRepository) GetUser(id string) (user User, exists bool) {
 	conn, err := ur.getConnection()
 	if err != nil {
 		log.Print(err)
@@ -74,7 +73,7 @@ func (ur *UserLdapRepository) GetUser(id string) (user models.User, exists bool)
 		properties[attr] = entry.GetAttributeValue(attr)
 	}
 
-	user = models.User{
+	user = User{
 		ID:         entry.GetAttributeValue("uid"),
 		Properties: properties,
 	}
@@ -103,7 +102,7 @@ func (ur *UserLdapRepository) ValidatePassword(id, password string) bool {
 	}
 
 }
-func (ur *UserLdapRepository) CreateUser(user models.User) (models.User, error) {
+func (ur *UserLdapRepository) CreateUser(user User) (User, error) {
 	conn, err := ur.getConnection()
 	if err != nil {
 		log.Print(err)
@@ -123,7 +122,7 @@ func (ur *UserLdapRepository) CreateUser(user models.User) (models.User, error) 
 	return user, err
 
 }
-func (ur *UserLdapRepository) UpdateUser(user models.User) error {
+func (ur *UserLdapRepository) UpdateUser(user User) error {
 	return errors.New("not implemented")
 }
 

@@ -10,7 +10,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/maximthomas/gortas/pkg/repo"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -216,7 +216,7 @@ func getNewRegistrationModule(t *testing.T) *Registration {
 	config.SetConfig(config.Config{
 		Logger: logrus.New(),
 		UserDataStore: config.UserDataStore{
-			Repo: repo.NewInMemoryUserRepository(),
+			Repo: user.NewInMemoryUserRepository(),
 		},
 	})
 	var b = BaseAuthModule{
