@@ -7,14 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 
 	"github.com/dgrijalva/jwt-go"
@@ -118,7 +117,7 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
 
-		log.Info("bad login and password")
+		log.Print("bad login and password")
 		for i := range cbReq.Callbacks {
 			(&cbReq.Callbacks[i]).Value = "bad"
 		}
@@ -195,7 +194,7 @@ func TestLogin(t *testing.T) {
 		(&cbReq.Callbacks[0]).Value = login
 		(&cbReq.Callbacks[1]).Value = password
 
-		log.Info("valid login and password")
+		log.Print("valid login and password")
 		body, _ := json.Marshal(cbReq)
 		request = httptest.NewRequest("POST", target, bytes.NewBuffer(body))
 		request.AddCookie(authCookie)
@@ -204,7 +203,7 @@ func TestLogin(t *testing.T) {
 
 		var respJson = make(map[string]interface{})
 		_ = json.Unmarshal(recorder.Body.Bytes(), &respJson)
-		log.Info(recorder.Result())
+		log.Print(recorder.Result())
 		assert.NoError(t, err)
 		sessionCookie, err := getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
 		assert.NoError(t, err)
@@ -308,7 +307,7 @@ func TestAuthQR(t *testing.T) {
 
 	var respJSON = make(map[string]interface{})
 	_ = json.Unmarshal([]byte(recorder.Body.String()), &respJSON)
-	log.Info(recorder.Result())
+	log.Print(recorder.Result())
 	assert.NoError(t, err)
 	sessionCookie, err := getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
 	assert.NoError(t, err)
