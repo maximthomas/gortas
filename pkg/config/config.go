@@ -58,7 +58,7 @@ func InitConfig() error {
 	}
 	session.InitSessionService(config.Session)
 
-	configLogger.Infof("got configuration %+v\n", config)
+	configLogger.Debugf("got configuration %+v\n", config)
 
 	return nil
 }
