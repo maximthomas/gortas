@@ -22,17 +22,11 @@ type Config struct {
 	Session       Session         `yaml:"session"`
 	Server        Server          `yaml:"server"`
 	EncryptionKey string          `yaml:"encryptionKey"`
-	UserDataStore UserDataStore   `yaml:"userDataStore"`
+	UserDataStore user.UserConfig `yaml:"userDataStore"`
 }
 
 type Flow struct {
 	Modules []Module `yaml:"modules"`
-}
-
-type UserDataStore struct {
-	Type       string                 `yaml:"type"`
-	Properties map[string]interface{} `yaml:"properties,omitempty"`
-	Repo       user.UserRepository
 }
 
 type Module struct {
@@ -86,35 +80,7 @@ func InitConfig() error {
 		configLogger.Errorf("Fatal error config file: %s \n", err)
 		panic(err)
 	}
-
-	if config.UserDataStore.Type == "ldap" {
-		prop := config.UserDataStore.Properties
-		ur := &user.UserLdapRepository{}
-		err := mapstructure.Decode(prop, ur)
-		if err != nil {
-			configLogger.Fatal(err)
-			return err
-		}
-		config.UserDataStore.Repo = ur
-	} else if config.UserDataStore.Type == "mongodb" {
-		prop := config.UserDataStore.Properties
-		params := make(map[string]interface{})
-		err := mapstructure.Decode(&prop, &params)
-		if err != nil {
-			configLogger.Fatal(err)
-			return err
-		}
-		url, _ := params["url"].(string)
-		db, _ := params["database"].(string)
-		col, _ := params["collection"].(string)
-		ur, err := user.NewUserMongoRepository(url, db, col)
-		if err != nil {
-			panic(err)
-		}
-		config.UserDataStore.Repo = ur
-	} else {
-		config.UserDataStore.Repo = user.NewInMemoryUserRepository()
-	}
+	user.InitUserService(config.UserDataStore)
 
 	if config.Session.Type == "stateless" {
 		jwt := &config.Session.Jwt
@@ -160,4 +126,5 @@ func GetConfig() Config {
 
 func SetConfig(newConfig Config) {
 	config = newConfig
+	user.InitUserService(newConfig.UserDataStore)
 }

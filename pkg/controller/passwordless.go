@@ -11,6 +11,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/middleware"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -45,7 +46,7 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	}
 	s := si.(session.Session)
 	uid := s.GetUserID()
-	ur := pc.conf.UserDataStore.Repo
+	ur := user.GetUserService().Repo
 
 	_, ok = ur.GetUser(uid)
 	if !ok {
@@ -73,7 +74,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	}
 	s := si.(session.Session)
 	uid := s.GetUserID()
-	ur := pc.conf.UserDataStore.Repo
+	ur := user.GetUserService().Repo
 
 	user, ok := ur.GetUser(uid)
 	if !ok {
@@ -124,7 +125,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	ur := pc.conf.UserDataStore.Repo
+	ur := user.GetUserService().Repo
 	user, ok := ur.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})

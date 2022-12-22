@@ -88,10 +88,7 @@ var (
 
 	logger = logrus.New()
 	conf   = config.Config{
-		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: ur,
-		},
+		Flows:  flows,
 		Logger: logger,
 		Session: config.Session{
 			Type:    "stateless",

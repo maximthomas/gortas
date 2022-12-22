@@ -28,7 +28,7 @@ import (
 
 var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 var publicKey = &privateKey.PublicKey
-var ur = user.NewInMemoryUserRepository()
+var ur user.UserRepository
 var (
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{
@@ -53,10 +53,7 @@ var (
 
 	logger = logrus.New()
 	conf   = config.Config{
-		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: ur,
-		},
+		Flows:  flows,
 		Logger: logger,
 		Session: config.Session{
 			Type:    "stateless",
@@ -76,6 +73,7 @@ var (
 func init() {
 	config.SetConfig(conf)
 	router = SetupRouter(conf)
+	ur = user.GetUserService().Repo
 }
 
 func TestSetupRouter(t *testing.T) {

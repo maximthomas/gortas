@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -197,7 +198,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 	}
 	conf.Session.DataStore.Repo.CreateSession(validSess)
 
-	ur := conf.UserDataStore.Repo
+	ur := user.GetUserService().Repo
 	user, _ := ur.GetUser("user1")
 	user.Properties = map[string]string{
 		"passwordless.qr": `{"secret": "s3cr3t"}`,

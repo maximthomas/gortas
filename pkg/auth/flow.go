@@ -16,6 +16,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -164,7 +165,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 		return sessId, errors.New("user id is not set")
 	}
 
-	user, userExists := config.GetConfig().UserDataStore.Repo.GetUser(fs.UserId)
+	usr, userExists := user.GetUserService().Repo.GetUser(fs.UserId)
 
 	var sessionID string
 	if sc.Type == "stateless" {
@@ -177,7 +178,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 		claims["iss"] = sc.Jwt.Issuer
 		claims["sub"] = fs.UserId
 		if userExists {
-			claims["props"] = user.Properties
+			claims["props"] = usr.Properties
 		}
 
 		token.Header["jks"] = sc.Jwt.PrivateKeyID
@@ -188,11 +189,11 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 		newSession := session.Session{
 			ID: sessionID,
 			Properties: map[string]string{
-				"userId": user.ID,
-				"sub":    user.ID,
+				"userId": usr.ID,
+				"sub":    usr.ID,
 			},
 		}
-		for k, v := range user.Properties {
+		for k, v := range usr.Properties {
 			newSession.Properties[k] = v
 		}
 

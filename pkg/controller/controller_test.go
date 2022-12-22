@@ -8,7 +8,6 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 )
 
@@ -54,10 +53,7 @@ var (
 
 	logger = logrus.New()
 	conf   = config.Config{
-		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: user.NewInMemoryUserRepository(),
-		},
+		Flows:  flows,
 		Logger: logger,
 		Session: config.Session{
 			Type:    "stateless",
