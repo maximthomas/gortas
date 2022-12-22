@@ -165,7 +165,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 		return sessId, errors.New("user id is not set")
 	}
 
-	usr, userExists := user.GetUserService().Repo.GetUser(fs.UserId)
+	usr, userExists := user.GetUserService().GetUser(fs.UserId)
 
 	var sessionID string
 	if sc.Type == "stateless" {

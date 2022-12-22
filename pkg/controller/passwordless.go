@@ -46,9 +46,9 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	}
 	s := si.(session.Session)
 	uid := s.GetUserID()
-	ur := user.GetUserService().Repo
+	us := user.GetUserService()
 
-	_, ok = ur.GetUser(uid)
+	_, ok = us.GetUser(uid)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
@@ -74,9 +74,9 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	}
 	s := si.(session.Session)
 	uid := s.GetUserID()
-	ur := user.GetUserService().Repo
+	us := user.GetUserService()
 
-	user, ok := ur.GetUser(uid)
+	user, ok := us.GetUser(uid)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
@@ -93,7 +93,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		user.Properties = make(map[string]string)
 	}
 	user.Properties["passwordless.qr"] = string(qrPropsJSON)
-	err = ur.UpdateUser(user)
+	err = us.UpdateUser(user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
@@ -125,8 +125,8 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	ur := user.GetUserService().Repo
-	user, ok := ur.GetUser(authQRRequest.UID)
+	us := user.GetUserService()
+	user, ok := us.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})
 		return

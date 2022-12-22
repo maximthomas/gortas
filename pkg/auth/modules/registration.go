@@ -89,8 +89,8 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		return state.IN_PROGRESS, errCbs, nil
 	}
 
-	ur := user.GetUserService().Repo
-	_, exists := ur.GetUser(username)
+	us := user.GetUserService()
+	_, exists := us.GetUser(username)
 	if exists {
 		(&errCbs[0]).Error = "User exists"
 		return state.IN_PROGRESS, errCbs, nil
@@ -101,12 +101,12 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		Properties: fields,
 	}
 
-	_, err = ur.CreateUser(user)
+	_, err = us.CreateUser(user)
 	if err != nil {
 		return state.FAIL, cbs, err
 	}
 
-	err = ur.SetPassword(user.ID, password)
+	err = us.SetPassword(user.ID, password)
 	if err != nil {
 		return state.FAIL, cbs, err
 	}

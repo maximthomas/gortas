@@ -92,8 +92,8 @@ func TestModifyUser(t *testing.T) {
 	assert.Fail(t, "not implemented")
 }
 
-func getUserLdapRepository() *UserLdapRepository {
-	return &UserLdapRepository{
+func getUserLdapRepository() *userLdapRepository {
+	return &userLdapRepository{
 		Address:        "localhost:50389",
 		BindDN:         "cn=admin,dc=farawaygalaxy,dc=net",
 		Password:       "passw0rd",

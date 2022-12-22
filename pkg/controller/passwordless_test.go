@@ -198,12 +198,12 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 	}
 	conf.Session.DataStore.Repo.CreateSession(validSess)
 
-	ur := user.GetUserService().Repo
-	user, _ := ur.GetUser("user1")
+	us := user.GetUserService()
+	user, _ := us.GetUser("user1")
 	user.Properties = map[string]string{
 		"passwordless.qr": `{"secret": "s3cr3t"}`,
 	}
-	ur.UpdateUser(user)
+	us.UpdateUser(user)
 
 	pc := NewPasswordlessServicesController(conf)
 	type args struct {

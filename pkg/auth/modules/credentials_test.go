@@ -107,14 +107,14 @@ func TestCredentiaslPostProcess(t *testing.T) {
 		},
 	}
 
-	ur := user.GetUserService().Repo
-	_, ok := ur.GetUser(testEmail)
+	us := user.GetUserService()
+	_, ok := us.GetUser(testEmail)
 	assert.False(t, ok, "User does not exists")
 	fs := &state.FlowState{}
 	err := cm.PostProcess(fs)
 	assert.NoError(t, err)
 
-	user, ok := ur.GetUser(testEmail)
+	user, ok := us.GetUser(testEmail)
 	assert.True(t, ok, "user exists")
 	assert.Equal(t, testEmail, user.ID)
 	assert.Equal(t, testName, user.Properties["name"])

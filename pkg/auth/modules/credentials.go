@@ -83,17 +83,17 @@ func (cm *Credentials) PostProcess(fs *state.FlowState) error {
 		ID:         cm.credentialsState.UserID,
 		Properties: cm.credentialsState.Properties,
 	}
-	ur := user.GetUserService().Repo
-	user, ok := ur.GetUser(moduleUser.ID)
+	us := user.GetUserService()
+	user, ok := us.GetUser(moduleUser.ID)
 	var err error
 	if !ok {
-		user, err = ur.CreateUser(moduleUser)
+		user, err = us.CreateUser(moduleUser)
 		if err != nil {
 			return errors.Wrap(err, "error creating user")
 		}
 	} else {
 		user.Properties = moduleUser.Properties
-		err = ur.UpdateUser(user)
+		err = us.UpdateUser(user)
 		if err != nil {
 			return errors.Wrap(err, "error updating user")
 		}

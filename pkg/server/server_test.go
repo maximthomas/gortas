@@ -28,7 +28,7 @@ import (
 
 var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
 var publicKey = &privateKey.PublicKey
-var ur user.UserRepository
+var us user.UserService
 var (
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{
@@ -73,7 +73,7 @@ var (
 func init() {
 	config.SetConfig(conf)
 	router = SetupRouter(conf)
-	ur = user.GetUserService().Repo
+	us = user.GetUserService()
 }
 
 func TestSetupRouter(t *testing.T) {
@@ -164,7 +164,7 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Test successful authentication", func(t *testing.T) {
-		_ = ur.SetPassword("jerso", "passw0rd")
+		_ = us.SetPassword("jerso", "passw0rd")
 		request := httptest.NewRequest("GET", target, nil)
 		recorder := httptest.NewRecorder()
 
@@ -270,9 +270,9 @@ func TestAuthQR(t *testing.T) {
 	t.Skip()
 	assert.Fail(t, "implement test")
 	const secret = "s3cr3t"
-	user1, _ := ur.GetUser("user1")
+	user1, _ := us.GetUser("user1")
 	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%s"}`, secret))
-	_ = ur.UpdateUser(user1)
+	_ = us.UpdateUser(user1)
 
 	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/login/staff/qr", nil)
 	recorder := httptest.NewRecorder()

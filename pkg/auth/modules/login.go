@@ -26,8 +26,8 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 			password = cb.Value
 		}
 	}
-	ur := user.GetUserService().Repo
-	valid := ur.ValidatePassword(username, password)
+	us := user.GetUserService()
+	valid := us.ValidatePassword(username, password)
 	if valid {
 		fs.UserId = username
 		return state.PASS, cbs, err

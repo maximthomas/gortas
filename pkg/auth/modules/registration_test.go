@@ -203,10 +203,10 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 		status, _, err := rm.ProcessCallbacks(inCbs, lss)
 		assert.NoError(t, err)
 		assert.Equal(t, state.PASS, status)
-		ur := user.GetUserService().Repo
-		_, ok := ur.GetUser(userName)
+		us := user.GetUserService()
+		_, ok := us.GetUser(userName)
 		assert.True(t, ok)
-		pValid := ur.ValidatePassword(userName, password)
+		pValid := us.ValidatePassword(userName, password)
 		assert.True(t, pValid)
 
 	})
