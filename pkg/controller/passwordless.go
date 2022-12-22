@@ -22,16 +22,13 @@ import (
 
 // TODO v2 refactor passwordless architecture
 type PasswordlessServicesController struct {
-	sr     session.SessionRepository
 	logger logrus.FieldLogger
 	conf   config.Config
 }
 
 func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
 	logger := config.Logger.WithField("module", "PasswordlessServicesController")
-	sr := session.GetSessionService().Repo
-
-	return &PasswordlessServicesController{sr, logger, config}
+	return &PasswordlessServicesController{logger, config}
 }
 
 type QRProps struct {
@@ -119,7 +116,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	session, err := pc.sr.GetSession(authQRRequest.SID)
+	sess, err := session.GetSessionService().GetSession(authQRRequest.SID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
@@ -153,7 +150,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 
 	//authorise session
 	var fs state.FlowState
-	err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+	err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
@@ -177,8 +174,8 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
-	session.Properties[constants.FlowStateSessionProperty] = string(fsJSON)
-	err = pc.sr.UpdateSession(session)
+	sess.Properties[constants.FlowStateSessionProperty] = string(fsJSON)
+	err = session.GetSessionService().UpdateSession(sess)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return

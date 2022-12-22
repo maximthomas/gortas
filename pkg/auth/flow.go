@@ -148,7 +148,7 @@ modules:
 			Token: sessID,
 			Type:  "Bearer",
 		}
-		err = session.GetSessionService().Repo.DeleteSession(fs.Id)
+		err = session.GetSessionService().DeleteSession(fs.Id)
 		if err != nil {
 			f.logger.Warnf("error clearing session %s %v", fs.Id, err)
 		}
@@ -197,7 +197,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 			newSession.Properties[k] = v
 		}
 
-		newSession, err = session.GetSessionService().Repo.CreateSession(newSession)
+		newSession, err = session.GetSessionService().CreateSession(newSession)
 		if err != nil {
 			return sessId, err
 		}
@@ -211,19 +211,19 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 		return errors.Wrap(err, "error marshalling flow sate")
 	}
 
-	sr := session.GetSessionService().Repo
+	ss := session.GetSessionService()
 
-	sess, err := sr.GetSession(fs.Id)
+	sess, err := ss.GetSession(fs.Id)
 	if err != nil {
 		sess = session.Session{
 			ID:         fs.Id,
 			Properties: make(map[string]string),
 		}
 		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
-		_, err = sr.CreateSession(sess)
+		_, err = ss.CreateSession(sess)
 	} else {
 		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
-		err = sr.UpdateSession(sess)
+		err = ss.UpdateSession(sess)
 	}
 	if err != nil {
 		return err
@@ -235,7 +235,7 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, error) {
 	c := config.GetConfig()
 	ss := session.GetSessionService()
-	session, err := ss.Repo.GetSession(id)
+	session, err := ss.GetSession(id)
 	var fs state.FlowState
 	if err != nil {
 		flow, ok := c.Flows[name]

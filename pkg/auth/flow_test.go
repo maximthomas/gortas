@@ -57,14 +57,14 @@ func init() {
 			constants.FlowStateSessionProperty: "{}",
 		},
 	}
-	_, _ = session.GetSessionService().Repo.CreateSession(s)
+	_, _ = session.GetSessionService().CreateSession(s)
 	corruptedSession := session.Session{
 		ID: corruptedFlowId,
 		Properties: map[string]string{
 			constants.FlowStateSessionProperty: "bad",
 		},
 	}
-	_, _ = session.GetSessionService().Repo.CreateSession(corruptedSession)
+	_, _ = session.GetSessionService().CreateSession(corruptedSession)
 }
 
 func TestGetFlowState(t *testing.T) {

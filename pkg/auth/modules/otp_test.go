@@ -65,7 +65,7 @@ func TestProcess_MagicLink(t *testing.T) {
 	sess.Properties = make(map[string]string, 1)
 	sess.Properties[constants.FlowStateSessionProperty] = "{}"
 	sess.ID = sessionId
-	session.GetSessionService().Repo.CreateSession(sess)
+	session.GetSessionService().CreateSession(sess)
 
 	m := getOTPModule(t)
 	m.req = httptest.NewRequest("GET", "http://localhost/gortas?code="+encrypted, nil)

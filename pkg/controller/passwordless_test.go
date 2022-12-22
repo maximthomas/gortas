@@ -171,7 +171,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		CreatedAt:  time.Now(),
 		Properties: nil,
 	}
-	session.GetSessionService().Repo.CreateSession(badSess)
+	session.GetSessionService().CreateSession(badSess)
 
 	lss := state.FlowState{
 		Modules: []state.FlowStateModuleInfo{
@@ -196,7 +196,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			"lss": string(lssBytes),
 		},
 	}
-	session.GetSessionService().Repo.CreateSession(validSess)
+	session.GetSessionService().CreateSession(validSess)
 
 	us := user.GetUserService()
 	user, _ := us.GetUser("user1")

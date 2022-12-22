@@ -10,16 +10,32 @@ import (
 )
 
 type SessionService struct {
-	Repo SessionRepository
+	repo sessionRepository
 	Type string
-	Jwt  JWT
+	Jwt  Jwt
 }
 
-type JWT struct {
+type Jwt struct {
 	PrivateKeyID string
 	Issuer       string
 	PrivateKey   *rsa.PrivateKey
 	PublicKey    *rsa.PublicKey
+}
+
+func (ss SessionService) CreateSession(session Session) (Session, error) {
+	return ss.repo.CreateSession(session)
+}
+
+func (ss SessionService) DeleteSession(id string) error {
+	return ss.repo.DeleteSession(id)
+}
+
+func (ss SessionService) GetSession(id string) (Session, error) {
+	return ss.repo.GetSession(id)
+}
+
+func (ss SessionService) UpdateSession(session Session) error {
+	return ss.repo.UpdateSession(session)
 }
 
 var ss SessionService
@@ -57,12 +73,12 @@ func newSessionServce(sc SessionConfig) (ss SessionService, err error) {
 		url := params["url"]
 		db := params["database"]
 		col := params["collection"]
-		ss.Repo, err = NewMongoSessionRepository(url, db, col)
+		ss.repo, err = NewMongoSessionRepository(url, db, col)
 		if err != nil {
 			return ss, err
 		}
 	} else {
-		ss.Repo = NewInMemorySessionRepository()
+		ss.repo = NewInMemorySessionRepository()
 	}
 	return ss, err
 }

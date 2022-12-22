@@ -86,7 +86,7 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 		return state.FAIL, lm.Callbacks, errors.New("code link expired")
 	}
 
-	sess, err := session.GetSessionService().Repo.GetSession(sessionId)
+	sess, err := session.GetSessionService().GetSession(sessionId)
 	if err != nil {
 		return state.FAIL, lm.Callbacks, err
 	}

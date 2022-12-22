@@ -68,7 +68,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 				Properties: sessionProps,
 			}
 		} else {
-			sess, err = session.GetSessionService().Repo.GetSession(sessionID)
+			sess, err = session.GetSessionService().GetSession(sessionID)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 				return

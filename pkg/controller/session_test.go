@@ -41,7 +41,7 @@ func setupConfig(sessRepoType string) {
 			"realm":  "users",
 		},
 	}
-	_, err := session.GetSessionService().Repo.CreateSession(statefulSession)
+	_, err := session.GetSessionService().CreateSession(statefulSession)
 	if err != nil {
 		panic(err)
 	}

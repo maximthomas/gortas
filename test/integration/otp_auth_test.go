@@ -21,7 +21,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/server"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,8 +32,6 @@ var privateKeyStr = string(pem.EncodeToMemory(
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	},
 ))
-var publicKey = &privateKey.PublicKey
-var ur = user.NewInMemoryUserRepository()
 var (
 	flows = map[string]config.Flow{
 		"otp": {Modules: []config.Module{
@@ -169,7 +166,7 @@ func TestOTPAuth(t *testing.T) {
 	executeRequest(t, request, cbReq)
 
 	//send valid OTP
-	sess, _ := session.GetSessionService().Repo.GetSession(cookieVal)
+	sess, _ := session.GetSessionService().GetSession(cookieVal)
 	var fs state.FlowState
 	err := json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
@@ -178,7 +175,7 @@ func TestOTPAuth(t *testing.T) {
 	fs.Modules[2].State["otp"] = "1234"
 	sd, _ := json.Marshal(fs)
 	sess.Properties[constants.FlowStateSessionProperty] = string(sd)
-	err = session.GetSessionService().Repo.UpdateSession(sess)
+	err = session.GetSessionService().UpdateSession(sess)
 	if err != nil {
 		panic(err)
 	}

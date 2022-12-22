@@ -56,7 +56,7 @@ func (sc *SessionController) getSessionData(sessionId string) (sess map[string]i
 		}
 		sess = claims
 	} else {
-		statefulSession, err := session.GetSessionService().Repo.GetSession(sessionId)
+		statefulSession, err := session.GetSessionService().GetSession(sessionId)
 		if statefulSession.GetUserID() == "" {
 			return sess, errors.New("User session  not found")
 		}
