@@ -1,14 +1,6 @@
 package config
 
 import (
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-
-	"github.com/mitchellh/mapstructure"
-
-	"github.com/google/uuid"
-
 	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/spf13/viper"
@@ -18,11 +10,11 @@ import (
 
 type Config struct {
 	Logger        *logrus.Logger
-	Flows         map[string]Flow `yaml:"flows"`
-	Session       Session         `yaml:"session"`
-	Server        Server          `yaml:"server"`
-	EncryptionKey string          `yaml:"encryptionKey"`
-	UserDataStore user.UserConfig `yaml:"userDataStore"`
+	Flows         map[string]Flow       `yaml:"flows"`
+	Session       session.SessionConfig `yaml:"session"`
+	Server        Server                `yaml:"server"`
+	EncryptionKey string                `yaml:"encryptionKey"`
+	UserDataStore user.UserConfig       `yaml:"userDataStore"`
 }
 
 type Flow struct {
@@ -34,27 +26,6 @@ type Module struct {
 	Type       string                 `yaml:"type"`
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
 	Criteria   string                 `yaml:"criteria"`
-}
-
-type Session struct {
-	Type      string           `yaml:"type"`
-	Expires   int              `yaml:"expires"`
-	Jwt       SessionJWT       `yaml:"jwt,omitempty"`
-	DataStore SessionDataStore `yaml:"dataStore,omitempty"`
-}
-
-type SessionJWT struct {
-	Issuer        string `yaml:"issuer"`
-	PrivateKeyPem string `yml:"privateKeyPem"`
-	PrivateKeyID  string
-	PrivateKey    *rsa.PrivateKey
-	PublicKey     *rsa.PublicKey
-}
-
-type SessionDataStore struct {
-	Repo       session.SessionRepository
-	Type       string
-	Properties map[string]string
 }
 
 type Server struct {
@@ -80,40 +51,12 @@ func InitConfig() error {
 		configLogger.Errorf("Fatal error config file: %s \n", err)
 		panic(err)
 	}
-	user.InitUserService(config.UserDataStore)
-
-	if config.Session.Type == "stateless" {
-		jwt := &config.Session.Jwt
-		privateKeyBlock, _ := pem.Decode([]byte(jwt.PrivateKeyPem))
-		privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
-		if err != nil {
-			configLogger.Fatal(err)
-			return err
-		}
-		jwt.PrivateKey = privateKey
-		jwt.PublicKey = &privateKey.PublicKey
-		jwt.PrivateKeyID = uuid.New().String()
+	err = user.InitUserService(config.UserDataStore)
+	if err != nil {
+		configLogger.Errorf("Fatal error config file: %s \n", err)
+		panic(err)
 	}
-
-	if config.Session.DataStore.Type == "mongo" {
-		prop := config.Session.DataStore.Properties
-		params := make(map[string]string)
-		err := mapstructure.Decode(&prop, &params)
-		if err != nil {
-			configLogger.Fatal(err)
-			return err
-		}
-		url, _ := params["url"]
-		db, _ := params["database"]
-		col, _ := params["collection"]
-		config.Session.DataStore.Repo, err = session.NewMongoSessionRepository(url, db, col)
-		if err != nil {
-			configLogger.Fatal(err)
-			return err
-		}
-	} else {
-		config.Session.DataStore.Repo = session.NewInMemorySessionRepository(logger)
-	}
+	session.InitSessionService(config.Session)
 
 	configLogger.Infof("got configuration %+v\n", config)
 
@@ -127,4 +70,5 @@ func GetConfig() Config {
 func SetConfig(newConfig Config) {
 	config = newConfig
 	user.InitUserService(newConfig.UserDataStore)
+	session.InitSessionService(newConfig.Session)
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/crypt"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,7 +55,6 @@ func TestProcess_MagicLink(t *testing.T) {
 	rand.Read(key)
 	keyStr := base64.StdEncoding.EncodeToString(key)
 	conf := config.Config{}
-	conf.Session.DataStore.Repo = session.NewInMemorySessionRepository(logrus.New())
 	conf.EncryptionKey = keyStr
 	config.SetConfig(conf)
 	sessionId := "test_session"
@@ -67,7 +65,7 @@ func TestProcess_MagicLink(t *testing.T) {
 	sess.Properties = make(map[string]string, 1)
 	sess.Properties[constants.FlowStateSessionProperty] = "{}"
 	sess.ID = sessionId
-	conf.Session.DataStore.Repo.CreateSession(sess)
+	session.GetSessionService().Repo.CreateSession(sess)
 
 	m := getOTPModule(t)
 	m.req = httptest.NewRequest("GET", "http://localhost/gortas?code="+encrypted, nil)

@@ -148,7 +148,7 @@ modules:
 			Token: sessID,
 			Type:  "Bearer",
 		}
-		err = config.GetConfig().Session.DataStore.Repo.DeleteSession(fs.Id)
+		err = session.GetSessionService().Repo.DeleteSession(fs.Id)
 		if err != nil {
 			f.logger.Warnf("error clearing session %s %v", fs.Id, err)
 		}
@@ -173,16 +173,16 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 		claims := token.Claims.(jwt.MapClaims)
 		exp := time.Second * time.Duration(rand.Intn(sc.Expires))
 		claims["exp"] = time.Now().Add(exp).Unix()
-		claims["jti"] = sc.Jwt.PrivateKeyID
+		claims["jti"] = session.GetSessionService().Jwt.PrivateKeyID
 		claims["iat"] = time.Now().Unix()
-		claims["iss"] = sc.Jwt.Issuer
+		claims["iss"] = session.GetSessionService().Jwt.Issuer
 		claims["sub"] = fs.UserId
 		if userExists {
 			claims["props"] = usr.Properties
 		}
 
-		token.Header["jks"] = sc.Jwt.PrivateKeyID
-		ss, _ := token.SignedString(sc.Jwt.PrivateKey)
+		token.Header["jks"] = session.GetSessionService().Jwt.PrivateKeyID
+		ss, _ := token.SignedString(session.GetSessionService().Jwt.PrivateKey)
 		sessionID = ss
 	} else {
 		sessionID = uuid.New().String()
@@ -197,7 +197,7 @@ func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err er
 			newSession.Properties[k] = v
 		}
 
-		newSession, err = sc.DataStore.Repo.CreateSession(newSession)
+		newSession, err = session.GetSessionService().Repo.CreateSession(newSession)
 		if err != nil {
 			return sessId, err
 		}
@@ -211,7 +211,7 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 		return errors.Wrap(err, "error marshalling flow sate")
 	}
 
-	sr := config.GetConfig().Session.DataStore.Repo
+	sr := session.GetSessionService().Repo
 
 	sess, err := sr.GetSession(fs.Id)
 	if err != nil {
@@ -234,8 +234,8 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 
 func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, error) {
 	c := config.GetConfig()
-	sds := c.Session.DataStore
-	session, err := sds.Repo.GetSession(id)
+	ss := session.GetSessionService()
+	session, err := ss.Repo.GetSession(id)
 	var fs state.FlowState
 	if err != nil {
 		flow, ok := c.Flows[name]

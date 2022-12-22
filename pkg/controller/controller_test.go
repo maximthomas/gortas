@@ -55,16 +55,11 @@ var (
 	conf   = config.Config{
 		Flows:  flows,
 		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: config.SessionJWT{
-				Issuer:     "http://gortas",
-				PrivateKey: privateKey,
-				PublicKey:  publicKey,
-			},
-			DataStore: config.SessionDataStore{
-				Repo: session.NewInMemorySessionRepository(logger),
+			Jwt: session.SessionJWT{
+				Issuer: "http://gortas",
 			},
 		},
 	}

@@ -19,20 +19,16 @@ func setupConfig(sessRepoType string) {
 
 	conf := config.Config{
 		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    sessRepoType,
 			Expires: 60000,
-			DataStore: config.SessionDataStore{
-				Repo:       session.NewInMemorySessionRepository(logger),
+			DataStore: session.SessionDataStore{
 				Type:       "in_memory",
 				Properties: nil,
 			},
-			Jwt: config.SessionJWT{
+			Jwt: session.SessionJWT{
 				Issuer:        "http://gortas",
-				PrivateKeyPem: "",
-				PrivateKeyID:  "http://gortas",
-				PrivateKey:    privateKey,
-				PublicKey:     publicKey,
+				PrivateKeyPem: privateKeyStr,
 			},
 		},
 	}
@@ -45,7 +41,7 @@ func setupConfig(sessRepoType string) {
 			"realm":  "users",
 		},
 	}
-	_, err := conf.Session.DataStore.Repo.CreateSession(statefulSession)
+	_, err := session.GetSessionService().Repo.CreateSession(statefulSession)
 	if err != nil {
 		panic(err)
 	}

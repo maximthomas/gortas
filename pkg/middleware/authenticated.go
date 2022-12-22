@@ -10,16 +10,15 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
 )
 
-func NewAuthenticatedMiddleware(s config.Session) gin.HandlerFunc {
+func NewAuthenticatedMiddleware(s session.SessionConfig) gin.HandlerFunc {
 	return authenticatedMiddleware{s}.build()
 }
 
 type authenticatedMiddleware struct {
-	sc config.Session
+	sc session.SessionConfig
 }
 
 func (a authenticatedMiddleware) build() gin.HandlerFunc {
@@ -34,7 +33,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 		if a.sc.Type == "stateless" {
 			claims := jwt.MapClaims{}
 			_, err := jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
-				return a.sc.Jwt.PublicKey, nil
+				return session.GetSessionService().Jwt.PublicKey, nil
 			})
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
@@ -69,7 +68,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 				Properties: sessionProps,
 			}
 		} else {
-			sess, err = a.sc.DataStore.Repo.GetSession(sessionID)
+			sess, err = session.GetSessionService().Repo.GetSession(sessionID)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
 				return

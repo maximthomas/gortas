@@ -14,8 +14,8 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/modules/otp"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/crypt"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
@@ -86,7 +86,7 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 		return state.FAIL, lm.Callbacks, errors.New("code link expired")
 	}
 
-	sess, err := config.GetConfig().Session.DataStore.Repo.GetSession(sessionId)
+	sess, err := session.GetSessionService().Repo.GetSession(sessionId)
 	if err != nil {
 		return state.FAIL, lm.Callbacks, err
 	}

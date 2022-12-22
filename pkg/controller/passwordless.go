@@ -29,7 +29,7 @@ type PasswordlessServicesController struct {
 
 func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
 	logger := config.Logger.WithField("module", "PasswordlessServicesController")
-	sr := config.Session.DataStore.Repo
+	sr := session.GetSessionService().Repo
 
 	return &PasswordlessServicesController{sr, logger, config}
 }

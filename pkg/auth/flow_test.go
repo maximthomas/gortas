@@ -18,22 +18,6 @@ const corruptedFlowId = "corrupted-flow-id"
 
 func init() {
 	logger := logrus.New()
-	sr := session.NewInMemorySessionRepository(logger)
-	s := session.Session{
-		ID: testFlowId,
-		Properties: map[string]string{
-			constants.FlowStateSessionProperty: "{}",
-		},
-	}
-	_, _ = sr.CreateSession(s)
-	corruptedSession := session.Session{
-		ID: corruptedFlowId,
-		Properties: map[string]string{
-			constants.FlowStateSessionProperty: "bad",
-		},
-	}
-	_, _ = sr.CreateSession(corruptedSession)
-
 	flows := map[string]config.Flow{
 		"login": {Modules: []config.Module{
 			{
@@ -61,12 +45,26 @@ func init() {
 	conf := config.Config{
 		Flows:  flows,
 		Logger: logger,
-		Session: config.Session{
-			Type:      "stateful",
-			DataStore: config.SessionDataStore{Repo: sr},
+		Session: session.SessionConfig{
+			Type: "stateful",
 		},
 	}
 	config.SetConfig(conf)
+
+	s := session.Session{
+		ID: testFlowId,
+		Properties: map[string]string{
+			constants.FlowStateSessionProperty: "{}",
+		},
+	}
+	_, _ = session.GetSessionService().Repo.CreateSession(s)
+	corruptedSession := session.Session{
+		ID: corruptedFlowId,
+		Properties: map[string]string{
+			constants.FlowStateSessionProperty: "bad",
+		},
+	}
+	_, _ = session.GetSessionService().Repo.CreateSession(corruptedSession)
 }
 
 func TestGetFlowState(t *testing.T) {

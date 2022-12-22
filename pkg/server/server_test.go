@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"log"
@@ -27,8 +29,17 @@ import (
 )
 
 var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+var privateKeyStr = string(pem.EncodeToMemory(
+	&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	},
+))
+
 var publicKey = &privateKey.PublicKey
+
 var us user.UserService
+var ss session.SessionService
 var (
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{
@@ -55,16 +66,13 @@ var (
 	conf   = config.Config{
 		Flows:  flows,
 		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: config.SessionJWT{
-				Issuer:       "http://gortas",
-				PrivateKey:   privateKey,
-				PublicKey:    publicKey,
-				PrivateKeyID: "dummy",
+			Jwt: session.SessionJWT{
+				Issuer:        "http://gortas",
+				PrivateKeyPem: privateKeyStr,
 			},
-			DataStore: config.SessionDataStore{Repo: session.NewInMemorySessionRepository(logger)},
 		},
 	}
 	router *gin.Engine
@@ -74,6 +82,7 @@ func init() {
 	config.SetConfig(conf)
 	router = SetupRouter(conf)
 	us = user.GetUserService()
+	ss = session.GetSessionService()
 }
 
 func TestSetupRouter(t *testing.T) {
@@ -216,7 +225,7 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 
-		assert.Equal(t, "dummy", token.Header["jks"])
+		assert.Equal(t, ss.Jwt.PrivateKeyID, token.Header["jks"])
 		assert.Equal(t, login, claims["sub"])
 
 	})

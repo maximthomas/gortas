@@ -71,13 +71,9 @@ func (sr *InMemorySessionRepository) cleanupExpired() {
 	}
 }
 
-func NewInMemorySessionRepository(logger *logrus.Logger) SessionRepository {
-	if logger == nil {
-		logger = logrus.New()
-	}
+func NewInMemorySessionRepository() SessionRepository {
 	repo := &InMemorySessionRepository{
 		sessions: make(map[string]Session),
-		logger:   logger.WithField("module", "InMemorySessionRepository"),
 	}
 
 	go repo.cleanupExpired()
