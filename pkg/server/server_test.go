@@ -225,7 +225,7 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 
-		assert.Equal(t, ss.Jwt.PrivateKeyID, token.Header["jks"])
+		assert.NotEmpty(t, token.Header["jks"])
 		assert.Equal(t, login, claims["sub"])
 
 	})

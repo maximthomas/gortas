@@ -60,7 +60,7 @@ func (sr *inMemorySessionRepository) cleanupExpired() {
 	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	for {
-		_ = <-ticker.C
+		<-ticker.C
 		for k := range sr.sessions {
 			sess := sr.sessions[k]
 			if (sess.CreatedAt.Second() + 60*60*24) < time.Now().Second() {

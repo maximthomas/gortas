@@ -3,11 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
-	"time"
-
-	"github.com/dgrijalva/jwt-go"
 
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
@@ -16,7 +12,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -160,49 +155,12 @@ modules:
 }
 
 func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {
-	sc := config.GetConfig().Session
 	if fs.UserId == "" {
 		return sessId, errors.New("user id is not set")
 	}
 
-	usr, userExists := user.GetUserService().GetUser(fs.UserId)
+	return session.GetSessionService().CreateUserSession(fs.UserId)
 
-	var sessionID string
-	if sc.Type == "stateless" {
-		token := jwt.New(jwt.SigningMethodRS256)
-		claims := token.Claims.(jwt.MapClaims)
-		exp := time.Second * time.Duration(rand.Intn(sc.Expires))
-		claims["exp"] = time.Now().Add(exp).Unix()
-		claims["jti"] = session.GetSessionService().Jwt.PrivateKeyID
-		claims["iat"] = time.Now().Unix()
-		claims["iss"] = session.GetSessionService().Jwt.Issuer
-		claims["sub"] = fs.UserId
-		if userExists {
-			claims["props"] = usr.Properties
-		}
-
-		token.Header["jks"] = session.GetSessionService().Jwt.PrivateKeyID
-		ss, _ := token.SignedString(session.GetSessionService().Jwt.PrivateKey)
-		sessionID = ss
-	} else {
-		sessionID = uuid.New().String()
-		newSession := session.Session{
-			ID: sessionID,
-			Properties: map[string]string{
-				"userId": usr.ID,
-				"sub":    usr.ID,
-			},
-		}
-		for k, v := range usr.Properties {
-			newSession.Properties[k] = v
-		}
-
-		newSession, err = session.GetSessionService().CreateSession(newSession)
-		if err != nil {
-			return sessId, err
-		}
-	}
-	return sessionID, nil
 }
 
 func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {

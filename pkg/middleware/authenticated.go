@@ -33,7 +33,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 		if a.sc.Type == "stateless" {
 			claims := jwt.MapClaims{}
 			_, err := jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
-				return session.GetSessionService().Jwt.PublicKey, nil
+				return session.GetSessionService().GetJwtPublicKey(), nil
 			})
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})

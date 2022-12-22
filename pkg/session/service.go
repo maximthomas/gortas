@@ -4,15 +4,21 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
+	"math/rand"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/mitchellh/mapstructure"
 )
 
 type SessionService struct {
-	repo sessionRepository
-	Type string
-	Jwt  Jwt
+	repo        sessionRepository
+	sessionType string
+	jwt         Jwt
+	expires     int
 }
 
 type Jwt struct {
@@ -38,6 +44,80 @@ func (ss SessionService) UpdateSession(session Session) error {
 	return ss.repo.UpdateSession(session)
 }
 
+func (ss SessionService) CreateUserSession(userId string) (sessId string, err error) {
+	var sessionID string
+	u, userExists := user.GetUserService().GetUser(userId)
+	if ss.sessionType == "stateless" {
+		token := jwt.New(jwt.SigningMethodRS256)
+		claims := token.Claims.(jwt.MapClaims)
+		exp := time.Second * time.Duration(rand.Intn(ss.expires))
+		claims["exp"] = time.Now().Add(exp).Unix()
+		claims["jti"] = ss.jwt.PrivateKeyID
+		claims["iat"] = time.Now().Unix()
+		claims["iss"] = ss.jwt.Issuer
+		claims["sub"] = userId
+		if userExists {
+			claims["props"] = u.Properties
+		}
+
+		token.Header["jks"] = ss.jwt.PrivateKeyID
+		ss, _ := token.SignedString(ss.jwt.PrivateKey)
+		sessionID = ss
+	} else {
+		sessionID = uuid.New().String()
+		newSession := Session{
+			ID: sessionID,
+			Properties: map[string]string{
+				"userId": u.ID,
+				"sub":    userId,
+			},
+		}
+		if userExists {
+			for k, v := range u.Properties {
+				newSession.Properties[k] = v
+			}
+		}
+
+		newSession, err = ss.CreateSession(newSession)
+		if err != nil {
+			return sessId, err
+		}
+	}
+	return sessionID, nil
+}
+
+func (ss SessionService) GetSessionData(sessionId string) (sess map[string]interface{}, err error) {
+	sess = make(map[string]interface{})
+
+	if ss.sessionType == "stateless" {
+		publicKey := ss.jwt.PublicKey
+		claims := jwt.MapClaims{}
+		_, err := jwt.ParseWithClaims(sessionId, claims, func(token *jwt.Token) (interface{}, error) {
+			return publicKey, nil
+		})
+		if err != nil {
+			return sess, err
+		}
+		sess = claims
+	} else {
+		statefulSession, err := ss.GetSession(sessionId)
+		if statefulSession.GetUserID() == "" {
+			return sess, errors.New("User session  not found")
+		}
+		if err != nil {
+			return sess, err
+		}
+		sess["id"] = statefulSession.ID
+		sess["created"] = statefulSession.CreatedAt
+		sess["properties"] = statefulSession.Properties
+	}
+	return sess, err
+}
+
+func (ss SessionService) GetJwtPublicKey() *rsa.PublicKey {
+	return ss.jwt.PublicKey
+}
+
 var ss SessionService
 
 func InitSessionService(sc SessionConfig) error {
@@ -57,10 +137,10 @@ func newSessionServce(sc SessionConfig) (ss SessionService, err error) {
 		if err != nil {
 			return ss, err
 		}
-		ss.Jwt.PrivateKey = privateKey
-		ss.Jwt.PublicKey = &privateKey.PublicKey
-		ss.Jwt.PrivateKeyID = uuid.New().String()
-		ss.Jwt.Issuer = jwt.Issuer
+		ss.jwt.PrivateKey = privateKey
+		ss.jwt.PublicKey = &privateKey.PublicKey
+		ss.jwt.PrivateKeyID = uuid.New().String()
+		ss.jwt.Issuer = jwt.Issuer
 	}
 
 	if sc.DataStore.Type == "mongo" {
@@ -80,6 +160,8 @@ func newSessionServce(sc SessionConfig) (ss SessionService, err error) {
 	} else {
 		ss.repo = NewInMemorySessionRepository()
 	}
+	ss.sessionType = sc.Type
+	ss.expires = sc.Expires
 	return ss, err
 }
 
