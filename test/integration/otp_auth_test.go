@@ -93,8 +93,7 @@ var (
 
 	logger = logrus.New()
 	conf   = config.Config{
-		Flows:  flows,
-		Logger: logger,
+		Flows: flows,
 		Session: session.SessionConfig{
 			Type:    "stateless",
 			Expires: 60000,

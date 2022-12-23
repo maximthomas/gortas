@@ -11,6 +11,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/modules"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ type flowProcessor struct {
 
 func NewFlowProcessor() FlowProcessor {
 	return &flowProcessor{
-		logger: config.GetConfig().Logger.WithField("module", "FlowProcessor"),
+		logger: log.WithField("module", "FlowProcessor"),
 	}
 }
 

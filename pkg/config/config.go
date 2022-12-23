@@ -1,15 +1,13 @@
 package config
 
 import (
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/spf13/viper"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
-	Logger        *logrus.Logger
 	Flows         map[string]Flow       `yaml:"flows"`
 	Session       session.SessionConfig `yaml:"session"`
 	Server        Server                `yaml:"server"`
@@ -39,14 +37,13 @@ type Cors struct {
 var config Config
 
 func InitConfig() error {
-	logger := logrus.New()
+
 	//newLogger.SetFormatter(&logrus.JSONFormatter{})
 	//newLogger.SetReportCaller(true)
-	var configLogger = logger.WithField("module", "config")
+	var configLogger = log.WithField("module", "config")
 
 	err := viper.Unmarshal(&config)
 
-	config.Logger = logger
 	if err != nil { // Handle errors reading the config file
 		configLogger.Errorf("Fatal error config file: %s \n", err)
 		panic(err)

@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,8 +10,8 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/user"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -71,7 +71,7 @@ func TestRegistration_Process(t *testing.T) {
 		c.Request = httptest.NewRequest("GET", "/login", nil)
 		lss := &state.FlowState{}
 		status, cbs, err := rm.Process(lss)
-		log.Print(status, cbs, err)
+		fmt.Print(status, cbs, err)
 		assert.Equal(t, 4, len(cbs))
 		assert.NoError(t, err)
 		assert.Equal(t, state.IN_PROGRESS, status)
@@ -213,11 +213,9 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 }
 
 func getNewRegistrationModule(t *testing.T) *Registration {
-	config.SetConfig(config.Config{
-		Logger: logrus.New(),
-	})
+	config.SetConfig(config.Config{})
 	var b = BaseAuthModule{
-		l: config.GetConfig().Logger.WithField("module", "registration"),
+		l: log.WithField("module", "registration"),
 		Properties: map[string]interface{}{
 			"primaryField": Field{
 				Name:       "login",

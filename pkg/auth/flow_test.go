@@ -9,7 +9,6 @@ import (
 	"github.com/maximthomas/gortas/pkg/session"
 
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,6 @@ const testFlowId = "test-flow-id"
 const corruptedFlowId = "corrupted-flow-id"
 
 func init() {
-	logger := logrus.New()
 	flows := map[string]config.Flow{
 		"login": {Modules: []config.Module{
 			{
@@ -43,8 +41,7 @@ func init() {
 	}
 
 	conf := config.Config{
-		Flows:  flows,
-		Logger: logger,
+		Flows: flows,
 		Session: session.SessionConfig{
 			Type: "stateful",
 		},

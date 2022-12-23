@@ -9,6 +9,7 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/middleware"
 	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/maximthomas/gortas/pkg/user"
@@ -27,7 +28,7 @@ type PasswordlessServicesController struct {
 }
 
 func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
-	logger := config.Logger.WithField("module", "PasswordlessServicesController")
+	logger := log.WithField("module", "PasswordlessServicesController")
 	return &PasswordlessServicesController{logger, config}
 }
 

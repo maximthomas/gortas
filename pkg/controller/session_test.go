@@ -18,7 +18,6 @@ import (
 func setupConfig(sessRepoType string) {
 
 	conf := config.Config{
-		Logger: logger,
 		Session: session.SessionConfig{
 			Type:    sessRepoType,
 			Expires: 60000,

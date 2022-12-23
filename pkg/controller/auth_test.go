@@ -13,9 +13,7 @@ import (
 )
 
 func init() {
-	conf := config.Config{
-		Logger: logger,
-	}
+	conf := config.Config{}
 	config.SetConfig(conf)
 }
 

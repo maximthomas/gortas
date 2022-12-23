@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/sirupsen/logrus"
 )
@@ -72,8 +72,7 @@ func (sc *SessionController) generateErrorResponse(c *gin.Context) {
 }
 
 func NewSessionController() *SessionController {
-	conf := config.GetConfig()
 	return &SessionController{
-		logger: conf.Logger.WithField("module", "SessionController"),
+		logger: log.WithField("module", "SessionController"),
 	}
 }

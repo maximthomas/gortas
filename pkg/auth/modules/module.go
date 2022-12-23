@@ -7,7 +7,7 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,7 +40,7 @@ func GetAuthModule(mi state.FlowStateModuleInfo, req *http.Request, w http.Respo
 		State:      mi.State,
 		req:        req,
 		w:          w,
-		l:          config.GetConfig().Logger.WithField("module", mi.Type),
+		l:          log.WithField("module", mi.Type),
 	}
 	constructor, ok := modulesRegistry.Load(mi.Type)
 	if !ok {
