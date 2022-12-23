@@ -44,6 +44,25 @@ func (ss SessionService) UpdateSession(session Session) error {
 	return ss.repo.UpdateSession(session)
 }
 
+func (ss SessionService) ConvertSessionToJwt(sessId string) (string, error) {
+	sess, err := ss.GetSession(sessId)
+	if err != nil {
+		return "", err
+	}
+
+	token := jwt.New(jwt.SigningMethodRS256)
+	claims := token.Claims.(jwt.MapClaims)
+	exp := time.Second * time.Duration(rand.Intn(ss.expires))
+	claims["exp"] = time.Now().Add(exp).Unix()
+	claims["jti"] = ss.jwt.PrivateKeyID
+	claims["iat"] = time.Now().Unix()
+	claims["iss"] = ss.jwt.Issuer
+	claims["sub"] = sess.GetUserID()
+	claims["props"] = sess.Properties
+	token.Header["jks"] = ss.jwt.PrivateKeyID
+	return token.SignedString(ss.jwt.PrivateKey)
+}
+
 func (ss SessionService) CreateUserSession(userId string) (sessId string, err error) {
 	var sessionID string
 	u, userExists := user.GetUserService().GetUser(userId)
@@ -130,8 +149,10 @@ func InitSessionService(sc SessionConfig) error {
 }
 
 func newSessionServce(sc SessionConfig) (ss SessionService, err error) {
-	if sc.Type == "stateless" {
-		jwt := &sc.Jwt
+	jwt := &sc.Jwt
+
+	if jwt.PrivateKeyPem != "" {
+
 		privateKeyBlock, _ := pem.Decode([]byte(jwt.PrivateKeyPem))
 		privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
 		if err != nil {
