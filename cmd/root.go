@@ -52,7 +52,6 @@ func er(msg interface{}) {
 }
 
 func initConfig() {
-	fmt.Println("init config")
 	fmt.Println(os.Getwd())
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -75,7 +74,6 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 		config.InitConfig()
-		fmt.Printf("config: %+v", config.GetConfig())
 	} else {
 		er(err)
 	}

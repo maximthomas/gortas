@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserMongoRepository struct {
+type userMongoRepository struct {
 	client     *mongo.Client
 	db         string
 	collection string
@@ -23,7 +23,7 @@ type mongoRepoUser struct {
 	Password string `json:"password,omitempty"`
 }
 
-func (ur *UserMongoRepository) GetUser(id string) (User, bool) {
+func (ur *userMongoRepository) GetUser(id string) (User, bool) {
 	var user User
 	collection := ur.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -40,7 +40,7 @@ func (ur *UserMongoRepository) GetUser(id string) (User, bool) {
 	return repoUser.User, true
 }
 
-func (ur *UserMongoRepository) ValidatePassword(id, password string) bool {
+func (ur *userMongoRepository) ValidatePassword(id, password string) bool {
 	collection := ur.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -62,7 +62,7 @@ func (ur *UserMongoRepository) ValidatePassword(id, password string) bool {
 	return valid
 }
 
-func (ur *UserMongoRepository) CreateUser(user User) (User, error) {
+func (ur *userMongoRepository) CreateUser(user User) (User, error) {
 	if user.ID == "" {
 		user.ID = uuid.New().String()
 	}
@@ -82,7 +82,7 @@ func (ur *UserMongoRepository) CreateUser(user User) (User, error) {
 	return user, nil
 }
 
-func (ur *UserMongoRepository) UpdateUser(user User) error {
+func (ur *userMongoRepository) UpdateUser(user User) error {
 	collection := ur.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -98,7 +98,7 @@ func (ur *UserMongoRepository) UpdateUser(user User) error {
 	return nil
 }
 
-func (ur *UserMongoRepository) SetPassword(id, password string) error {
+func (ur *userMongoRepository) SetPassword(id, password string) error {
 	collection := ur.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -119,7 +119,7 @@ func (ur *UserMongoRepository) SetPassword(id, password string) error {
 	return nil
 }
 
-func NewUserMongoRepository(uri, db, c string) (*UserMongoRepository, error) {
+func NewUserMongoRepository(uri, db, c string) (*userMongoRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	log.Printf("connecting to mongo, uri: %v", uri)
@@ -135,7 +135,7 @@ func NewUserMongoRepository(uri, db, c string) (*UserMongoRepository, error) {
 		}, Options: idxOpt,
 	}
 
-	rep := &UserMongoRepository{
+	rep := &userMongoRepository{
 		client:     client,
 		db:         db,
 		collection: c,
@@ -149,6 +149,6 @@ func NewUserMongoRepository(uri, db, c string) (*UserMongoRepository, error) {
 
 }
 
-func (ur *UserMongoRepository) getCollection() *mongo.Collection {
+func (ur *userMongoRepository) getCollection() *mongo.Collection {
 	return ur.client.Database(ur.db).Collection(ur.collection)
 }

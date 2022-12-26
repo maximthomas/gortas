@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type MongoSessionRepository struct {
+type mongoSessionRepository struct {
 	client     *mongo.Client
 	db         string
 	collection string
@@ -23,7 +23,7 @@ type mongoRepoSession struct {
 	Session `bson:",inline"`
 }
 
-func NewMongoSessionRepository(uri, db, c string) (*MongoSessionRepository, error) {
+func NewMongoSessionRepository(uri, db, c string) (*mongoSessionRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	log.Printf("connecting to mongo, uri: %v", uri)
@@ -39,7 +39,7 @@ func NewMongoSessionRepository(uri, db, c string) (*MongoSessionRepository, erro
 		}, Options: idxOpt,
 	}
 
-	rep := &MongoSessionRepository{
+	rep := &mongoSessionRepository{
 		client:     client,
 		db:         db,
 		collection: c,
@@ -53,7 +53,7 @@ func NewMongoSessionRepository(uri, db, c string) (*MongoSessionRepository, erro
 
 }
 
-func (sr *MongoSessionRepository) CreateSession(session Session) (Session, error) {
+func (sr *mongoSessionRepository) CreateSession(session Session) (Session, error) {
 	if session.ID == "" {
 		session.ID = uuid.New().String()
 	}
@@ -76,7 +76,7 @@ func (sr *MongoSessionRepository) CreateSession(session Session) (Session, error
 	return session, nil
 }
 
-func (sr *MongoSessionRepository) DeleteSession(id string) error {
+func (sr *mongoSessionRepository) DeleteSession(id string) error {
 	collection := sr.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -88,7 +88,7 @@ func (sr *MongoSessionRepository) DeleteSession(id string) error {
 	return nil
 }
 
-func (sr *MongoSessionRepository) GetSession(id string) (Session, error) {
+func (sr *mongoSessionRepository) GetSession(id string) (Session, error) {
 	var session Session
 	collection := sr.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -105,7 +105,7 @@ func (sr *MongoSessionRepository) GetSession(id string) (Session, error) {
 	return repoSession.Session, nil
 }
 
-func (sr *MongoSessionRepository) UpdateSession(session Session) error {
+func (sr *mongoSessionRepository) UpdateSession(session Session) error {
 	collection := sr.getCollection()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -120,6 +120,6 @@ func (sr *MongoSessionRepository) UpdateSession(session Session) error {
 	return nil
 }
 
-func (sr *MongoSessionRepository) getCollection() *mongo.Collection {
+func (sr *mongoSessionRepository) getCollection() *mongo.Collection {
 	return sr.client.Database(sr.db).Collection(sr.collection)
 }

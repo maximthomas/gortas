@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/pkg/errors"
+	"github.com/maximthomas/gortas/pkg/log"
+	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 type SessionController struct {
@@ -30,8 +30,10 @@ func (sc *SessionController) SessionInfo(c *gin.Context) {
 	if sessionId == "" {
 		sc.logger.Warn("session not found in the request")
 		sc.generateErrorResponse(c)
+		return
 	}
-	session, err := sc.getSessionData(sessionId)
+
+	session, err := session.GetSessionService().GetSessionData(sessionId)
 	if err != nil {
 		sc.logger.Warnf("error validating sessionId %s", sessionId)
 		sc.generateErrorResponse(c)
@@ -39,33 +41,30 @@ func (sc *SessionController) SessionInfo(c *gin.Context) {
 	c.JSON(200, session)
 }
 
-func (sc *SessionController) getSessionData(sessionId string) (session map[string]interface{}, err error) {
-	session = make(map[string]interface{})
-	sessionType := config.GetConfig().Session.Type
-
-	if sessionType == "stateless" {
-		publicKey := config.GetConfig().Session.Jwt.PublicKey
-		claims := jwt.MapClaims{}
-		_, err := jwt.ParseWithClaims(sessionId, claims, func(token *jwt.Token) (interface{}, error) {
-			return publicKey, nil
-		})
-		if err != nil {
-			return session, err
-		}
-		session = claims
-	} else {
-		statefulSession, err := config.GetConfig().Session.DataStore.Repo.GetSession(sessionId)
-		if statefulSession.GetUserID() == "" {
-			return session, errors.New("User session  not found")
-		}
-		if err != nil {
-			return session, err
-		}
-		session["id"] = statefulSession.ID
-		session["created"] = statefulSession.CreatedAt
-		session["properties"] = statefulSession.Properties
+func (sc *SessionController) SessionJwt(c *gin.Context) {
+	var sessionId string
+	authHeader := c.Request.Header.Get("Authorization")
+	if authHeader != "" { //from header
+		sessionId = strings.TrimPrefix(authHeader, "Bearer ")
 	}
-	return session, err
+	if sessionId == "" { //from cookie
+		cookie, err := c.Request.Cookie(state.SessionCookieName)
+		if err == nil {
+			sessionId = cookie.Value
+		}
+	}
+
+	if sessionId == "" {
+		sc.logger.Warn("session not found in the request")
+		sc.generateErrorResponse(c)
+		return
+	}
+	session, err := session.GetSessionService().ConvertSessionToJwt(sessionId)
+	if err != nil {
+		sc.logger.Warnf("error validating sessionId %s", sessionId)
+		sc.generateErrorResponse(c)
+	}
+	c.JSON(200, session)
 }
 
 func (sc *SessionController) generateErrorResponse(c *gin.Context) {
@@ -73,8 +72,7 @@ func (sc *SessionController) generateErrorResponse(c *gin.Context) {
 }
 
 func NewSessionController() *SessionController {
-	conf := config.GetConfig()
 	return &SessionController{
-		logger: conf.Logger.WithField("module", "SessionController"),
+		logger: log.WithField("module", "SessionController"),
 	}
 }

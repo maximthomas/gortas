@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,14 +21,17 @@ import (
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/server"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
-var publicKey = &privateKey.PublicKey
-var ur = user.NewInMemoryUserRepository()
+var privateKeyStr = string(pem.EncodeToMemory(
+	&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	},
+))
 var (
 	flows = map[string]config.Flow{
 		"otp": {Modules: []config.Module{
@@ -89,20 +94,13 @@ var (
 	logger = logrus.New()
 	conf   = config.Config{
 		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: ur,
-		},
-		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: config.SessionJWT{
-				Issuer:       "http://gortas",
-				PrivateKey:   privateKey,
-				PublicKey:    publicKey,
-				PrivateKeyID: "dummy",
+			Jwt: session.SessionJWT{
+				Issuer:        "http://gortas",
+				PrivateKeyPem: privateKeyStr,
 			},
-			DataStore: config.SessionDataStore{Repo: session.NewInMemorySessionRepository(logger)},
 		},
 		EncryptionKey: "Gb8l9wSZzEjeL2FTRG0k6bBnw7AZ/rBCcZfDDGLVreY=",
 	}
@@ -167,16 +165,16 @@ func TestOTPAuth(t *testing.T) {
 	executeRequest(t, request, cbReq)
 
 	//send valid OTP
-	session, _ := config.GetConfig().Session.DataStore.Repo.GetSession(cookieVal)
+	sess, _ := session.GetSessionService().GetSession(cookieVal)
 	var fs state.FlowState
-	err := json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+	err := json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
 		panic(err)
 	}
 	fs.Modules[2].State["otp"] = "1234"
 	sd, _ := json.Marshal(fs)
-	session.Properties[constants.FlowStateSessionProperty] = string(sd)
-	err = config.GetConfig().Session.DataStore.Repo.UpdateSession(session)
+	sess.Properties[constants.FlowStateSessionProperty] = string(sd)
+	err = session.GetSessionService().UpdateSession(sess)
 	if err != nil {
 		panic(err)
 	}

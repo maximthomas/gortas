@@ -9,8 +9,10 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/middleware"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,16 +23,13 @@ import (
 
 // TODO v2 refactor passwordless architecture
 type PasswordlessServicesController struct {
-	sr     session.SessionRepository
 	logger logrus.FieldLogger
 	conf   config.Config
 }
 
 func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
-	logger := config.Logger.WithField("module", "PasswordlessServicesController")
-	sr := config.Session.DataStore.Repo
-
-	return &PasswordlessServicesController{sr, logger, config}
+	logger := log.WithField("module", "PasswordlessServicesController")
+	return &PasswordlessServicesController{logger, config}
 }
 
 type QRProps struct {
@@ -45,9 +44,9 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	}
 	s := si.(session.Session)
 	uid := s.GetUserID()
-	ur := pc.conf.UserDataStore.Repo
+	us := user.GetUserService()
 
-	_, ok = ur.GetUser(uid)
+	_, ok = us.GetUser(uid)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
@@ -73,9 +72,9 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	}
 	s := si.(session.Session)
 	uid := s.GetUserID()
-	ur := pc.conf.UserDataStore.Repo
+	us := user.GetUserService()
 
-	user, ok := ur.GetUser(uid)
+	user, ok := us.GetUser(uid)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
@@ -92,7 +91,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		user.Properties = make(map[string]string)
 	}
 	user.Properties["passwordless.qr"] = string(qrPropsJSON)
-	err = ur.UpdateUser(user)
+	err = us.UpdateUser(user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
@@ -118,14 +117,14 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	session, err := pc.sr.GetSession(authQRRequest.SID)
+	sess, err := session.GetSessionService().GetSession(authQRRequest.SID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
 
-	ur := pc.conf.UserDataStore.Repo
-	user, ok := ur.GetUser(authQRRequest.UID)
+	us := user.GetUserService()
+	user, ok := us.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})
 		return
@@ -152,7 +151,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 
 	//authorise session
 	var fs state.FlowState
-	err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+	err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
@@ -176,8 +175,8 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "there is no valid authentication session"})
 		return
 	}
-	session.Properties[constants.FlowStateSessionProperty] = string(fsJSON)
-	err = pc.sr.UpdateSession(session)
+	sess.Properties[constants.FlowStateSessionProperty] = string(fsJSON)
+	err = session.GetSessionService().UpdateSession(sess)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return

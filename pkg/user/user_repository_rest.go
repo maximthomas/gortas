@@ -8,13 +8,13 @@ import (
 	"net/http"
 )
 
-type UserRestRepository struct {
+type userRestRepository struct {
 	realm    string
 	endpoint string
 	client   http.Client
 }
 
-func (ur *UserRestRepository) GetUser(id string) (user User, exists bool) {
+func (ur *userRestRepository) GetUser(id string) (user User, exists bool) {
 
 	resp, err := ur.client.Get(ur.endpoint + "/users/" + id)
 	if err != nil {
@@ -44,7 +44,7 @@ func (ur *UserRestRepository) GetUser(id string) (user User, exists bool) {
 	return user, exists
 }
 
-func (ur *UserRestRepository) ValidatePassword(id, password string) (valid bool) {
+func (ur *userRestRepository) ValidatePassword(id, password string) (valid bool) {
 
 	pr := Password{
 		Password: password,
@@ -87,19 +87,19 @@ func (ur *UserRestRepository) ValidatePassword(id, password string) (valid bool)
 	return valid
 }
 
-func (ur *UserRestRepository) CreateUser(user User) (User, error) {
+func (ur *userRestRepository) CreateUser(user User) (User, error) {
 	return user, nil
 }
 
-func (ur *UserRestRepository) UpdateUser(user User) error {
+func (ur *userRestRepository) UpdateUser(user User) error {
 	return nil
 }
-func (ur *UserRestRepository) SetPassword(id, password string) error {
+func (ur *userRestRepository) SetPassword(id, password string) error {
 	return nil
 }
 
-func NewUserRestRepository(realm, endpoint string) UserRestRepository {
-	return UserRestRepository{
+func NewUserRestRepository(realm, endpoint string) userRestRepository {
+	return userRestRepository{
 		realm:    realm,
 		endpoint: endpoint,
 	}

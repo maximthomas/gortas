@@ -8,7 +8,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
-type UserLdapRepository struct {
+type userLdapRepository struct {
 	Address        string
 	BindDN         string
 	Password       string
@@ -17,7 +17,7 @@ type UserLdapRepository struct {
 	UserAttributes []string
 }
 
-func (ur *UserLdapRepository) getConnection() (*ldap.Conn, error) {
+func (ur *userLdapRepository) getConnection() (*ldap.Conn, error) {
 	conn, err := ldap.Dial("tcp", ur.Address)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (ur *UserLdapRepository) getConnection() (*ldap.Conn, error) {
 	return conn, nil
 }
 
-func (ur *UserLdapRepository) getLdapEntry(id string, conn *ldap.Conn) (*ldap.Entry, error) {
+func (ur *userLdapRepository) getLdapEntry(id string, conn *ldap.Conn) (*ldap.Entry, error) {
 	fields := append([]string{"dn", "uid"}, ur.UserAttributes...)
 	result, err := conn.Search(ldap.NewSearchRequest(
 		ur.BaseDN,
@@ -54,7 +54,7 @@ func (ur *UserLdapRepository) getLdapEntry(id string, conn *ldap.Conn) (*ldap.En
 	return result.Entries[0], nil
 }
 
-func (ur *UserLdapRepository) GetUser(id string) (user User, exists bool) {
+func (ur *userLdapRepository) GetUser(id string) (user User, exists bool) {
 	conn, err := ur.getConnection()
 	if err != nil {
 		log.Print(err)
@@ -82,7 +82,7 @@ func (ur *UserLdapRepository) GetUser(id string) (user User, exists bool) {
 	return user, exists
 }
 
-func (ur *UserLdapRepository) ValidatePassword(id, password string) bool {
+func (ur *userLdapRepository) ValidatePassword(id, password string) bool {
 	conn, err := ur.getConnection()
 	if err != nil {
 		log.Print(err)
@@ -102,7 +102,7 @@ func (ur *UserLdapRepository) ValidatePassword(id, password string) bool {
 	}
 
 }
-func (ur *UserLdapRepository) CreateUser(user User) (User, error) {
+func (ur *userLdapRepository) CreateUser(user User) (User, error) {
 	conn, err := ur.getConnection()
 	if err != nil {
 		log.Print(err)
@@ -122,11 +122,11 @@ func (ur *UserLdapRepository) CreateUser(user User) (User, error) {
 	return user, err
 
 }
-func (ur *UserLdapRepository) UpdateUser(user User) error {
+func (ur *userLdapRepository) UpdateUser(user User) error {
 	return errors.New("not implemented")
 }
 
-func (ur *UserLdapRepository) SetPassword(id, password string) error {
+func (ur *userLdapRepository) SetPassword(id, password string) error {
 	conn, err := ur.getConnection()
 	if err != nil {
 		log.Print(err)

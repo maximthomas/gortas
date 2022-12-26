@@ -7,10 +7,8 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/constants"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/maximthomas/gortas/pkg/user"
 
 	"github.com/maximthomas/gortas/pkg/config"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,23 +16,6 @@ const testFlowId = "test-flow-id"
 const corruptedFlowId = "corrupted-flow-id"
 
 func init() {
-	logger := logrus.New()
-	sr := session.NewInMemorySessionRepository(logger)
-	s := session.Session{
-		ID: testFlowId,
-		Properties: map[string]string{
-			constants.FlowStateSessionProperty: "{}",
-		},
-	}
-	_, _ = sr.CreateSession(s)
-	corruptedSession := session.Session{
-		ID: corruptedFlowId,
-		Properties: map[string]string{
-			constants.FlowStateSessionProperty: "bad",
-		},
-	}
-	_, _ = sr.CreateSession(corruptedSession)
-
 	flows := map[string]config.Flow{
 		"login": {Modules: []config.Module{
 			{
@@ -61,16 +42,26 @@ func init() {
 
 	conf := config.Config{
 		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: user.NewInMemoryUserRepository(),
-		},
-		Logger: logger,
-		Session: config.Session{
-			Type:      "stateful",
-			DataStore: config.SessionDataStore{Repo: sr},
+		Session: session.SessionConfig{
+			Type: "stateful",
 		},
 	}
 	config.SetConfig(conf)
+
+	s := session.Session{
+		ID: testFlowId,
+		Properties: map[string]string{
+			constants.FlowStateSessionProperty: "{}",
+		},
+	}
+	_, _ = session.GetSessionService().CreateSession(s)
+	corruptedSession := session.Session{
+		ID: corruptedFlowId,
+		Properties: map[string]string{
+			constants.FlowStateSessionProperty: "bad",
+		},
+	}
+	_, _ = session.GetSessionService().CreateSession(corruptedSession)
 }
 
 func TestGetFlowState(t *testing.T) {

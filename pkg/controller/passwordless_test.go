@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/session"
+	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -170,7 +171,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		CreatedAt:  time.Now(),
 		Properties: nil,
 	}
-	conf.Session.DataStore.Repo.CreateSession(badSess)
+	session.GetSessionService().CreateSession(badSess)
 
 	lss := state.FlowState{
 		Modules: []state.FlowStateModuleInfo{
@@ -195,14 +196,14 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			"lss": string(lssBytes),
 		},
 	}
-	conf.Session.DataStore.Repo.CreateSession(validSess)
+	session.GetSessionService().CreateSession(validSess)
 
-	ur := conf.UserDataStore.Repo
-	user, _ := ur.GetUser("user1")
+	us := user.GetUserService()
+	user, _ := us.GetUser("user1")
 	user.Properties = map[string]string{
 		"passwordless.qr": `{"secret": "s3cr3t"}`,
 	}
-	ur.UpdateUser(user)
+	us.UpdateUser(user)
 
 	pc := NewPasswordlessServicesController(conf)
 	type args struct {

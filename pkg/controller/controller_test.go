@@ -8,7 +8,6 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/sirupsen/logrus"
 )
 
@@ -55,20 +54,11 @@ var (
 	logger = logrus.New()
 	conf   = config.Config{
 		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: user.NewInMemoryUserRepository(),
-		},
-		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: config.SessionJWT{
-				Issuer:     "http://gortas",
-				PrivateKey: privateKey,
-				PublicKey:  publicKey,
-			},
-			DataStore: config.SessionDataStore{
-				Repo: session.NewInMemorySessionRepository(logger),
+			Jwt: session.SessionJWT{
+				Issuer: "http://gortas",
 			},
 		},
 	}

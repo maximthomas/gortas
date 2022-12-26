@@ -9,7 +9,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth"
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -95,7 +95,6 @@ func deleteCookie(name string, c *gin.Context) {
 }
 
 func NewAuthController() *AuthController {
-	conf := config.GetConfig()
-	logger := conf.Logger.WithField("module", "AuthController")
+	logger := log.WithField("module", "AuthController")
 	return &AuthController{logger}
 }

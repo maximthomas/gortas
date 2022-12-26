@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"log"
@@ -27,8 +29,17 @@ import (
 )
 
 var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+var privateKeyStr = string(pem.EncodeToMemory(
+	&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	},
+))
+
 var publicKey = &privateKey.PublicKey
-var ur = user.NewInMemoryUserRepository()
+
+var us user.UserService
+var ss session.SessionService
 var (
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{
@@ -54,20 +65,13 @@ var (
 	logger = logrus.New()
 	conf   = config.Config{
 		Flows: flows,
-		UserDataStore: config.UserDataStore{
-			Repo: ur,
-		},
-		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: config.SessionJWT{
-				Issuer:       "http://gortas",
-				PrivateKey:   privateKey,
-				PublicKey:    publicKey,
-				PrivateKeyID: "dummy",
+			Jwt: session.SessionJWT{
+				Issuer:        "http://gortas",
+				PrivateKeyPem: privateKeyStr,
 			},
-			DataStore: config.SessionDataStore{Repo: session.NewInMemorySessionRepository(logger)},
 		},
 	}
 	router *gin.Engine
@@ -76,10 +80,12 @@ var (
 func init() {
 	config.SetConfig(conf)
 	router = SetupRouter(conf)
+	us = user.GetUserService()
+	ss = session.GetSessionService()
 }
 
 func TestSetupRouter(t *testing.T) {
-	assert.Equal(t, 3, len(router.Routes()))
+	assert.Equal(t, 4, len(router.Routes()))
 }
 
 const target = "http://localhost/gortas/v1/auth/default"
@@ -166,7 +172,7 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Test successful authentication", func(t *testing.T) {
-		_ = ur.SetPassword("jerso", "passw0rd")
+		_ = us.SetPassword("jerso", "passw0rd")
 		request := httptest.NewRequest("GET", target, nil)
 		recorder := httptest.NewRecorder()
 
@@ -218,7 +224,7 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, token)
 
-		assert.Equal(t, "dummy", token.Header["jks"])
+		assert.NotEmpty(t, token.Header["jks"])
 		assert.Equal(t, login, claims["sub"])
 
 	})
@@ -272,9 +278,9 @@ func TestAuthQR(t *testing.T) {
 	t.Skip()
 	assert.Fail(t, "implement test")
 	const secret = "s3cr3t"
-	user1, _ := ur.GetUser("user1")
+	user1, _ := us.GetUser("user1")
 	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%s"}`, secret))
-	_ = ur.UpdateUser(user1)
+	_ = us.UpdateUser(user1)
 
 	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/login/staff/qr", nil)
 	recorder := httptest.NewRecorder()

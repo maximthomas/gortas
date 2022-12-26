@@ -32,7 +32,7 @@ userDataStore:
   type: "inMemory"
 
 session:
-  type: "stateless" #could be also stateful, implement later
+  type: "stateful"
   expires: 60000
   jwt:
     issuer: 'http://gortas'

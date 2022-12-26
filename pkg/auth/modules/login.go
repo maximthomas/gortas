@@ -3,7 +3,7 @@ package modules
 import (
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/user"
 )
 
 type LoginPassword struct {
@@ -26,8 +26,8 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 			password = cb.Value
 		}
 	}
-
-	valid := config.GetConfig().UserDataStore.Repo.ValidatePassword(username, password)
+	us := user.GetUserService()
+	valid := us.ValidatePassword(username, password)
 	if valid {
 		fs.UserId = username
 		return state.PASS, cbs, err

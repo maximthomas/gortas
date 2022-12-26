@@ -3,11 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
-	"time"
-
-	"github.com/dgrijalva/jwt-go"
 
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/auth/callbacks"
@@ -15,6 +11,7 @@ import (
 	"github.com/maximthomas/gortas/pkg/auth/modules"
 	"github.com/maximthomas/gortas/pkg/auth/state"
 	"github.com/maximthomas/gortas/pkg/config"
+	"github.com/maximthomas/gortas/pkg/log"
 	"github.com/maximthomas/gortas/pkg/session"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -32,7 +29,7 @@ type flowProcessor struct {
 
 func NewFlowProcessor() FlowProcessor {
 	return &flowProcessor{
-		logger: config.GetConfig().Logger.WithField("module", "FlowProcessor"),
+		logger: log.WithField("module", "FlowProcessor"),
 	}
 }
 
@@ -147,7 +144,7 @@ modules:
 			Token: sessID,
 			Type:  "Bearer",
 		}
-		err = config.GetConfig().Session.DataStore.Repo.DeleteSession(fs.Id)
+		err = session.GetSessionService().DeleteSession(fs.Id)
 		if err != nil {
 			f.logger.Warnf("error clearing session %s %v", fs.Id, err)
 		}
@@ -159,49 +156,12 @@ modules:
 }
 
 func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {
-	sc := config.GetConfig().Session
 	if fs.UserId == "" {
 		return sessId, errors.New("user id is not set")
 	}
 
-	user, userExists := config.GetConfig().UserDataStore.Repo.GetUser(fs.UserId)
+	return session.GetSessionService().CreateUserSession(fs.UserId)
 
-	var sessionID string
-	if sc.Type == "stateless" {
-		token := jwt.New(jwt.SigningMethodRS256)
-		claims := token.Claims.(jwt.MapClaims)
-		exp := time.Second * time.Duration(rand.Intn(sc.Expires))
-		claims["exp"] = time.Now().Add(exp).Unix()
-		claims["jti"] = sc.Jwt.PrivateKeyID
-		claims["iat"] = time.Now().Unix()
-		claims["iss"] = sc.Jwt.Issuer
-		claims["sub"] = fs.UserId
-		if userExists {
-			claims["props"] = user.Properties
-		}
-
-		token.Header["jks"] = sc.Jwt.PrivateKeyID
-		ss, _ := token.SignedString(sc.Jwt.PrivateKey)
-		sessionID = ss
-	} else {
-		sessionID = uuid.New().String()
-		newSession := session.Session{
-			ID: sessionID,
-			Properties: map[string]string{
-				"userId": user.ID,
-				"sub":    user.ID,
-			},
-		}
-		for k, v := range user.Properties {
-			newSession.Properties[k] = v
-		}
-
-		newSession, err = sc.DataStore.Repo.CreateSession(newSession)
-		if err != nil {
-			return sessId, err
-		}
-	}
-	return sessionID, nil
 }
 
 func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
@@ -210,19 +170,19 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 		return errors.Wrap(err, "error marshalling flow sate")
 	}
 
-	sr := config.GetConfig().Session.DataStore.Repo
+	ss := session.GetSessionService()
 
-	sess, err := sr.GetSession(fs.Id)
+	sess, err := ss.GetSession(fs.Id)
 	if err != nil {
 		sess = session.Session{
 			ID:         fs.Id,
 			Properties: make(map[string]string),
 		}
 		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
-		_, err = sr.CreateSession(sess)
+		_, err = ss.CreateSession(sess)
 	} else {
 		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
-		err = sr.UpdateSession(sess)
+		err = ss.UpdateSession(sess)
 	}
 	if err != nil {
 		return err
@@ -233,8 +193,8 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 
 func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, error) {
 	c := config.GetConfig()
-	sds := c.Session.DataStore
-	session, err := sds.Repo.GetSession(id)
+	ss := session.GetSessionService()
+	session, err := ss.GetSession(id)
 	var fs state.FlowState
 	if err != nil {
 		flow, ok := c.Flows[name]

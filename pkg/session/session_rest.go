@@ -3,17 +3,17 @@ package session
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
 
-type RestSessionRepository struct {
+type restSessionRepository struct {
 	Endpoint string
 	client   http.Client
 }
 
-func (sr *RestSessionRepository) CreateSession(session Session) (Session, error) {
+func (sr *restSessionRepository) CreateSession(session Session) (Session, error) {
 	var newSession Session
 	sessBytes, err := json.Marshal(session)
 	if err != nil {
@@ -27,7 +27,7 @@ func (sr *RestSessionRepository) CreateSession(session Session) (Session, error)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error creating session: %v", err)
 		return newSession, err
@@ -42,7 +42,7 @@ func (sr *RestSessionRepository) CreateSession(session Session) (Session, error)
 	return newSession, err
 }
 
-func (sr *RestSessionRepository) DeleteSession(id string) error {
+func (sr *restSessionRepository) DeleteSession(id string) error {
 	req, err := http.NewRequest("DELETE", sr.Endpoint+"/"+id, nil)
 	if err != nil {
 		return err
@@ -52,6 +52,6 @@ func (sr *RestSessionRepository) DeleteSession(id string) error {
 	return err
 }
 
-func (sr *RestSessionRepository) UpdateSession(id string, session Session) error {
+func (sr *restSessionRepository) UpdateSession(id string, session Session) error {
 	return nil
 }

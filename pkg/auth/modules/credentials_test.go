@@ -107,14 +107,14 @@ func TestCredentiaslPostProcess(t *testing.T) {
 		},
 	}
 
-	ur := config.GetConfig().UserDataStore.Repo
-	_, ok := ur.GetUser(testEmail)
+	us := user.GetUserService()
+	_, ok := us.GetUser(testEmail)
 	assert.False(t, ok, "User does not exists")
 	fs := &state.FlowState{}
 	err := cm.PostProcess(fs)
 	assert.NoError(t, err)
 
-	user, ok := ur.GetUser(testEmail)
+	user, ok := us.GetUser(testEmail)
 	assert.True(t, ok, "user exists")
 	assert.Equal(t, testEmail, user.ID)
 	assert.Equal(t, testName, user.Properties["name"])
@@ -127,11 +127,7 @@ func TestGetCredentialsModule(t *testing.T) {
 }
 
 func getCredentialsModule(t *testing.T) *Credentials {
-	conf := config.Config{
-		UserDataStore: config.UserDataStore{
-			Repo: user.NewInMemoryUserRepository(),
-		},
-	}
+	conf := config.Config{}
 	config.SetConfig(conf)
 
 	const emailRegexp = "^([a-z0-9_-]+)(@[a-z0-9-]+)(\\.[a-z]+|\\.[a-z]+\\.[a-z]+)?$"

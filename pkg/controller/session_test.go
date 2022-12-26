@@ -18,21 +18,16 @@ import (
 func setupConfig(sessRepoType string) {
 
 	conf := config.Config{
-		Logger: logger,
-		Session: config.Session{
+		Session: session.SessionConfig{
 			Type:    sessRepoType,
 			Expires: 60000,
-			DataStore: config.SessionDataStore{
-				Repo:       session.NewInMemorySessionRepository(logger),
+			DataStore: session.SessionDataStore{
 				Type:       "in_memory",
 				Properties: nil,
 			},
-			Jwt: config.SessionJWT{
+			Jwt: session.SessionJWT{
 				Issuer:        "http://gortas",
-				PrivateKeyPem: "",
-				PrivateKeyID:  "http://gortas",
-				PrivateKey:    privateKey,
-				PublicKey:     publicKey,
+				PrivateKeyPem: privateKeyStr,
 			},
 		},
 	}
@@ -45,7 +40,7 @@ func setupConfig(sessRepoType string) {
 			"realm":  "users",
 		},
 	}
-	_, err := conf.Session.DataStore.Repo.CreateSession(statefulSession)
+	_, err := session.GetSessionService().CreateSession(statefulSession)
 	if err != nil {
 		panic(err)
 	}
@@ -123,63 +118,6 @@ func TestSessionController_SessionInfo(t *testing.T) {
 			c.Request = tt.getRequest()
 			sc.SessionInfo(c)
 			assert.Equal(t, tt.wantStatus, recorder.Result().StatusCode)
-		})
-	}
-}
-
-func Test_getSessionData(t *testing.T) {
-
-	statelessId := getTestJWT()
-
-	type args struct {
-		sessionId string
-	}
-	tests := []struct {
-		name          string
-		args          args
-		wantSessionId string
-		wantErr       bool
-		setupFunc     func()
-	}{
-		{
-			name: "stateful_session_found",
-			args: args{
-				sessionId: "testSessionId",
-			},
-			wantSessionId: "testSessionId",
-			wantErr:       false,
-			setupFunc:     func() { setupConfig("stateful") },
-		},
-		{
-			name: "stateful_session_nof_found",
-			args: args{
-				sessionId: "badSessionId",
-			},
-			wantErr:   true,
-			setupFunc: func() { setupConfig("stateful") },
-		},
-		{
-			name: "stateless_valid_session",
-			args: args{
-				sessionId: statelessId,
-			},
-			wantErr:       false,
-			wantSessionId: "testSessionId",
-			setupFunc:     func() { setupConfig("stateless") },
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.setupFunc()
-			sc := NewSessionController()
-			gotSession, err := sc.getSessionData(tt.args.sessionId)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getSessionData() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				assert.Equal(t, tt.wantSessionId, gotSession["id"])
-			}
 		})
 	}
 }

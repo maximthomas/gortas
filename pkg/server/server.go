@@ -32,7 +32,8 @@ func SetupRouter(conf config.Config) *gin.Engine {
 		}
 		session := v1.Group("/session")
 		{
-			session.GET("", sc.SessionInfo)
+			session.GET("/info", sc.SessionInfo)
+			session.GET("/jwt", sc.SessionJwt)
 		}
 	}
 	return router

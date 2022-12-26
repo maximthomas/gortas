@@ -18,8 +18,5 @@ func TestReadConfigFileViper(t *testing.T) {
 	conf := GetConfig()
 	assert.True(t, len(conf.Flows) > 0)
 	assert.NotEmpty(t, config.Session.Jwt.PrivateKeyPem)
-	assert.NotEmpty(t, config.Session.Jwt.PrivateKeyID)
-	assert.NotNil(t, config.Session.Jwt.PublicKey)
-	assert.NotNil(t, config.Session.Jwt.PrivateKey)
 	assert.Equal(t, 1, len(conf.Server.Cors.AllowedOrigins))
 }

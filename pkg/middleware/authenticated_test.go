@@ -3,6 +3,8 @@ package middleware
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +12,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/maximthomas/gortas/pkg/auth/state"
-	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
 
 	"github.com/stretchr/testify/assert"
@@ -21,23 +22,25 @@ import (
 
 func TestMiddleware(t *testing.T) {
 	var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
-	var publicKey = &privateKey.PublicKey
-	s := config.Session{
+	var privateKeyStr = string(pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+		},
+	))
+	s := session.SessionConfig{
 		Type:    "stateless",
 		Expires: 0,
-		Jwt: config.SessionJWT{
+		Jwt: session.SessionJWT{
 			Issuer:        "http://gortas",
-			PrivateKeyPem: "",
-			PrivateKeyID:  "",
-			PrivateKey:    privateKey,
-			PublicKey:     publicKey,
+			PrivateKeyPem: privateKeyStr,
 		},
-		DataStore: config.SessionDataStore{
-			Repo:       session.NewInMemorySessionRepository(nil),
+		DataStore: session.SessionDataStore{
 			Type:       "",
 			Properties: nil,
 		},
 	}
+	session.InitSessionService(s)
 
 	// Create the Claims
 	claims := &jwt.StandardClaims{

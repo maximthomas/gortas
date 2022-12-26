@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserRepository interface {
+type userRepository interface {
 	GetUser(id string) (User, bool)
 	ValidatePassword(id, password string) bool
 	CreateUser(user User) (User, error)
@@ -12,13 +12,13 @@ type UserRepository interface {
 	SetPassword(id, password string) error
 }
 
-type InMemoryUserRepository struct {
+type inMemoryUserRepository struct {
 	Users     []User
 	Realm     string
 	passwords map[string]string
 }
 
-func (ur *InMemoryUserRepository) GetUser(id string) (user User, exists bool) {
+func (ur *inMemoryUserRepository) GetUser(id string) (user User, exists bool) {
 	for _, u := range ur.Users {
 		if u.ID == id {
 			user = u
@@ -29,7 +29,7 @@ func (ur *InMemoryUserRepository) GetUser(id string) (user User, exists bool) {
 	return user, exists
 }
 
-func (ur *InMemoryUserRepository) ValidatePassword(id, password string) (valid bool) {
+func (ur *inMemoryUserRepository) ValidatePassword(id, password string) (valid bool) {
 	if password == "password" {
 		valid = true
 	}
@@ -41,7 +41,7 @@ func (ur *InMemoryUserRepository) ValidatePassword(id, password string) (valid b
 	return valid
 }
 
-func (ur *InMemoryUserRepository) CreateUser(user User) (User, error) {
+func (ur *inMemoryUserRepository) CreateUser(user User) (User, error) {
 	if user.ID == "" {
 		user.ID = uuid.New().String()
 	}
@@ -49,7 +49,7 @@ func (ur *InMemoryUserRepository) CreateUser(user User) (User, error) {
 	return user, nil
 }
 
-func (ur *InMemoryUserRepository) UpdateUser(usr User) error {
+func (ur *inMemoryUserRepository) UpdateUser(usr User) error {
 	for i, u := range ur.Users {
 		if u.ID == usr.ID {
 			ur.Users[i] = usr
@@ -59,14 +59,14 @@ func (ur *InMemoryUserRepository) UpdateUser(usr User) error {
 	return nil
 }
 
-func (ur *InMemoryUserRepository) SetPassword(id, password string) error {
+func (ur *inMemoryUserRepository) SetPassword(id, password string) error {
 	ur.passwords[id] = password
 	return nil
 }
 
-func NewInMemoryUserRepository() UserRepository {
+func NewInMemoryUserRepository() userRepository {
 
-	ds := &InMemoryUserRepository{}
+	ds := &inMemoryUserRepository{}
 	ds.Users = []User{
 		{
 			ID:    "user1",
