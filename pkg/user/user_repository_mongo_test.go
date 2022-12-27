@@ -6,7 +6,6 @@ package user
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"

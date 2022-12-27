@@ -1,0 +1,28 @@
+http:
+  routers:
+    gortas-auth:
+      rule: "PathPrefix(`/gortas/v1/auth`)"
+      service: gortas
+
+    sample-service:
+      rule: "PathPrefix(`/secured`)"
+      service: sample-service
+      middlewares:
+        - gortas-plugin
+
+  services:
+    gortas:
+      loadBalancer:
+       servers:
+        - url: http://gortas:8080
+    sample-service:
+      loadBalancer:
+        servers:
+          - url: http://sample-service:8080
+  
+  middlewares:
+    gortas-plugin:
+      plugin:
+        gortas:
+          gortasUrl: http://gortas:8080/gortas
+            
