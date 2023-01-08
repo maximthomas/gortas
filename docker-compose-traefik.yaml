@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  gortas:
+    image: maximthomas/gortas:latest
+    ports:
+      - "8080"
+    volumes:
+      - '$PWD/test/auth-config-dev.yaml:/app/config/auth-config.yaml'
+  
+  traefik:
+    image: traefik:latest
+    volumes:
+      - '$PWD/traefik/traefik.yml:/etc/traefik/traefik.yml'
+      - '$PWD/traefik/conf:/etc/traefik/conf'
+      - '$PWD/traefik/plugins-local:/plugins-local'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    ports:
+      - "8081:8080"
+      - "8080:80"
+  
+  sample-service:
+    image: maximthomas/sample-service

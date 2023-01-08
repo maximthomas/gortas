@@ -1,0 +1,9 @@
+displayName: Gortas Traefik Plugin
+type: middleware
+
+import: github.com/maximthomas/gortas_traefik_plugin
+
+summary: 'Gortas Traefik Plugin'
+
+testData:
+  gortasUrl: http://gortas:8080

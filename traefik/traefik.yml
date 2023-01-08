@@ -1,0 +1,18 @@
+## traefik.yml
+
+# Docker configuration backend
+providers:
+  docker:
+    defaultRule: "Host(`{{ trimPrefix `/` .Name }}.docker.localhost`)"
+  file:
+    directory: "/etc/traefik/conf"
+
+# API and dashboard configuration
+api:
+  insecure: true
+
+# plugins
+experimental:
+  localPlugins:
+    gortas:
+      moduleName: github.com/maximthomas/gortas_traefik_plugin

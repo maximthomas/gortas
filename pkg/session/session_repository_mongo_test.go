@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/maximthomas/gortas/pkg/models"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -59,16 +59,16 @@ func (sc *SessionController) SessionJwt(c *gin.Context) {
 		sc.generateErrorResponse(c)
 		return
 	}
-	session, err := session.GetSessionService().ConvertSessionToJwt(sessionId)
+	jwt, err := session.GetSessionService().ConvertSessionToJwt(sessionId)
 	if err != nil {
 		sc.logger.Warnf("error validating sessionId %s", sessionId)
 		sc.generateErrorResponse(c)
 	}
-	c.JSON(200, session)
+	c.JSON(200, gin.H{"jwt": jwt})
 }
 
 func (sc *SessionController) generateErrorResponse(c *gin.Context) {
-	c.JSON(404, gin.H{"valid": "false"})
+	c.JSON(404, gin.H{"error": "token not found"})
 }
 
 func NewSessionController() *SessionController {
