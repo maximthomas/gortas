@@ -228,6 +228,63 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, login, claims["sub"])
 
 	})
+
+	t.Run("test authentication without init", func(t *testing.T) {
+		const login = "jerso"
+		const password = "passw0rd"
+
+		_ = us.SetPassword(login, password)
+
+		cbReq := callbacks.Request{
+			Callbacks: []callbacks.Callback{
+				{
+					Name:  "login",
+					Value: login,
+				},
+				{
+					Name:  "password",
+					Value: password,
+				},
+			},
+		}
+
+		log.Print("valid login and password")
+		body, _ := json.Marshal(cbReq)
+		request := httptest.NewRequest("POST", target, bytes.NewBuffer(body))
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		var respJson = make(map[string]interface{})
+		_ = json.Unmarshal(recorder.Body.Bytes(), &respJson)
+		log.Print(recorder.Result())
+		sessionCookie, err := getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
+		assert.NoError(t, err)
+		assert.NotEmpty(t, sessionCookie)
+		assert.NotEmpty(t, respJson["token"])
+	})
+
+	t.Run("test authentication without init invalid data", func(t *testing.T) {
+
+		cbReq := callbacks.Request{
+			Callbacks: []callbacks.Callback{
+				{
+					Name:  "login",
+					Value: "bad",
+				},
+			},
+		}
+
+		log.Print("invalid auth data")
+		body, _ := json.Marshal(cbReq)
+		request := httptest.NewRequest("POST", target, bytes.NewBuffer(body))
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		var respJson = make(map[string]interface{})
+		_ = json.Unmarshal(recorder.Body.Bytes(), &respJson)
+		assert.Equal(t, "fail", respJson["status"])
+		assert.Equal(t, 401, recorder.Result().StatusCode)
+	})
 }
 
 func TestIDM(t *testing.T) {

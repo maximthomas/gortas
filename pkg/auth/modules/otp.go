@@ -320,19 +320,22 @@ func newOTP(base BaseAuthModule) AuthModule {
 	var os otpState
 	_ = mapstructure.Decode(base.State, &os)
 	om.otpState = &os
-	var osp otpSenderProperties
-	err = mapstructure.Decode(base.Properties[otpSenderProperty], &osp)
-	if err != nil {
-		panic(err)
-	}
-	var sender otp.Sender
-	sender, err = otp.GetSender(osp.SenderType, osp.Properties)
 
-	if err != nil {
-		panic(err)
-	}
+	if !om.OtpCheckMagicLink { //if module just checks magic link, there's no need to init OTP sender
+		var osp otpSenderProperties
+		err = mapstructure.Decode(base.Properties[otpSenderProperty], &osp)
+		if err != nil {
+			panic(err)
+		}
+		var sender otp.Sender
+		sender, err = otp.GetSender(osp.SenderType, osp.Properties)
 
-	om.otpSender = sender
+		if err != nil {
+			panic(err)
+		}
+
+		om.otpSender = sender
+	}
 
 	return &om
 }

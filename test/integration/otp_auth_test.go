@@ -40,21 +40,7 @@ var (
 				Type:     "otp",
 				Criteria: constants.CriteriaSufficient,
 				Properties: map[string]interface{}{
-					"otpCheckMagicLink":  true,
-					"otpLength":          4,
-					"useLetters":         false,
-					"useDigits":          true,
-					"otpTimeoutSec":      180,
-					"otpResendSec":       90,
-					"otpRetryCount":      5,
-					"OtpMessageTemplate": "Code {{.OTP}} valid for {{.ValidFor}} min, link code {{.MagicLink}}",
-					"sender": map[string]interface{}{
-						"senderType": "test",
-						"properties": map[string]interface{}{
-							"host": "localhost",
-							"port": 1234,
-						},
-					},
+					"otpCheckMagicLink": true,
 				}},
 			{
 				ID:   "phone",
