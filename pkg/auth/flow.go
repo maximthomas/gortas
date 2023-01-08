@@ -55,33 +55,27 @@ modules:
 				return cbResp, fmt.Errorf("Process: error getting auth module %v %w", moduleInfo, err)
 			}
 			var newState state.ModuleStatus
-
-			switch moduleInfo.Status {
-			case state.START:
-				{
-					newState, outCbs, err = instance.Process(&fs)
-					if err != nil {
-						return cbResp, err
-					}
-					break
+			//if module is the first in the flow, then pass callbacks directly to the module
+			if (len(cbReq.Callbacks) == 0 || moduleIndex > 0) && moduleInfo.Status == state.START {
+				newState, outCbs, err = instance.Process(&fs)
+				if err != nil {
+					return cbResp, err
 				}
-			case state.IN_PROGRESS:
-				{
-					if err != nil {
-						f.logger.Error("error parsing request body: ", err)
-						return cbResp, errors.New("bad request")
-					}
-					err = instance.ValidateCallbacks(inCbs)
-					if err != nil {
-						return cbResp, err
-					}
-					newState, outCbs, err = instance.ProcessCallbacks(inCbs, &fs)
-					if err != nil {
-						return cbResp, err
-					}
-					break
+			} else {
+				if err != nil {
+					f.logger.Error("error parsing request body: ", err)
+					return cbResp, errors.New("bad request")
+				}
+				err = instance.ValidateCallbacks(inCbs)
+				if err != nil {
+					return cbResp, err
+				}
+				newState, outCbs, err = instance.ProcessCallbacks(inCbs, &fs)
+				if err != nil {
+					return cbResp, err
 				}
 			}
+
 			moduleInfo.Status = newState
 
 			fs.UpdateModuleInfo(moduleIndex, moduleInfo)
