@@ -48,12 +48,13 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 			(&errCbs[i]).Error = (&errCbs[i]).Prompt + " required"
 			callbacksValid = false
 		} else if errCbs[i].Validation != "" {
-			re, err := regexp.Compile(errCbs[i].Validation)
+			var re *regexp.Regexp
+			re, err = regexp.Compile(errCbs[i].Validation)
 			if err != nil {
 				rm.l.Errorf("error compiling regex for callback %v", cb.Validation)
 				return state.FAIL, cbs, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
-			match := re.Match([]byte(cb.Value))
+			match := re.MatchString(cb.Value)
 			if !match {
 				(&errCbs[i]).Error = (&errCbs[i]).Prompt + " invalid"
 				callbacksValid = false
@@ -111,7 +112,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		return state.FAIL, cbs, err
 	}
 
-	fs.UserId = user.ID
+	fs.UserID = user.ID
 
 	return state.PASS, rm.Callbacks, err
 }

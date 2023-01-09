@@ -57,14 +57,14 @@ func TestProcess_MagicLink(t *testing.T) {
 	conf := config.Config{}
 	conf.EncryptionKey = keyStr
 	config.SetConfig(conf)
-	sessionId := "test_session"
-	code := sessionId + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
+	sessionID := "test_session"
+	code := sessionID + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
 	encrypted, err := crypt.EncryptWithConfig(code)
 	assert.NoError(t, err)
 	sess := session.Session{}
 	sess.Properties = make(map[string]string, 1)
 	sess.Properties[constants.FlowStateSessionProperty] = "{}"
-	sess.ID = sessionId
+	sess.ID = sessionID
 	session.GetSessionService().CreateSession(sess)
 
 	m := getOTPModule(t)
@@ -206,7 +206,7 @@ func TestProcessCallbacks_CodeValid(t *testing.T) {
 
 func TestGetMessage(t *testing.T) {
 	fs := &state.FlowState{
-		Id: "test",
+		ID: "test",
 	}
 	m := getOTPModule(t)
 	m.otpState.Otp = "1234"
@@ -218,7 +218,7 @@ func TestGetMessage(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	fs := &state.FlowState{
-		Id: "test",
+		ID: "test",
 	}
 	m := getOTPModule(t)
 	err := m.send(fs)

@@ -8,12 +8,10 @@ import (
 
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/sirupsen/logrus"
 )
 
 var (
 	privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
-	publicKey     = &privateKey.PublicKey
 
 	privateKeyStr = string(pem.EncodeToMemory(
 		&pem.Block{
@@ -22,12 +20,6 @@ var (
 		},
 	))
 
-	publicKeyStr = string(pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PublicKey(publicKey),
-		},
-	))
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{
 			{
@@ -51,8 +43,7 @@ var (
 		"sso": {Modules: []config.Module{}},
 	}
 
-	logger = logrus.New()
-	conf   = config.Config{
+	conf = config.Config{
 		Flows: flows,
 		Session: session.SessionConfig{
 			Type:    "stateless",

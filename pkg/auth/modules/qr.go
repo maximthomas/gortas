@@ -30,7 +30,7 @@ func (q *QR) Process(lss *state.FlowState) (ms state.ModuleStatus, cbs []callbac
 		q.State["qrT"] = qrT
 	}
 
-	image, err := q.generateQRImage(lss.Id, qrT)
+	image, err := q.generateQRImage(lss.ID, qrT)
 	if err != nil {
 		return state.FAIL, q.Callbacks, err
 	}
@@ -59,7 +59,7 @@ func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms 
 			q.State["qrT"] = newQrT
 		}
 
-		image, err := q.generateQRImage(lss.Id, qrT)
+		image, err := q.generateQRImage(lss.ID, qrT)
 		if err != nil {
 			return state.FAIL, cbs, err
 		}
@@ -68,7 +68,7 @@ func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms 
 
 		return state.IN_PROGRESS, q.Callbacks, err
 	}
-	lss.UserId = uid
+	lss.UserID = uid
 	return state.PASS, cbs, err
 
 }
@@ -95,15 +95,15 @@ func (q *QR) getSecret() (secret string, err error) {
 	return secret, err
 }
 
-func (q *QR) generateQRImage(sessId string, qrT int64) (string, error) {
+func (q *QR) generateQRImage(sessID string, qrT int64) (string, error) {
 	var image string
 	secret, err := q.getSecret()
 	if err != nil {
 		return image, err
 	}
 
-	h := crypt.MD5(secret + strconv.FormatInt(qrT, 10))
-	qrValue := fmt.Sprintf("?sid=%s;%s&action=login", sessId, h)
+	h := crypt.SHA512(secret + strconv.FormatInt(qrT, 10))
+	qrValue := fmt.Sprintf("?sid=%s;%s&action=login", sessID, h)
 	png, err := qrcode.Encode(qrValue, qrcode.Medium, 256)
 	if err != nil {
 		return image, err

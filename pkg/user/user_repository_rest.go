@@ -2,8 +2,9 @@ package user
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -15,20 +16,25 @@ type userRestRepository struct {
 }
 
 func (ur *userRestRepository) GetUser(id string) (user User, exists bool) {
-
-	resp, err := ur.client.Get(ur.endpoint + "/users/" + id)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ur.endpoint+"/users/"+id, nil)
+	if err != nil {
+		log.Printf("error crearing request: %v", err)
+		return user, exists
+	}
+	resp, err := ur.client.Do(req)
 	if err != nil {
 		log.Printf("error getting user: %v", err)
 		return user, exists
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 300 {
+	if resp.StatusCode >= http.StatusMultipleChoices {
 		log.Printf("got bad response from user service: %v", resp)
 		return user, exists
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error getting user: %v", err)
 		return user, exists
@@ -45,7 +51,6 @@ func (ur *userRestRepository) GetUser(id string) (user User, exists bool) {
 }
 
 func (ur *userRestRepository) ValidatePassword(id, password string) (valid bool) {
-
 	pr := Password{
 		Password: password,
 	}
@@ -56,19 +61,27 @@ func (ur *userRestRepository) ValidatePassword(id, password string) (valid bool)
 	}
 
 	buf := bytes.NewBuffer(prBytes)
-	resp, err := ur.client.Post(ur.endpoint+"/users/"+id+"/validatepassword", "application/json", buf)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ur.endpoint+"/users/"+id+"/validatepassword", buf)
+	if err != nil {
+		log.Printf("error crearing request: %v", err)
+		return valid
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := ur.client.Do(req)
 	if err != nil {
 		log.Printf("error validating password: %v", err)
 		return valid
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 300 {
+	if resp.StatusCode >= http.StatusMultipleChoices {
 		log.Printf("got bad response from user service: %v", resp)
 		return valid
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error validating password: %v", err)
 		return valid

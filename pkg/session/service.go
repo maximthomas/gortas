@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/maximthomas/gortas/pkg/user"
 	"github.com/mitchellh/mapstructure"
@@ -28,24 +28,24 @@ type Jwt struct {
 	PublicKey    *rsa.PublicKey
 }
 
-func (ss SessionService) CreateSession(session Session) (Session, error) {
+func (ss *SessionService) CreateSession(session Session) (Session, error) {
 	return ss.repo.CreateSession(session)
 }
 
-func (ss SessionService) DeleteSession(id string) error {
+func (ss *SessionService) DeleteSession(id string) error {
 	return ss.repo.DeleteSession(id)
 }
 
-func (ss SessionService) GetSession(id string) (Session, error) {
+func (ss *SessionService) GetSession(id string) (Session, error) {
 	return ss.repo.GetSession(id)
 }
 
-func (ss SessionService) UpdateSession(session Session) error {
+func (ss *SessionService) UpdateSession(session Session) error {
 	return ss.repo.UpdateSession(session)
 }
 
-func (ss SessionService) ConvertSessionToJwt(sessId string) (string, error) {
-	sess, err := ss.GetSession(sessId)
+func (ss *SessionService) ConvertSessionToJwt(sessID string) (string, error) {
+	sess, err := ss.GetSession(sessID)
 	if err != nil {
 		return "", err
 	}
@@ -63,9 +63,9 @@ func (ss SessionService) ConvertSessionToJwt(sessId string) (string, error) {
 	return token.SignedString(ss.jwt.PrivateKey)
 }
 
-func (ss SessionService) CreateUserSession(userId string) (sessId string, err error) {
+func (ss *SessionService) CreateUserSession(userID string) (sessID string, err error) {
 	var sessionID string
-	u, userExists := user.GetUserService().GetUser(userId)
+	u, userExists := user.GetUserService().GetUser(userID)
 	if ss.sessionType == "stateless" {
 		token := jwt.New(jwt.SigningMethodRS256)
 		claims := token.Claims.(jwt.MapClaims)
@@ -74,7 +74,7 @@ func (ss SessionService) CreateUserSession(userId string) (sessId string, err er
 		claims["jti"] = ss.jwt.PrivateKeyID
 		claims["iat"] = time.Now().Unix()
 		claims["iss"] = ss.jwt.Issuer
-		claims["sub"] = userId
+		claims["sub"] = userID
 		if userExists {
 			claims["props"] = u.Properties
 		}
@@ -88,7 +88,7 @@ func (ss SessionService) CreateUserSession(userId string) (sessId string, err er
 			ID: sessionID,
 			Properties: map[string]string{
 				"userId": u.ID,
-				"sub":    userId,
+				"sub":    userID,
 			},
 		}
 		if userExists {
@@ -99,19 +99,19 @@ func (ss SessionService) CreateUserSession(userId string) (sessId string, err er
 
 		newSession, err = ss.CreateSession(newSession)
 		if err != nil {
-			return sessId, err
+			return sessID, err
 		}
 	}
 	return sessionID, nil
 }
 
-func (ss SessionService) GetSessionData(sessionId string) (sess map[string]interface{}, err error) {
+func (ss *SessionService) GetSessionData(sessionID string) (sess map[string]interface{}, err error) {
 	sess = make(map[string]interface{})
 
 	if ss.sessionType == "stateless" {
 		publicKey := ss.jwt.PublicKey
 		claims := jwt.MapClaims{}
-		_, err := jwt.ParseWithClaims(sessionId, claims, func(token *jwt.Token) (interface{}, error) {
+		_, err = jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
 			return publicKey, nil
 		})
 		if err != nil {
@@ -119,9 +119,10 @@ func (ss SessionService) GetSessionData(sessionId string) (sess map[string]inter
 		}
 		sess = claims
 	} else {
-		statefulSession, err := ss.GetSession(sessionId)
+		var statefulSession Session
+		statefulSession, err = ss.GetSession(sessionID)
 		if statefulSession.GetUserID() == "" {
-			return sess, errors.New("User session  not found")
+			return sess, errors.New("user session  not found")
 		}
 		if err != nil {
 			return sess, err
@@ -133,13 +134,13 @@ func (ss SessionService) GetSessionData(sessionId string) (sess map[string]inter
 	return sess, err
 }
 
-func (ss SessionService) GetJwtPublicKey() *rsa.PublicKey {
+func (ss *SessionService) GetJwtPublicKey() *rsa.PublicKey {
 	return ss.jwt.PublicKey
 }
 
 var ss SessionService
 
-func InitSessionService(sc SessionConfig) error {
+func InitSessionService(sc *SessionConfig) error {
 	newSs, err := newSessionServce(sc)
 	if err != nil {
 		return err
@@ -148,26 +149,26 @@ func InitSessionService(sc SessionConfig) error {
 	return nil
 }
 
-func newSessionServce(sc SessionConfig) (ss SessionService, err error) {
-	jwt := &sc.Jwt
+func newSessionServce(sc *SessionConfig) (ss SessionService, err error) {
+	token := sc.Jwt
 
-	if jwt.PrivateKeyPem != "" {
-
-		privateKeyBlock, _ := pem.Decode([]byte(jwt.PrivateKeyPem))
-		privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
+	if token.PrivateKeyPem != "" {
+		var privateKey *rsa.PrivateKey
+		privateKeyBlock, _ := pem.Decode([]byte(token.PrivateKeyPem))
+		privateKey, err = x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
 		if err != nil {
 			return ss, err
 		}
 		ss.jwt.PrivateKey = privateKey
 		ss.jwt.PublicKey = &privateKey.PublicKey
 		ss.jwt.PrivateKeyID = uuid.New().String()
-		ss.jwt.Issuer = jwt.Issuer
+		ss.jwt.Issuer = token.Issuer
 	}
 
 	if sc.DataStore.Type == "mongo" {
 		prop := sc.DataStore.Properties
 		params := make(map[string]string)
-		err := mapstructure.Decode(&prop, &params)
+		err = mapstructure.Decode(&prop, &params)
 		if err != nil {
 			return ss, err
 		}
@@ -186,10 +187,10 @@ func newSessionServce(sc SessionConfig) (ss SessionService, err error) {
 	return ss, err
 }
 
-func GetSessionService() SessionService {
-	return ss
+func GetSessionService() *SessionService {
+	return &ss
 }
 
-func SetSessionService(newSs SessionService) {
-	ss = newSs
+func SetSessionService(newSs *SessionService) {
+	ss = *newSs
 }

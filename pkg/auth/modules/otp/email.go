@@ -53,7 +53,7 @@ func NewEmailSender(props map[string]interface{}) (Sender, error) {
 	return EmailSender{server: server, From: sp.From, Subject: sp.Subject}, nil
 }
 
-func (es EmailSender) Send(to string, text string) error {
+func (es EmailSender) Send(to, text string) error {
 
 	smtpClient, err := es.server.Connect()
 

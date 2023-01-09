@@ -21,11 +21,10 @@ import (
 	"github.com/maximthomas/gortas/pkg/config"
 	"github.com/maximthomas/gortas/pkg/server"
 	"github.com/maximthomas/gortas/pkg/session"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+var privateKey, _ = rsa.GenerateKey(rand.Reader, 2048)
 var privateKeyStr = string(pem.EncodeToMemory(
 	&pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -77,8 +76,7 @@ var (
 		}},
 	}
 
-	logger = logrus.New()
-	conf   = config.Config{
+	conf = config.Config{
 		Flows: flows,
 		Session: session.SessionConfig{
 			Type:    "stateless",
@@ -99,13 +97,13 @@ func init() {
 }
 func TestOTPAuth(t *testing.T) {
 
-	const authUrl = "http://localhost/gortas/v1/auth/otp"
+	const authURL = "http://localhost/gortas/v1/auth/otp"
 
 	const badPhone = "123"
 	const validPhone = "5551112233"
 
-	//init auth
-	request := httptest.NewRequest("GET", authUrl, nil)
+	// init auth
+	request := httptest.NewRequest("GET", authURL, nil)
 	cbReq := &callbacks.Request{}
 	resp := executeRequest(t, request, cbReq)
 	assert.Equal(t, "phone", cbReq.Module)
@@ -122,7 +120,7 @@ func TestOTPAuth(t *testing.T) {
 	//send invalid phone
 	requestBody := fmt.Sprintf(`{"callbacks":[{"name":"phone", "value": "%v"}]}`, badPhone)
 
-	request = httptest.NewRequest("POST", authUrl, bytes.NewBuffer([]byte(requestBody)))
+	request = httptest.NewRequest("POST", authURL, bytes.NewBuffer([]byte(requestBody)))
 	request.AddCookie(flowCookie)
 	cbReq = &callbacks.Request{}
 	executeRequest(t, request, cbReq)
@@ -133,7 +131,7 @@ func TestOTPAuth(t *testing.T) {
 
 	//send valid phone
 	requestBody = fmt.Sprintf(`{"callbacks":[{"name":"phone", "value": "%v"}]}`, validPhone)
-	request = httptest.NewRequest("POST", authUrl, bytes.NewBuffer([]byte(requestBody)))
+	request = httptest.NewRequest("POST", authURL, bytes.NewBuffer([]byte(requestBody)))
 	request.AddCookie(flowCookie)
 
 	cbReq = &callbacks.Request{}
@@ -145,7 +143,7 @@ func TestOTPAuth(t *testing.T) {
 
 	//send invalid OTP
 	requestBody = fmt.Sprintf(`{"callbacks":[{"name":"otp", "value": "%v"},{"name":"action", "value": "%v"}]}`, "1234", "check")
-	request = httptest.NewRequest("POST", authUrl, bytes.NewBuffer([]byte(requestBody)))
+	request = httptest.NewRequest("POST", authURL, bytes.NewBuffer([]byte(requestBody)))
 	request.AddCookie(flowCookie)
 	cbReq = &callbacks.Request{}
 	executeRequest(t, request, cbReq)
@@ -166,7 +164,7 @@ func TestOTPAuth(t *testing.T) {
 	}
 
 	requestBody = fmt.Sprintf(`{"callbacks":[{"name":"otp", "value": "%v"},{"name":"action", "value": "%v"}]}`, "1234", "check")
-	request = httptest.NewRequest("POST", authUrl, bytes.NewBuffer([]byte(requestBody)))
+	request = httptest.NewRequest("POST", authURL, bytes.NewBuffer([]byte(requestBody)))
 	request.AddCookie(flowCookie)
 	cbReq = &callbacks.Request{}
 	resp = executeRequest(t, request, cbReq)
@@ -176,26 +174,26 @@ func TestOTPAuth(t *testing.T) {
 }
 
 func TestOTPAuthMagicLink(t *testing.T) {
-	const authUrl = "http://localhost/gortas/v1/auth/otp"
+	const authURL = "http://localhost/gortas/v1/auth/otp"
 	const validPhone = "5551112233"
 
-	request := httptest.NewRequest("GET", authUrl, nil)
+	request := httptest.NewRequest("GET", authURL, nil)
 	cbReq := &callbacks.Request{}
 	resp := executeRequest(t, request, cbReq)
 	assert.Equal(t, "phone", cbReq.Module)
 	assert.Equal(t, 1, len(cbReq.Callbacks))
 	assert.Equal(t, "phone", cbReq.Callbacks[0].Name)
 
-	flowId, _ := GetCookieValue(state.FlowCookieName, resp.Cookies())
+	flowID, _ := GetCookieValue(state.FlowCookieName, resp.Cookies())
 
 	flowCookie := &http.Cookie{
 		Name:  state.FlowCookieName,
-		Value: flowId,
+		Value: flowID,
 	}
 
 	//send valid phone
 	requestBody := fmt.Sprintf(`{"callbacks":[{"name":"phone", "value": "%v"}]}`, validPhone)
-	request = httptest.NewRequest("POST", authUrl, bytes.NewBuffer([]byte(requestBody)))
+	request = httptest.NewRequest("POST", authURL, bytes.NewBuffer([]byte(requestBody)))
 	request.AddCookie(flowCookie)
 
 	cbReq = &callbacks.Request{}
@@ -211,7 +209,7 @@ func TestOTPAuthMagicLink(t *testing.T) {
 	msg := ts.Messages[validPhone]
 	msgCode := strings.Split(msg, "link code")
 
-	request = httptest.NewRequest("GET", authUrl+"?code="+strings.TrimSpace(msgCode[1]), nil)
+	request = httptest.NewRequest("GET", authURL+"?code="+strings.TrimSpace(msgCode[1]), nil)
 	request.AddCookie(flowCookie)
 	cbReq = &callbacks.Request{}
 	resp = executeRequest(t, request, cbReq)

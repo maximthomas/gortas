@@ -8,6 +8,8 @@ import (
 	"github.com/go-ldap/ldap/v3"
 )
 
+const ldapSearchTimeout = 100
+
 type userLdapRepository struct {
 	Address        string
 	BindDN         string
@@ -36,7 +38,7 @@ func (ur *userLdapRepository) getLdapEntry(id string, conn *ldap.Conn) (*ldap.En
 		ldap.ScopeSingleLevel,
 		ldap.NeverDerefAliases,
 		0,
-		100,
+		ldapSearchTimeout,
 		false,
 		fmt.Sprintf("(uid=%v)", id),
 		fields,

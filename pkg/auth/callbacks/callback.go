@@ -4,7 +4,7 @@ const (
 	TypeText       = "text"
 	TypePassword   = "password"
 	TypeImage      = "image"
-	TypeHttpStatus = "httpstatus"
+	TypeHTTPStatus = "httpstatus"
 	TypeAutoSubmit = "autosubmit"
 	TypeOptions    = "options"
 	TypeActions    = "actions"
@@ -26,7 +26,7 @@ type Callback struct {
 type Request struct {
 	Module    string     `json:"module,omitempty"`
 	Callbacks []Callback `json:"callbacks,omitempty"`
-	FlowId    string     `json:"flowId,omitempty"`
+	FlowID    string     `json:"flowId,omitempty"`
 }
 
 // Response TODO move to more appropriate package
@@ -34,6 +34,6 @@ type Response struct {
 	Module    string     `json:"module,omitempty"`
 	Callbacks []Callback `json:"callbacks,omitempty"`
 	Token     string     `json:"token,omitempty"`
-	Type      string     `json:"type,omitempty"`   //returns token type
-	FlowId    string     `json:"flowId,omitempty"` //TODO add error
+	Type      string     `json:"type,omitempty"`   // returns token type
+	FlowID    string     `json:"flowId,omitempty"` // TODO add error
 }

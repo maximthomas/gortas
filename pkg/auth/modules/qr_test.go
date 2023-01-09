@@ -20,7 +20,7 @@ func TestQR(t *testing.T) {
 		c.Request = httptest.NewRequest("GET", "/login", nil)
 
 		lss := &state.FlowState{}
-		lss.Id = uuid.New().String()
+		lss.ID = uuid.New().String()
 
 		status, cbs, err := q.Process(lss)
 		img, ok := cbs[0].Properties["image"]
@@ -35,7 +35,7 @@ func TestQR(t *testing.T) {
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("POST", "/login", nil)
 		lss := &state.FlowState{SharedState: map[string]string{}}
-		lss.Id = uuid.New().String()
+		lss.ID = uuid.New().String()
 		q.BaseAuthModule.State["qrUserId"] = "ivan"
 		ms, _, err := q.ProcessCallbacks(q.Callbacks, lss)
 		assert.Equal(t, state.PASS, ms)
@@ -48,7 +48,7 @@ func TestQR(t *testing.T) {
 		c, _ := gin.CreateTestContext(recorder)
 		c.Request = httptest.NewRequest("POST", "/login", nil)
 		lss := &state.FlowState{SharedState: map[string]string{}}
-		lss.Id = uuid.New().String()
+		lss.ID = uuid.New().String()
 		ms, cbs, err := q.ProcessCallbacks(q.Callbacks, lss)
 		assert.Equal(t, state.IN_PROGRESS, ms)
 		assert.NoError(t, err)

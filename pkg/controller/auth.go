@@ -23,7 +23,7 @@ func (a *AuthController) Auth(c *gin.Context) {
 	fn := c.Param("flow")
 
 	var cbReq callbacks.Request
-	var fId string
+	var fID string
 	if c.Request.Method == http.MethodPost {
 		err := c.ShouldBindJSON(&cbReq)
 		if err != nil {
@@ -31,12 +31,12 @@ func (a *AuthController) Auth(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "bad request"})
 			return
 		}
-		fId = cbReq.FlowId
-		if fId == "" {
-			fId, _ = c.Cookie(state.FlowCookieName)
+		fID = cbReq.FlowID
+		if fID == "" {
+			fID, _ = c.Cookie(state.FlowCookieName)
 		}
 	}
-	(&cbReq).FlowId = fId
+	(&cbReq).FlowID = fID
 	fp := auth.NewFlowProcessor()
 	cbResp, err := fp.Process(fn, cbReq, c.Request, c.Writer)
 	a.generateResponse(c, cbResp, err)
@@ -54,16 +54,16 @@ func (a *AuthController) generateResponse(c *gin.Context, cbResp callbacks.Respo
 		setCookie(state.SessionCookieName, cbResp.Token, c)
 		deleteCookie(state.FlowCookieName, c)
 		c.JSON(http.StatusOK, cbResp)
-	} else if cbResp.FlowId != "" {
+	} else if cbResp.FlowID != "" {
 		status := http.StatusOK
 		outCb := make([]callbacks.Callback, 0)
 		for _, cb := range cbResp.Callbacks {
-			if cb.Type == callbacks.TypeHttpStatus {
+			if cb.Type == callbacks.TypeHTTPStatus {
 				status, err = strconv.Atoi(cb.Value)
 				if err != nil {
 					errMsg := fmt.Sprintf("error parsing status %v", cb.Value)
 					a.logger.Errorf(errMsg)
-					c.JSON(500, gin.H{"status": "fail", "message": errMsg})
+					c.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": errMsg})
 					return
 				}
 				for k, val := range cb.Properties {
@@ -76,9 +76,9 @@ func (a *AuthController) generateResponse(c *gin.Context, cbResp callbacks.Respo
 		cbOutResp := callbacks.Response{
 			Callbacks: outCb,
 			Module:    cbResp.Module,
-			FlowId:    cbResp.FlowId,
+			FlowID:    cbResp.FlowID,
 		}
-		setCookie(state.FlowCookieName, cbResp.FlowId, c)
+		setCookie(state.FlowCookieName, cbResp.FlowID, c)
 		c.JSON(status, cbOutResp)
 	} else {
 		a.logger.Error("this should be never happen")

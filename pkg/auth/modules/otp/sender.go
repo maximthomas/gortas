@@ -50,17 +50,17 @@ func NewTestSender(props map[string]interface{}) (Sender, error) {
 	if ts != nil {
 		return ts, nil
 	}
-	var newTs TestSender
-	err := mapstructure.Decode(props, &newTs)
+	var newTS TestSender
+	err := mapstructure.Decode(props, &newTS)
 	if err != nil {
 		return nil, err
 	}
-	ts = &newTs
+	ts = &newTS
 	ts.Messages = make(map[string]string)
 	return ts, nil
 }
 
-func (ts *TestSender) Send(to string, text string) error {
+func (ts *TestSender) Send(to, text string) error {
 	ts.Messages[to] = text
 	return nil
 }

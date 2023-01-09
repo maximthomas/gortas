@@ -76,7 +76,7 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 	}
 
 	codeParts := strings.Split(codeDecrypted, "|")
-	sessionId := codeParts[0]
+	sessionID := codeParts[0]
 	expired, err := strconv.ParseInt(codeParts[1], 10, 0)
 	if err != nil {
 		return state.FAIL, lm.Callbacks, err
@@ -86,7 +86,7 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 		return state.FAIL, lm.Callbacks, errors.New("code link expired")
 	}
 
-	sess, err := session.GetSessionService().GetSession(sessionId)
+	sess, err := session.GetSessionService().GetSession(sessionID)
 	if err != nil {
 		return state.FAIL, lm.Callbacks, err
 	}
@@ -95,7 +95,7 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 	if err != nil {
 		return state.FAIL, lm.Callbacks, err
 	}
-	fs.UserId = oldFlowState.UserId
+	fs.UserID = oldFlowState.UserID
 	for k, v := range oldFlowState.SharedState {
 		fs.SharedState[k] = v
 	}
@@ -206,7 +206,7 @@ func (lm *OTP) send(fs *state.FlowState) error {
 	if err != nil {
 		return errors.Wrap(err, "error generating message")
 	}
-	err = lm.otpSender.Send(fs.UserId, msg)
+	err = lm.otpSender.Send(fs.UserID, msg)
 	if err != nil {
 		return errors.Wrap(err, "error sending message")
 	}
@@ -226,7 +226,7 @@ func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
 	otpExpiresAt := time.Now().UnixMilli() + int64(lm.OtpTimeoutSec*1000)
 
 	otpTimeoutFormatted := fmt.Sprintf("%02d:%02d", minutes, seconds)
-	magicLink, err := crypt.EncryptWithConfig(fs.Id + "|" + strconv.FormatInt(otpExpiresAt, 10))
+	magicLink, err := crypt.EncryptWithConfig(fs.ID + "|" + strconv.FormatInt(otpExpiresAt, 10))
 	if err != nil {
 		return "", err
 	}

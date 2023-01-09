@@ -38,8 +38,8 @@ var config Config
 
 func InitConfig() error {
 
-	//newLogger.SetFormatter(&logrus.JSONFormatter{})
-	//newLogger.SetReportCaller(true)
+	// newLogger.SetFormatter(&logrus.JSONFormatter{})
+	// newLogger.SetReportCaller(true)
 	var configLogger = log.WithField("module", "config")
 
 	err := viper.Unmarshal(&config)
@@ -53,7 +53,12 @@ func InitConfig() error {
 		configLogger.Errorf("Fatal error config file: %s \n", err)
 		panic(err)
 	}
-	session.InitSessionService(config.Session)
+	err = session.InitSessionService(&config.Session)
+
+	if err != nil {
+		configLogger.Errorf("error while init session service: %s \n", err)
+		panic(err)
+	}
 
 	configLogger.Debugf("got configuration %+v\n", config)
 
@@ -67,5 +72,5 @@ func GetConfig() Config {
 func SetConfig(newConfig Config) {
 	config = newConfig
 	user.InitUserService(newConfig.UserDataStore)
-	session.InitSessionService(newConfig.Session)
+	session.InitSessionService(&newConfig.Session)
 }

@@ -2,6 +2,7 @@ package modules
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -39,6 +40,7 @@ func (h *Hydra) getLoginChallenge() string {
 func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 
 	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, h.getLoginChallenge())
+
 	resp, err := h.client.Get(uri)
 	if err != nil {
 		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", uri, err)
@@ -55,10 +57,6 @@ func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callba
 		return state.FAIL, h.Callbacks, err
 	}
 
-	if !hld.Skip {
-
-	}
-
 	return state.PASS, h.Callbacks, err
 }
 
@@ -73,7 +71,7 @@ func (h *Hydra) ValidateCallbacks(cbs []callbacks.Callback) error {
 func (h *Hydra) PostProcess(fs *state.FlowState) error {
 
 	hs := hydraSubject{
-		Subject:     fs.UserId,
+		Subject:     fs.UserID,
 		Remember:    false,
 		RememberFor: 0,
 		ACR:         "gortas",
@@ -85,8 +83,8 @@ func (h *Hydra) PostProcess(fs *state.FlowState) error {
 		return err
 	}
 	uri := fmt.Sprintf("%s/oauth2/auth/requests/login/accept?login_challenge=%s", h.URI, h.getLoginChallenge())
-
-	req, err := http.NewRequest(http.MethodPut, uri, bytes.NewBuffer(jsonBody))
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uri, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return err
 	}

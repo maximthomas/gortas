@@ -21,6 +21,8 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+const qrSize = 256
+
 // TODO v2 refactor passwordless architecture
 type PasswordlessServicesController struct {
 	logger logrus.FieldLogger
@@ -53,7 +55,8 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	}
 	requestURI := middleware.GetRequestURI(c)
 	imageData := fmt.Sprintf("%s?sid=%s&action=register", requestURI, s.ID)
-	png, err := qrcode.Encode(imageData, qrcode.Medium, 256)
+
+	png, err := qrcode.Encode(imageData, qrcode.Medium, qrSize)
 	if err != nil {
 		pc.logger.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error generate QR code"})
@@ -142,7 +145,6 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	err = json.Unmarshal([]byte(jsonProp), &qrProps)
 	if qrProps.Secret != authQRRequest.Secret {
 		pc.logger.Warn("AuthQR: user qr secrets does not match")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})

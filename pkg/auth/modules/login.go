@@ -29,7 +29,7 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 	us := user.GetUserService()
 	valid := us.ValidatePassword(username, password)
 	if valid {
-		fs.UserId = username
+		fs.UserID = username
 		return state.PASS, cbs, err
 	} else {
 		cbs = lm.Callbacks

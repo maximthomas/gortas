@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,60 +16,60 @@ type SessionController struct {
 }
 
 func (sc *SessionController) SessionInfo(c *gin.Context) {
-	var sessionId string
+	var sessionID string
 	authHeader := c.Request.Header.Get("Authorization")
-	if authHeader != "" { //from header
-		sessionId = strings.TrimPrefix(authHeader, "Bearer ")
+	if authHeader != "" { // from header
+		sessionID = strings.TrimPrefix(authHeader, "Bearer ")
 	}
-	if sessionId == "" { //from cookie
+	if sessionID == "" { // from cookie
 		cookie, err := c.Request.Cookie(state.SessionCookieName)
 		if err == nil {
-			sessionId = cookie.Value
+			sessionID = cookie.Value
 		}
 	}
 
-	if sessionId == "" {
+	if sessionID == "" {
 		sc.logger.Warn("session not found in the request")
 		sc.generateErrorResponse(c)
 		return
 	}
 
-	session, err := session.GetSessionService().GetSessionData(sessionId)
+	sess, err := session.GetSessionService().GetSessionData(sessionID)
 	if err != nil {
-		sc.logger.Warnf("error validating sessionId %s", sessionId)
+		sc.logger.Warnf("error validating sessionId %s", sessionID)
 		sc.generateErrorResponse(c)
 	}
-	c.JSON(200, session)
+	c.JSON(http.StatusOK, sess)
 }
 
 func (sc *SessionController) SessionJwt(c *gin.Context) {
-	var sessionId string
+	var sessionID string
 	authHeader := c.Request.Header.Get("Authorization")
 	if authHeader != "" { //from header
-		sessionId = strings.TrimPrefix(authHeader, "Bearer ")
+		sessionID = strings.TrimPrefix(authHeader, "Bearer ")
 	}
-	if sessionId == "" { //from cookie
+	if sessionID == "" { //from cookie
 		cookie, err := c.Request.Cookie(state.SessionCookieName)
 		if err == nil {
-			sessionId = cookie.Value
+			sessionID = cookie.Value
 		}
 	}
 
-	if sessionId == "" {
+	if sessionID == "" {
 		sc.logger.Warn("session not found in the request")
 		sc.generateErrorResponse(c)
 		return
 	}
-	jwt, err := session.GetSessionService().ConvertSessionToJwt(sessionId)
+	jwt, err := session.GetSessionService().ConvertSessionToJwt(sessionID)
 	if err != nil {
-		sc.logger.Warnf("error validating sessionId %s", sessionId)
+		sc.logger.Warnf("error validating sessionId %s", sessionID)
 		sc.generateErrorResponse(c)
 	}
-	c.JSON(200, gin.H{"jwt": jwt})
+	c.JSON(http.StatusOK, gin.H{"jwt": jwt})
 }
 
 func (sc *SessionController) generateErrorResponse(c *gin.Context) {
-	c.JSON(404, gin.H{"error": "token not found"})
+	c.JSON(http.StatusNotFound, gin.H{"error": "token not found"})
 }
 
 func NewSessionController() *SessionController {

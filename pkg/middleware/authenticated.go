@@ -32,7 +32,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 		var err error
 		if a.sc.Type == "stateless" {
 			claims := jwt.MapClaims{}
-			_, err := jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
+			_, err = jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
 				return session.GetSessionService().GetJwtPublicKey(), nil
 			})
 			if err != nil {
@@ -51,7 +51,8 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 				}
 				var strVal string
 				if key == "props" {
-					bytes, err := json.Marshal(value)
+					var bytes []byte
+					bytes, err = json.Marshal(value)
 					if err != nil {
 						c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Error parsing token attrs"})
 						return

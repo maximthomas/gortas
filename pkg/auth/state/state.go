@@ -11,14 +11,14 @@ import (
 type FlowState struct {
 	Modules     []FlowStateModuleInfo
 	SharedState map[string]string
-	UserId      string
-	Id          string
+	UserID      string
+	ID          string
 	RedirectURI string
 	Name        string
 }
 
 type FlowStateModuleInfo struct {
-	Id         string
+	ID         string
 	Type       string
 	Properties FlowStateModuleProperties
 	Status     ModuleStatus

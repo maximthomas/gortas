@@ -51,7 +51,7 @@ func TestGenerateResponse(t *testing.T) {
 					{Type: "text", Name: "login", Value: ""},
 					{Type: "password", Name: "password", Value: ""},
 				},
-				FlowId: "test-flow-id",
+				FlowID: "test-flow-id",
 			},
 			err:            nil,
 			expectedStatus: 200,
@@ -71,7 +71,7 @@ func TestGenerateResponse(t *testing.T) {
 					{Type: "text", Name: "login", Value: ""},
 					{Type: "httpstatus", Name: "httpstatus", Value: "401", Properties: map[string]string{"Authenticate": "WWW-Negotiate"}},
 				},
-				FlowId: "test-flow-id",
+				FlowID: "test-flow-id",
 			},
 			err:            nil,
 			expectedStatus: 401,
@@ -121,15 +121,17 @@ func TestGenerateResponse(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(recorder)
 			ac.generateResponse(c, tt.cbResp, tt.err)
-			assert.Equal(t, tt.expectedStatus, recorder.Result().StatusCode)
+			resp := recorder.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 			assert.Equal(t, tt.expectedBody, recorder.Body.String())
 			for _, ec := range tt.expectedCookies {
-				c := getCookie(ec.name, recorder.Result().Cookies())
+				c := getCookie(ec.name, resp.Cookies())
 				assert.NotNil(t, c)
 				assert.Equal(t, ec.value, c.Value)
 			}
 			for _, eh := range tt.expectedHeaders {
-				assert.Equal(t, eh.value, recorder.Result().Header.Get(eh.name))
+				assert.Equal(t, eh.value, resp.Header.Get(eh.name))
 			}
 
 		})

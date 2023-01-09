@@ -65,7 +65,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 		}
 	}
 	cm.updateState()
-	s.UserId = cm.credentialsState.UserID
+	s.UserID = cm.credentialsState.UserID
 	return state.PASS, nil, err
 }
 

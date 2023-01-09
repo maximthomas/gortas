@@ -50,7 +50,7 @@ func TestModuleRegistered(t *testing.T) {
 func TestGetModuleFromRegistry(t *testing.T) {
 	config.SetConfig(config.Config{})
 	mi := state.FlowStateModuleInfo{
-		Id:   "simple",
+		ID:   "simple",
 		Type: "simple",
 	}
 	m, err := GetAuthModule(mi, nil, nil)

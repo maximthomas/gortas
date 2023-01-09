@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testFlowId = "test-flow-id"
-const corruptedFlowId = "corrupted-flow-id"
+const testFlowID = "test-flow-id"
+const corruptedFlowID = "corrupted-flow-id"
 
 func init() {
 	flows := map[string]config.Flow{
@@ -49,14 +49,14 @@ func init() {
 	config.SetConfig(conf)
 
 	s := session.Session{
-		ID: testFlowId,
+		ID: testFlowID,
 		Properties: map[string]string{
 			constants.FlowStateSessionProperty: "{}",
 		},
 	}
 	_, _ = session.GetSessionService().CreateSession(s)
 	corruptedSession := session.Session{
-		ID: corruptedFlowId,
+		ID: corruptedFlowID,
 		Properties: map[string]string{
 			constants.FlowStateSessionProperty: "bad",
 		},
@@ -70,20 +70,20 @@ func TestGetFlowState(t *testing.T) {
 		name       string
 		realm      string
 		flowName   string
-		flowId     string
+		flowID     string
 		checkError func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
 		checkFlow  func(t assert.TestingT, fs state.FlowState)
 	}{
 		{name: "existing flow", flowName: "login", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
-		{name: "non existing flow", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.Id == "") }},
-		{name: "existing flowId", flowId: testFlowId, checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
-		{name: "corrupted flowId", flowId: corruptedFlowId, checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.Id == "") }},
-		{name: "non existing flowId", flowName: "login", flowId: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "non existing flow", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.ID == "") }},
+		{name: "existing flowId", flowID: testFlowID, checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "corrupted flowId", flowID: corruptedFlowID, checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.ID == "") }},
+		{name: "non existing flowId", flowName: "login", flowID: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs, err := fp.getFlowState(tt.flowName, tt.flowId)
+			fs, err := fp.getFlowState(tt.flowName, tt.flowID)
 			tt.checkError(t, err)
 			tt.checkFlow(t, fs)
 		})
@@ -97,7 +97,7 @@ func TestProcess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, len(cbResp.Callbacks) > 0)
 	assert.Equal(t, "login", cbResp.Module)
-	assert.NotEmpty(t, cbResp.FlowId)
+	assert.NotEmpty(t, cbResp.FlowID)
 
 	//invalid login and password
 	cbReq = callbacks.Request{
@@ -106,12 +106,12 @@ func TestProcess(t *testing.T) {
 	}
 	cbReq.Callbacks[0].Value = "test"
 	cbReq.Callbacks[1].Value = "test"
-	cbReq.FlowId = cbResp.FlowId
+	cbReq.FlowID = cbResp.FlowID
 	cbResp, err = fp.Process("login", cbReq, nil, nil)
 	assert.NoError(t, err)
 	assert.True(t, len(cbResp.Callbacks) > 0)
 	assert.Equal(t, "login", cbResp.Module)
-	assert.NotEmpty(t, cbResp.FlowId)
+	assert.NotEmpty(t, cbResp.FlowID)
 	assert.Equal(t, "Invalid username or password", cbResp.Callbacks[0].Error)
 
 	//valid login and password
@@ -120,7 +120,7 @@ func TestProcess(t *testing.T) {
 	cbResp, err = fp.Process("login", cbReq, nil, nil)
 	assert.NoError(t, err)
 	assert.True(t, len(cbResp.Callbacks) == 0)
-	assert.Empty(t, cbResp.FlowId)
+	assert.Empty(t, cbResp.FlowID)
 	assert.NotEmpty(t, cbResp.Token)
 }
 

@@ -2,6 +2,7 @@ package session
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -20,6 +21,7 @@ func (sr *restSessionRepository) CreateSession(session Session) (Session, error)
 		return newSession, err
 	}
 	buf := bytes.NewBuffer(sessBytes)
+
 	resp, err := sr.client.Post(sr.Endpoint, "application/json", buf)
 	if err != nil {
 		log.Printf("error creating session: %v", err)
@@ -43,7 +45,8 @@ func (sr *restSessionRepository) CreateSession(session Session) (Session, error)
 }
 
 func (sr *restSessionRepository) DeleteSession(id string) error {
-	req, err := http.NewRequest("DELETE", sr.Endpoint+"/"+id, nil)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, sr.Endpoint+"/"+id, nil)
 	if err != nil {
 		return err
 	}

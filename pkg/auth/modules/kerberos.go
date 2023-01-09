@@ -133,7 +133,7 @@ func (k *Kerberos) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []ca
 		// Authentication successful; get user's credentials from the context
 
 		id := ctx.Value(ctxCredentials).(*credentials.Credentials)
-		fs.UserId = id.UserName()
+		fs.UserID = id.UserName()
 
 		log.Printf("%s %s@%s - SPNEGO authentication succeeded", r.RemoteAddr, id.UserName(), id.Domain())
 

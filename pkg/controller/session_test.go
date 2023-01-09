@@ -57,8 +57,8 @@ func getTestJWT() string {
 	claims["iss"] = "http://gortas"
 	claims["sub"] = "user1"
 	claims["realm"] = "realm1"
-	statelessId, _ := token.SignedString(privateKey)
-	return statelessId
+	statelessID, _ := token.SignedString(privateKey)
+	return statelessID
 }
 
 func TestSessionController_SessionInfo(t *testing.T) {
@@ -117,7 +117,9 @@ func TestSessionController_SessionInfo(t *testing.T) {
 			c, _ := gin.CreateTestContext(recorder)
 			c.Request = tt.getRequest()
 			sc.SessionInfo(c)
-			assert.Equal(t, tt.wantStatus, recorder.Result().StatusCode)
+			resp := recorder.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, tt.wantStatus, resp.StatusCode)
 		})
 	}
 }

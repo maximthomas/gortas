@@ -176,7 +176,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 	lss := state.FlowState{
 		Modules: []state.FlowStateModuleInfo{
 			{
-				Id:         "",
+				ID:         "",
 				Type:       "qr",
 				Properties: nil,
 				Status:     state.IN_PROGRESS,
@@ -184,8 +184,8 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			},
 		},
 		SharedState: map[string]string{},
-		UserId:      "",
-		Id:          "",
+		UserID:      "",
+		ID:          "",
 		RedirectURI: "",
 	}
 	lssBytes, _ := json.Marshal(lss)
@@ -296,11 +296,11 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			c.Request = httptest.NewRequest("POST", "/", strings.NewReader(tt.args.body))
 			pc.AuthQR(c)
 			assert.Equal(t, tt.want.code, recorder.Code)
-			var respJson = make(map[string]interface{})
-			err := json.Unmarshal([]byte(recorder.Body.String()), &respJson)
+			var respJSON = make(map[string]interface{})
+			err := json.Unmarshal(recorder.Body.Bytes(), &respJSON)
 			assert.NoError(t, err)
 			if tt.want.errMessage != "" {
-				assert.Equal(t, respJson["error"], tt.want.errMessage)
+				assert.Equal(t, respJSON["error"], tt.want.errMessage)
 			}
 		})
 	}

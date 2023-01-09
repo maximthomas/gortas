@@ -37,7 +37,7 @@ func NewFlowProcessor() FlowProcessor {
 // goes through flow state authentication modules, requests and processes callbacks
 func (f *flowProcessor) Process(flowName string, cbReq callbacks.Request, r *http.Request, w http.ResponseWriter) (cbResp callbacks.Response, err error) {
 
-	fs, err := f.getFlowState(flowName, cbReq.FlowId)
+	fs, err := f.getFlowState(flowName, cbReq.FlowID)
 	if err != nil {
 		return cbResp, fmt.Errorf("Process: error getting flow state %w", err)
 	}
@@ -86,10 +86,10 @@ modules:
 
 			switch moduleInfo.Status {
 			case state.IN_PROGRESS, state.START:
-				cbResp := callbacks.Response{
+				cbResp = callbacks.Response{
 					Callbacks: outCbs,
-					Module:    moduleInfo.Id,
-					FlowId:    fs.Id,
+					Module:    moduleInfo.ID,
+					FlowID:    fs.ID,
 				}
 				return cbResp, err
 			case state.PASS:
@@ -138,9 +138,9 @@ modules:
 			Token: sessID,
 			Type:  "Bearer",
 		}
-		err = session.GetSessionService().DeleteSession(fs.Id)
+		err = session.GetSessionService().DeleteSession(fs.ID)
 		if err != nil {
-			f.logger.Warnf("error clearing session %s %v", fs.Id, err)
+			f.logger.Warnf("error clearing session %s %v", fs.ID, err)
 		}
 
 		return cbResp, err
@@ -150,26 +150,26 @@ modules:
 }
 
 func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {
-	if fs.UserId == "" {
+	if fs.UserID == "" {
 		return sessId, errors.New("user id is not set")
 	}
 
-	return session.GetSessionService().CreateUserSession(fs.UserId)
+	return session.GetSessionService().CreateUserSession(fs.UserID)
 
 }
 
 func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 	sessionProp, err := json.Marshal(*fs)
 	if err != nil {
-		return errors.Wrap(err, "error marshalling flow sate")
+		return errors.Wrap(err, "error marshaling flow sate")
 	}
 
 	ss := session.GetSessionService()
 
-	sess, err := ss.GetSession(fs.Id)
+	sess, err := ss.GetSession(fs.ID)
 	if err != nil {
 		sess = session.Session{
-			ID:         fs.Id,
+			ID:         fs.ID,
 			Properties: make(map[string]string),
 		}
 		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
@@ -212,13 +212,13 @@ func (f *flowProcessor) newFlowState(flowName string, flow config.Flow) state.Fl
 	fs := state.FlowState{
 		Modules:     make([]state.FlowStateModuleInfo, len(flow.Modules)),
 		SharedState: make(map[string]string),
-		UserId:      "",
-		Id:          uuid.New().String(),
+		UserID:      "",
+		ID:          uuid.New().String(),
 		Name:        flowName,
 	}
 
 	for i, module := range flow.Modules {
-		fs.Modules[i].Id = module.ID
+		fs.Modules[i].ID = module.ID
 		fs.Modules[i].Type = module.Type
 		fs.Modules[i].Properties = make(state.FlowStateModuleProperties)
 		for k, v := range module.Properties {
