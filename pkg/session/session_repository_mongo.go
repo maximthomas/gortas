@@ -26,7 +26,7 @@ type mongoRepoSession struct {
 const mongoSessionExpireSeconds = 24
 
 func NewMongoSessionRepository(uri, db, c string) (*mongoSessionRepository, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cleanupIntervalSeconds*time.Second)
 	defer cancel()
 	log.Printf("connecting to mongo, uri: %v", uri)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))

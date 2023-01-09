@@ -241,7 +241,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "no valid user in a repo",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -251,7 +251,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "user not bound",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -261,7 +261,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "secret does not match",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -272,7 +272,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "bad authentication session",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, badSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user1","realm":"staff","secret":"s3cr3t"}`, badSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -282,7 +282,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "valid authentication session",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code: http.StatusOK,

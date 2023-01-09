@@ -41,7 +41,7 @@ func (f *flowProcessor) Process(flowName string, cbReq callbacks.Request, r *htt
 	if err != nil {
 		return cbResp, fmt.Errorf("Process: error getting flow state %w", err)
 	}
-	//TODO extract process callbacks to a separate function
+	// TODO extract process callbacks to a separate function
 
 	inCbs := cbReq.Callbacks
 	var outCbs []callbacks.Callback
@@ -50,12 +50,13 @@ modules:
 		switch moduleInfo.Status {
 		// TODO v2 match module names in a callback request
 		case state.START, state.IN_PROGRESS:
-			instance, err := modules.GetAuthModule(moduleInfo, r, w)
+			var instance modules.AuthModule
+			instance, err = modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, fmt.Errorf("Process: error getting auth module %v %w", moduleInfo, err)
 			}
 			var newState state.ModuleStatus
-			//if module is the first in the flow, then pass callbacks directly to the module
+			// if module is the first in the flow, then pass callbacks directly to the module
 			if (len(cbReq.Callbacks) == 0 || moduleIndex > 0) && moduleInfo.Status == state.START {
 				newState, outCbs, err = instance.Process(&fs)
 				if err != nil {
@@ -120,7 +121,8 @@ modules:
 
 	if authSucceeded {
 		for _, moduleInfo := range fs.Modules {
-			am, err := modules.GetAuthModule(moduleInfo, r, w)
+			var am modules.AuthModule
+			am, err = modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error getting auth module for postprocess")
 			}
@@ -130,7 +132,8 @@ modules:
 			}
 		}
 
-		sessID, err := f.createSession(fs)
+		var sessID string
+		sessID, err = f.createSession(fs)
 		if err != nil {
 			return cbResp, errors.Wrap(err, "error creating session")
 		}
@@ -146,7 +149,7 @@ modules:
 		return cbResp, err
 	}
 
-	return
+	return cbResp, err
 }
 
 func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {

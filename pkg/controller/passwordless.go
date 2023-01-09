@@ -38,7 +38,7 @@ type QRProps struct {
 	Secret string `json:"secret"`
 }
 
-func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
+func (pc *PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	si, ok := c.Get("session")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
@@ -67,7 +67,7 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"qr": image})
 }
 
-func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
+func (pc *PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	si, ok := c.Get("session")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
@@ -105,7 +105,7 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "authURI": authURI})
 }
 
-func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
+func (pc *PasswordlessServicesController) AuthQR(c *gin.Context) {
 	var authQRRequest struct {
 		SID    string `json:"sid"`
 		UID    string `json:"uid"`

@@ -214,6 +214,8 @@ func (lm *OTP) send(fs *state.FlowState) error {
 
 }
 
+const millisecondsMultiplier = 1000
+
 // TODO add authentication link
 func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
 	tmpl, err := template.New("message").Parse(lm.OtpMessageTemplate)
@@ -223,7 +225,7 @@ func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
 
 	minutes := lm.OtpTimeoutSec / 60
 	seconds := lm.OtpTimeoutSec % 60
-	otpExpiresAt := time.Now().UnixMilli() + int64(lm.OtpTimeoutSec*1000)
+	otpExpiresAt := time.Now().UnixMilli() + int64(lm.OtpTimeoutSec*millisecondsMultiplier)
 
 	otpTimeoutFormatted := fmt.Sprintf("%02d:%02d", minutes, seconds)
 	magicLink, err := crypt.EncryptWithConfig(fs.ID + "|" + strconv.FormatInt(otpExpiresAt, 10))

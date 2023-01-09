@@ -56,8 +56,10 @@ func (sr *inMemorySessionRepository) UpdateSession(session Session) error {
 	}
 }
 
+const cleanupIntervalSeconds = 10
+
 func (sr *inMemorySessionRepository) cleanupExpired() {
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * cleanupIntervalSeconds)
 	defer ticker.Stop()
 	for {
 		<-ticker.C

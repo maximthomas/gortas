@@ -50,7 +50,12 @@ func (sr *restSessionRepository) DeleteSession(id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = sr.client.Do(req)
+
+	resp, err := sr.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
 	return err
 }

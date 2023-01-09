@@ -101,7 +101,7 @@ func TestLogin(t *testing.T) {
 		cbReq := &callbacks.Request{}
 		err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
-		recorder.Result().Header = recorder.Header()
+		resp.Header = recorder.Header()
 		cookieVal, err := getCookieValue(state.FlowCookieName, resp.Cookies())
 
 		assert.NoError(t, err)
@@ -110,17 +110,20 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Test bad credentials", func(t *testing.T) {
-
 		request := httptest.NewRequest("GET", target, nil)
 		recorder := httptest.NewRecorder()
 
 		router.ServeHTTP(recorder, request)
-		assert.Equal(t, 200, recorder.Result().StatusCode)
+
+		resp := recorder.Result()
+		defer resp.Body.Close()
+
+		assert.Equal(t, 200, resp.StatusCode)
 		cbReq := &callbacks.Request{}
 		err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
-		recorder.Result().Header = recorder.Header()
-		cookieVal, err := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
+		resp.Header = recorder.Header()
+		cookieVal, err := getCookieValue(state.FlowCookieName, resp.Cookies())
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
 
@@ -137,6 +140,7 @@ func TestLogin(t *testing.T) {
 		request.AddCookie(authCookie)
 		recorder = httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
+
 		err = json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
 		assert.Equal(t, "Invalid username or password", cbReq.Callbacks[0].Error)
@@ -336,7 +340,7 @@ func TestAuthQR(t *testing.T) {
 	assert.Fail(t, "implement test")
 	const secret = "s3cr3t"
 	user1, _ := us.GetUser("user1")
-	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%s"}`, secret))
+	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%q"}`, secret))
 	_ = us.UpdateUser(user1)
 
 	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/login/staff/qr", nil)
@@ -356,7 +360,7 @@ func TestAuthQR(t *testing.T) {
 	assert.NoError(t, err)
 
 	//auth QR
-	authQRBody := fmt.Sprintf(`{"sid":"%s", "uid": "%s", "realm":"%s", "secret": "%s"}`, cookieVal, "user1", "staff", secret)
+	authQRBody := fmt.Sprintf(`{"sid":"%q", "uid": "%q", "realm":"%q", "secret": "%q"}`, cookieVal, "user1", "staff", secret)
 	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/service/otp/qr/login", bytes.NewBuffer([]byte(authQRBody)))
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
@@ -377,7 +381,6 @@ func TestAuthQR(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sessionCookie)
 	assert.Equal(t, "success", respJSON["status"])
-
 }
 
 func doLogin(login string, password string) (sessionID string) {

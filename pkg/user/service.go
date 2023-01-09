@@ -52,7 +52,7 @@ func newUserService(uc UserConfig) (us UserService, err error) {
 	if uc.Type == "ldap" {
 		prop := uc.Properties
 		ur := &userLdapRepository{}
-		err := mapstructure.Decode(prop, ur)
+		err = mapstructure.Decode(prop, ur)
 		if err != nil {
 			return us, err
 		}
@@ -60,14 +60,15 @@ func newUserService(uc UserConfig) (us UserService, err error) {
 	} else if uc.Type == "mongodb" {
 		prop := uc.Properties
 		params := make(map[string]interface{})
-		err := mapstructure.Decode(&prop, &params)
+		err = mapstructure.Decode(&prop, &params)
 		if err != nil {
 			return us, err
 		}
 		url, _ := params["url"].(string)
 		db, _ := params["database"].(string)
 		col, _ := params["collection"].(string)
-		ur, err := NewUserMongoRepository(url, db, col)
+		var ur *userMongoRepository
+		ur, err = NewUserMongoRepository(url, db, col)
 		if err != nil {
 			return us, err
 		}

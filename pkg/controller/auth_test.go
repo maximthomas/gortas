@@ -55,7 +55,8 @@ func TestGenerateResponse(t *testing.T) {
 			},
 			err:            nil,
 			expectedStatus: 200,
-			expectedBody:   `{"module":"login","callbacks":[{"name":"login","type":"text","value":""},{"name":"password","type":"password","value":""}],"flowId":"test-flow-id"}`,
+			expectedBody: `{"module":"login","callbacks":[{"name":"login","type":"text","value":""},` +
+				`{"name":"password","type":"password","value":""}],"flowId":"test-flow-id"}`,
 			expectedCookies: []cookie{
 				{
 					name:  "GortasAuthFlow",
