@@ -59,8 +59,7 @@ func (lm *OTP) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []callba
 	if lm.OtpCheckMagicLink { //TODO refactor move to function and code to constant
 		return lm.checkMagicLink(fs)
 	}
-	lm.generateAndSendOTP(fs)
-	return state.IN_PROGRESS, lm.Callbacks, err
+	return lm.generateAndSendOTP(fs)
 }
 
 func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
@@ -109,12 +108,13 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 
 func (lm *OTP) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	defer lm.updateState()
-	var otp string
+	var o string
 	var action string
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		switch cb.Name {
 		case "otp":
-			otp = cb.Value
+			o = cb.Value
 		case "action":
 			action = cb.Value
 		}
@@ -148,7 +148,7 @@ func (lm *OTP) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState)
 		return state.IN_PROGRESS, cbs, err
 	}
 
-	valid := generatedOtp == otp || os.Getenv("GORTAS_OTP_TEST") == otp
+	valid := generatedOtp == o || os.Getenv("GORTAS_OTP_TEST") == o
 	if valid {
 		return state.PASS, cbs, err
 	}
@@ -189,12 +189,12 @@ func (lm *OTP) generateAndSendOTP(fs *state.FlowState) (ms state.ModuleStatus, c
 }
 
 func (lm *OTP) generate() error {
-	otp, err := crypt.RandomString(lm.OtpLength, lm.UseLetters, lm.UseDigits)
+	o, err := crypt.RandomString(lm.OtpLength, lm.UseLetters, lm.UseDigits)
 	if err != nil {
 		return errors.Wrap(err, "error generating OTP")
 	}
 
-	lm.otpState.Otp = otp
+	lm.otpState.Otp = o
 	lm.otpState.GeneratedAt = time.Now().UnixMilli()
 	return nil
 }
@@ -317,9 +317,9 @@ func newOTP(base BaseAuthModule) AuthModule {
 
 	om.BaseAuthModule = base
 
-	var os otpState
-	_ = mapstructure.Decode(base.State, &os)
-	om.otpState = &os
+	var st otpState
+	_ = mapstructure.Decode(base.State, &st)
+	om.otpState = &st
 
 	if !om.OtpCheckMagicLink { //if module just checks magic link, there's no need to init OTP sender
 		var osp otpSenderProperties

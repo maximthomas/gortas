@@ -32,7 +32,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 
 	callbacksValid := true
 
-	//callbacks validation
+	// callbacks validation
 	for i, cb := range inCbs {
 		if cb.Value == "" && cbs[i].Required {
 			(&cbs[i]).Error = (&cbs[i]).Prompt + " required"
@@ -44,7 +44,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 				cm.l.Errorf("error compiling regex for callback %v", cb.Validation)
 				return state.FAIL, nil, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
-			match := re.Match([]byte(cb.Value))
+			match := re.MatchString(cb.Value)
 			if !match {
 				(&cbs[i]).Error = (&cbs[i]).Prompt + " invalid"
 				callbacksValid = false
@@ -58,7 +58,8 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 
 	//fill state values
 
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		if cb.Name == cm.PrimaryField.Name {
 			cm.credentialsState.UserID = cb.Value
 		} else {
@@ -85,16 +86,16 @@ func (cm *Credentials) PostProcess(fs *state.FlowState) error {
 		Properties: cm.credentialsState.Properties,
 	}
 	us := user.GetUserService()
-	user, ok := us.GetUser(moduleUser.ID)
+	u, ok := us.GetUser(moduleUser.ID)
 	var err error
 	if !ok {
-		user, err = us.CreateUser(moduleUser)
+		u, err = us.CreateUser(moduleUser)
 		if err != nil {
 			return errors.Wrap(err, "error creating user")
 		}
 	} else {
-		user.Properties = moduleUser.Properties
-		err = us.UpdateUser(user)
+		u.Properties = moduleUser.Properties
+		err = us.UpdateUser(u)
 		if err != nil {
 			return errors.Wrap(err, "error updating user")
 		}

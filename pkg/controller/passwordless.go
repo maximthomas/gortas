@@ -77,7 +77,7 @@ func (pc *PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	uid := s.GetUserID()
 	us := user.GetUserService()
 
-	user, ok := us.GetUser(uid)
+	u, ok := us.GetUser(uid)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
@@ -90,11 +90,11 @@ func (pc *PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}
-	if user.Properties == nil {
-		user.Properties = make(map[string]string)
+	if u.Properties == nil {
+		u.Properties = make(map[string]string)
 	}
-	user.Properties["passwordless.qr"] = string(qrPropsJSON)
-	err = us.UpdateUser(user)
+	u.Properties["passwordless.qr"] = string(qrPropsJSON)
+	err = us.UpdateUser(u)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
@@ -102,7 +102,7 @@ func (pc *PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	requestURI := middleware.GetRequestURI(c)
 	authURI := strings.ReplaceAll(requestURI, "/idm/otp/qr", "/service/otp/qr/login")
 
-	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "authURI": authURI})
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": u.ID, "authURI": authURI})
 }
 
 func (pc *PasswordlessServicesController) AuthQR(c *gin.Context) {
@@ -127,12 +127,12 @@ func (pc *PasswordlessServicesController) AuthQR(c *gin.Context) {
 	}
 
 	us := user.GetUserService()
-	user, ok := us.GetUser(authQRRequest.UID)
+	u, ok := us.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})
 		return
 	}
-	jsonProp, ok := user.Properties["passwordless.qr"]
+	jsonProp, ok := u.Properties["passwordless.qr"]
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})
 		return

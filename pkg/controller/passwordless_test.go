@@ -201,11 +201,11 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 	assert.NoError(t, err)
 
 	us := user.GetUserService()
-	user, _ := us.GetUser("user1")
-	user.Properties = map[string]string{
+	u, _ := us.GetUser("user1")
+	u.Properties = map[string]string{
 		"passwordless.qr": `{"secret": "s3cr3t"}`,
 	}
-	err = us.UpdateUser(user)
+	err = us.UpdateUser(u)
 	assert.NoError(t, err)
 
 	pc := NewPasswordlessServicesController(&conf)

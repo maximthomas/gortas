@@ -72,7 +72,8 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 
 	fields := make(map[string]string, len(inCbs)-2)
 
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		switch cb.Name {
 		case rm.PrimaryField.Name:
 			username = cb.Value

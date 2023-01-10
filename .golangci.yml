@@ -44,3 +44,4 @@ linters:
         - errcheck
         - dupl
         - gosec
+        - funlen

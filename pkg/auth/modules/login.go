@@ -18,7 +18,8 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 	var username string
 	var password string
 
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		switch cb.Name {
 		case "login":
 			username = cb.Value

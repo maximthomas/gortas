@@ -57,7 +57,8 @@ func (a *AuthController) generateResponse(c *gin.Context, cbResp *callbacks.Resp
 	} else if cbResp.FlowID != "" {
 		status := http.StatusOK
 		outCb := make([]callbacks.Callback, 0)
-		for _, cb := range cbResp.Callbacks {
+		for i := range cbResp.Callbacks {
+			cb := cbResp.Callbacks[i]
 			if cb.Type == callbacks.TypeHTTPStatus {
 				status, err = strconv.Atoi(cb.Value)
 				if err != nil {
