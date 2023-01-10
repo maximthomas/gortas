@@ -30,6 +30,12 @@ func TestNewOTP(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
+	key := make([]byte, 32)
+	rand.Read(key)
+	keyStr := base64.StdEncoding.EncodeToString(key)
+	conf := config.Config{}
+	conf.EncryptionKey = keyStr
+	config.SetConfig(&conf)
 
 	m := getOTPModule(t)
 	var fs state.FlowState
@@ -229,14 +235,6 @@ func TestSend(t *testing.T) {
 }
 
 func getOTPModule(t *testing.T) *OTP {
-
-	key := make([]byte, 32)
-	rand.Read(key)
-	keyStr := base64.StdEncoding.EncodeToString(key)
-	conf := config.Config{}
-	conf.EncryptionKey = keyStr
-	config.SetConfig(&conf)
-
 	var b = BaseAuthModule{
 		State: make(map[string]interface{}, 1),
 		Properties: map[string]interface{}{
