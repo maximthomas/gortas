@@ -38,12 +38,15 @@ func (h *Hydra) getLoginChallenge() string {
 }
 
 func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-
-	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, h.getLoginChallenge())
-
-	resp, err := h.client.Get(uri)
+	hydraLoginURL := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, h.getLoginChallenge())
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, hydraLoginURL, nil)
 	if err != nil {
-		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", uri, err)
+		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
+	}
+	resp, err := h.client.Do(req)
+	if err != nil {
+		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
 	}
 
 	defer resp.Body.Close()

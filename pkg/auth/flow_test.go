@@ -42,11 +42,11 @@ func init() {
 
 	conf := config.Config{
 		Flows: flows,
-		Session: session.SessionConfig{
+		Session: session.Config{
 			Type: "stateful",
 		},
 	}
-	config.SetConfig(conf)
+	config.SetConfig(&conf)
 
 	s := session.Session{
 		ID: testFlowID,
@@ -74,11 +74,16 @@ func TestGetFlowState(t *testing.T) {
 		checkError func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool
 		checkFlow  func(t assert.TestingT, fs state.FlowState)
 	}{
-		{name: "existing flow", flowName: "login", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
-		{name: "non existing flow", flowName: "bad", checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.ID == "") }},
-		{name: "existing flowId", flowID: testFlowID, checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
-		{name: "corrupted flowId", flowID: corruptedFlowID, checkError: assert.Error, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.ID == "") }},
-		{name: "non existing flowId", flowName: "login", flowID: "bad-flow-id", checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "existing flow", flowName: "login", checkError: assert.NoError,
+			checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "non existing flow", flowName: "bad", checkError: assert.Error,
+			checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.ID == "") }},
+		{name: "existing flowId", flowID: testFlowID, checkError: assert.NoError,
+			checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
+		{name: "corrupted flowId", flowID: corruptedFlowID, checkError: assert.Error,
+			checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.True(t, fs.ID == "") }},
+		{name: "non existing flowId", flowName: "login", flowID: "bad-flow-id",
+			checkError: assert.NoError, checkFlow: func(t assert.TestingT, fs state.FlowState) { assert.NotNil(t, fs) }},
 	}
 
 	for _, tt := range tests {

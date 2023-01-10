@@ -8,11 +8,11 @@ import (
 )
 
 type Config struct {
-	Flows         map[string]Flow       `yaml:"flows"`
-	Session       session.SessionConfig `yaml:"session"`
-	Server        Server                `yaml:"server"`
-	EncryptionKey string                `yaml:"encryptionKey"`
-	UserDataStore user.UserConfig       `yaml:"userDataStore"`
+	Flows         map[string]Flow `yaml:"flows"`
+	Session       session.Config  `yaml:"session"`
+	Server        Server          `yaml:"server"`
+	EncryptionKey string          `yaml:"encryptionKey"`
+	UserDataStore user.Config     `yaml:"userDataStore"`
 }
 
 type Flow struct {
@@ -34,13 +34,14 @@ type Cors struct {
 	AllowedOrigins []string
 }
 
+var configLogger = log.WithField("module", "config")
+
 var config Config
 
 func InitConfig() error {
 
 	// newLogger.SetFormatter(&logrus.JSONFormatter{})
 	// newLogger.SetReportCaller(true)
-	var configLogger = log.WithField("module", "config")
 
 	err := viper.Unmarshal(&config)
 
@@ -69,8 +70,14 @@ func GetConfig() Config {
 	return config
 }
 
-func SetConfig(newConfig Config) {
-	config = newConfig
-	user.InitUserService(newConfig.UserDataStore)
-	session.InitSessionService(&newConfig.Session)
+func SetConfig(newConfig *Config) {
+	config = *newConfig
+	err := user.InitUserService(newConfig.UserDataStore)
+	if err != nil {
+		configLogger.Warnf("error %v", err)
+	}
+	err = session.InitSessionService(&newConfig.Session)
+	if err != nil {
+		configLogger.Warnf("error %v", err)
+	}
 }

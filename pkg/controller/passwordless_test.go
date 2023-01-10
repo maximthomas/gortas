@@ -18,7 +18,7 @@ import (
 )
 
 func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
-	pc := NewPasswordlessServicesController(conf)
+	pc := NewPasswordlessServicesController(&conf)
 	type args struct {
 		session interface{}
 	}
@@ -91,7 +91,7 @@ func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
 }
 
 func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
-	pc := NewPasswordlessServicesController(conf)
+	pc := NewPasswordlessServicesController(&conf)
 	type args struct {
 		session interface{}
 	}
@@ -171,7 +171,8 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		CreatedAt:  time.Now(),
 		Properties: nil,
 	}
-	session.GetSessionService().CreateSession(badSess)
+	_, err := session.GetSessionService().CreateSession(badSess)
+	assert.NoError(t, err)
 
 	lss := state.FlowState{
 		Modules: []state.FlowStateModuleInfo{
@@ -196,16 +197,18 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			"lss": string(lssBytes),
 		},
 	}
-	session.GetSessionService().CreateSession(validSess)
+	_, err = session.GetSessionService().CreateSession(validSess)
+	assert.NoError(t, err)
 
 	us := user.GetUserService()
 	user, _ := us.GetUser("user1")
 	user.Properties = map[string]string{
 		"passwordless.qr": `{"secret": "s3cr3t"}`,
 	}
-	us.UpdateUser(user)
+	err = us.UpdateUser(user)
+	assert.NoError(t, err)
 
-	pc := NewPasswordlessServicesController(conf)
+	pc := NewPasswordlessServicesController(&conf)
 	type args struct {
 		body string
 	}

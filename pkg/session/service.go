@@ -14,7 +14,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type SessionService struct {
+type Service struct {
 	repo        sessionRepository
 	sessionType string
 	jwt         Jwt
@@ -28,23 +28,23 @@ type Jwt struct {
 	PublicKey    *rsa.PublicKey
 }
 
-func (ss *SessionService) CreateSession(session Session) (Session, error) {
+func (ss *Service) CreateSession(session Session) (Session, error) {
 	return ss.repo.CreateSession(session)
 }
 
-func (ss *SessionService) DeleteSession(id string) error {
+func (ss *Service) DeleteSession(id string) error {
 	return ss.repo.DeleteSession(id)
 }
 
-func (ss *SessionService) GetSession(id string) (Session, error) {
+func (ss *Service) GetSession(id string) (Session, error) {
 	return ss.repo.GetSession(id)
 }
 
-func (ss *SessionService) UpdateSession(session Session) error {
+func (ss *Service) UpdateSession(session Session) error {
 	return ss.repo.UpdateSession(session)
 }
 
-func (ss *SessionService) ConvertSessionToJwt(sessID string) (string, error) {
+func (ss *Service) ConvertSessionToJwt(sessID string) (string, error) {
 	sess, err := ss.GetSession(sessID)
 	if err != nil {
 		return "", err
@@ -63,7 +63,7 @@ func (ss *SessionService) ConvertSessionToJwt(sessID string) (string, error) {
 	return token.SignedString(ss.jwt.PrivateKey)
 }
 
-func (ss *SessionService) CreateUserSession(userID string) (sessID string, err error) {
+func (ss *Service) CreateUserSession(userID string) (sessID string, err error) {
 	var sessionID string
 	u, userExists := user.GetUserService().GetUser(userID)
 	if ss.sessionType == "stateless" {
@@ -105,7 +105,7 @@ func (ss *SessionService) CreateUserSession(userID string) (sessID string, err e
 	return sessionID, nil
 }
 
-func (ss *SessionService) GetSessionData(sessionID string) (sess map[string]interface{}, err error) {
+func (ss *Service) GetSessionData(sessionID string) (sess map[string]interface{}, err error) {
 	sess = make(map[string]interface{})
 
 	if ss.sessionType == "stateless" {
@@ -134,13 +134,13 @@ func (ss *SessionService) GetSessionData(sessionID string) (sess map[string]inte
 	return sess, err
 }
 
-func (ss *SessionService) GetJwtPublicKey() *rsa.PublicKey {
+func (ss *Service) GetJwtPublicKey() *rsa.PublicKey {
 	return ss.jwt.PublicKey
 }
 
-var ss SessionService
+var ss Service
 
-func InitSessionService(sc *SessionConfig) error {
+func InitSessionService(sc *Config) error {
 	newSs, err := newSessionServce(sc)
 	if err != nil {
 		return err
@@ -149,7 +149,7 @@ func InitSessionService(sc *SessionConfig) error {
 	return nil
 }
 
-func newSessionServce(sc *SessionConfig) (ss SessionService, err error) {
+func newSessionServce(sc *Config) (ss Service, err error) {
 	token := sc.Jwt
 
 	if token.PrivateKeyPem != "" {
@@ -175,22 +175,22 @@ func newSessionServce(sc *SessionConfig) (ss SessionService, err error) {
 		url := params["url"]
 		db := params["database"]
 		col := params["collection"]
-		ss.repo, err = NewMongoSessionRepository(url, db, col)
+		ss.repo, err = newMongoSessionRepository(url, db, col)
 		if err != nil {
 			return ss, err
 		}
 	} else {
-		ss.repo = NewInMemorySessionRepository()
+		ss.repo = newInMemorySessionRepository()
 	}
 	ss.sessionType = sc.Type
 	ss.expires = sc.Expires
 	return ss, err
 }
 
-func GetSessionService() *SessionService {
+func GetSessionService() *Service {
 	return &ss
 }
 
-func SetSessionService(newSs *SessionService) {
+func SetSessionService(newSs *Service) {
 	ss = *newSs
 }

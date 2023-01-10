@@ -14,7 +14,7 @@ import (
 
 func init() {
 	conf := config.Config{}
-	config.SetConfig(conf)
+	config.SetConfig(&conf)
 }
 
 func TestGenerateResponse(t *testing.T) {
@@ -121,7 +121,7 @@ func TestGenerateResponse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(recorder)
-			ac.generateResponse(c, tt.cbResp, tt.err)
+			ac.generateResponse(c, &tt.cbResp, tt.err)
 			resp := recorder.Result()
 			defer resp.Body.Close()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)

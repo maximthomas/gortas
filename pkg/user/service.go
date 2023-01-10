@@ -4,33 +4,33 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type UserService struct {
+type Service struct {
 	repo userRepository
 }
 
-func (us UserService) GetUser(id string) (user User, exists bool) {
+func (us Service) GetUser(id string) (user User, exists bool) {
 	return us.repo.GetUser(id)
 }
 
-func (us UserService) ValidatePassword(id, password string) (valid bool) {
+func (us Service) ValidatePassword(id, password string) (valid bool) {
 	return us.repo.ValidatePassword(id, password)
 }
 
-func (us UserService) CreateUser(user User) (User, error) {
+func (us Service) CreateUser(user User) (User, error) {
 	return us.repo.CreateUser(user)
 }
 
-func (us UserService) UpdateUser(usr User) error {
+func (us Service) UpdateUser(usr User) error {
 	return us.repo.UpdateUser(usr)
 }
 
-func (us UserService) SetPassword(id, password string) error {
+func (us Service) SetPassword(id, password string) error {
 	return us.repo.SetPassword(id, password)
 }
 
-var us UserService
+var us Service
 
-func InitUserService(uc UserConfig) error {
+func InitUserService(uc Config) error {
 	newUs, err := newUserService(uc)
 	if err != nil {
 		return err
@@ -39,15 +39,15 @@ func InitUserService(uc UserConfig) error {
 	return nil
 }
 
-func GetUserService() UserService {
+func GetUserService() Service {
 	return us
 }
 
-func SetUserService(newUs UserService) {
+func SetUserService(newUs Service) {
 	us = newUs
 }
 
-func newUserService(uc UserConfig) (us UserService, err error) {
+func newUserService(uc Config) (us Service, err error) {
 
 	if uc.Type == "ldap" {
 		prop := uc.Properties
@@ -68,7 +68,7 @@ func newUserService(uc UserConfig) (us UserService, err error) {
 		db, _ := params["database"].(string)
 		col, _ := params["collection"].(string)
 		var ur *userMongoRepository
-		ur, err = NewUserMongoRepository(url, db, col)
+		ur, err = newUserMongoRepository(url, db, col)
 		if err != nil {
 			return us, err
 		}

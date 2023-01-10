@@ -99,10 +99,8 @@ func (ur *userLdapRepository) ValidatePassword(id, password string) bool {
 
 	if err := conn.Bind(entry.DN, password); err != nil {
 		return false
-	} else {
-		return true
 	}
-
+	return true
 }
 func (ur *userLdapRepository) CreateUser(user User) (User, error) {
 	conn, err := ur.getConnection()
@@ -145,7 +143,7 @@ func (ur *userLdapRepository) SetPassword(id, password string) error {
 	_, err = conn.PasswordModify(passwordModifyRequest)
 
 	if err != nil {
-		log.Fatalf("Password could not be changed: %s", err.Error())
+		log.Printf("Password could not be changed: %s", err.Error())
 	}
 	return nil
 }

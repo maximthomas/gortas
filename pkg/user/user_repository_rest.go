@@ -17,7 +17,7 @@ type userRestRepository struct {
 
 func (ur *userRestRepository) GetUser(id string) (user User, exists bool) {
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ur.endpoint+"/users/"+id, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ur.endpoint+"/users/"+id, http.NoBody)
 	if err != nil {
 		log.Printf("error crearing request: %v", err)
 		return user, exists
@@ -111,8 +111,8 @@ func (ur *userRestRepository) SetPassword(id, password string) error {
 	return nil
 }
 
-func NewUserRestRepository(realm, endpoint string) userRestRepository {
-	return userRestRepository{
+func newUserRestRepository(realm, endpoint string) userRepository {
+	return &userRestRepository{
 		realm:    realm,
 		endpoint: endpoint,
 	}

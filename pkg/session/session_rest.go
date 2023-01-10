@@ -46,7 +46,7 @@ func (sr *restSessionRepository) CreateSession(session Session) (Session, error)
 
 func (sr *restSessionRepository) DeleteSession(id string) error {
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, sr.Endpoint+"/"+id, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, sr.Endpoint+"/"+id, http.NoBody)
 	if err != nil {
 		return err
 	}

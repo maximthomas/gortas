@@ -39,10 +39,10 @@ func (a *AuthController) Auth(c *gin.Context) {
 	(&cbReq).FlowID = fID
 	fp := auth.NewFlowProcessor()
 	cbResp, err := fp.Process(fn, cbReq, c.Request, c.Writer)
-	a.generateResponse(c, cbResp, err)
+	a.generateResponse(c, &cbResp, err)
 }
 
-func (a *AuthController) generateResponse(c *gin.Context, cbResp callbacks.Response, err error) {
+func (a *AuthController) generateResponse(c *gin.Context, cbResp *callbacks.Response, err error) {
 	if err != nil {
 		logrus.Errorf("authentication error %v", err)
 		deleteCookie(state.FlowCookieName, c)

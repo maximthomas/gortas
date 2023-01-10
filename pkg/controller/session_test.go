@@ -18,20 +18,20 @@ import (
 func setupConfig(sessRepoType string) {
 
 	conf := config.Config{
-		Session: session.SessionConfig{
+		Session: session.Config{
 			Type:    sessRepoType,
 			Expires: 60000,
-			DataStore: session.SessionDataStore{
+			DataStore: session.DataStore{
 				Type:       "in_memory",
 				Properties: nil,
 			},
-			Jwt: session.SessionJWT{
+			Jwt: session.JWT{
 				Issuer:        "http://gortas",
 				PrivateKeyPem: privateKeyStr,
 			},
 		},
 	}
-	config.SetConfig(conf)
+	config.SetConfig(&conf)
 	statefulSession := session.Session{
 		ID: "testSessionId",
 		Properties: map[string]string{

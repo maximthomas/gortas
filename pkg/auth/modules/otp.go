@@ -121,7 +121,6 @@ func (lm *OTP) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState)
 	}
 
 	if action == actionSend {
-
 		return lm.generateAndSendOTP(fs)
 	}
 	//TODO move to BaseAuthModule
@@ -129,7 +128,7 @@ func (lm *OTP) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState)
 	copy(cbs, lm.Callbacks)
 
 	generatedTime := lm.otpState.GeneratedAt
-	expiresAt := generatedTime + (int64)(lm.OtpTimeoutSec*1000)
+	expiresAt := generatedTime + int64(lm.OtpTimeoutSec*1000)
 	if time.Now().UnixMilli() > expiresAt {
 		(&cbs[0]).Error = "OTP expired"
 		return state.IN_PROGRESS, cbs, err
@@ -152,13 +151,12 @@ func (lm *OTP) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState)
 	valid := generatedOtp == otp || os.Getenv("GORTAS_OTP_TEST") == otp
 	if valid {
 		return state.PASS, cbs, err
-	} else {
-		cbs = lm.Callbacks
-		lm.incrementRetries()
-		(&cbs[0]).Error = "Invalid OTP"
-		lm.updateOTPCallbackProperties(&cbs[0])
-		return state.IN_PROGRESS, cbs, err
 	}
+	cbs = lm.Callbacks
+	lm.incrementRetries()
+	(&cbs[0]).Error = "Invalid OTP"
+	lm.updateOTPCallbackProperties(&cbs[0])
+	return state.IN_PROGRESS, cbs, err
 }
 
 func (lm *OTP) updateState() {

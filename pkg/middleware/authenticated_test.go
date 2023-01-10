@@ -28,14 +28,14 @@ func TestMiddleware(t *testing.T) {
 			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 		},
 	))
-	s := session.SessionConfig{
+	s := session.Config{
 		Type:    "stateless",
 		Expires: 0,
-		Jwt: session.SessionJWT{
+		Jwt: session.JWT{
 			Issuer:        "http://gortas",
 			PrivateKeyPem: privateKeyStr,
 		},
-		DataStore: session.SessionDataStore{
+		DataStore: session.DataStore{
 			Type:       "",
 			Properties: nil,
 		},
@@ -53,7 +53,7 @@ func TestMiddleware(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	sessJWT, _ := token.SignedString(privateKey)
 
-	m := NewAuthenticatedMiddleware(s)
+	m := NewAuthenticatedMiddleware(&s)
 
 	var tests = []struct {
 		expectedStatus int

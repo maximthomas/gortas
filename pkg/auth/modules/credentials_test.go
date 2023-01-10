@@ -114,10 +114,10 @@ func TestCredentiaslPostProcess(t *testing.T) {
 	err := cm.PostProcess(fs)
 	assert.NoError(t, err)
 
-	user, ok := us.GetUser(testEmail)
+	u, ok := us.GetUser(testEmail)
 	assert.True(t, ok, "user exists")
-	assert.Equal(t, testEmail, user.ID)
-	assert.Equal(t, testName, user.Properties["name"])
+	assert.Equal(t, testEmail, u.ID)
+	assert.Equal(t, testName, u.Properties["name"])
 }
 
 func TestGetCredentialsModule(t *testing.T) {
@@ -128,7 +128,7 @@ func TestGetCredentialsModule(t *testing.T) {
 
 func getCredentialsModule(t *testing.T) *Credentials {
 	conf := config.Config{}
-	config.SetConfig(conf)
+	config.SetConfig(&conf)
 
 	const emailRegexp = "^([a-z0-9_-]+)(@[a-z0-9-]+)(\\.[a-z]+|\\.[a-z]+\\.[a-z]+)?$"
 	var b = BaseAuthModule{

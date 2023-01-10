@@ -56,7 +56,7 @@ func TestProcess_MagicLink(t *testing.T) {
 	keyStr := base64.StdEncoding.EncodeToString(key)
 	conf := config.Config{}
 	conf.EncryptionKey = keyStr
-	config.SetConfig(conf)
+	config.SetConfig(&conf)
 	sessionID := "test_session"
 	code := sessionID + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
 	encrypted, err := crypt.EncryptWithConfig(code)
@@ -79,10 +79,10 @@ func TestProcess_MagicLink(t *testing.T) {
 func TestGenerateOTP(t *testing.T) {
 	m := getOTPModule(t)
 	m.generate()
-	otp := m.otpState.Otp
+	otpCode := m.otpState.Otp
 	generated := m.otpState.GeneratedAt
-	assert.NotEmpty(t, otp)
-	assert.Equal(t, 4, len(otp))
+	assert.NotEmpty(t, otpCode)
+	assert.Equal(t, 4, len(otpCode))
 	assert.True(t, generated > time.Now().UnixMilli()-10000)
 }
 
@@ -249,7 +249,7 @@ func getOTPModule(t *testing.T) *OTP {
 	}
 	am := newOTP(b)
 	assert.NotNil(t, am)
-	otp, ok := am.(*OTP)
+	o, ok := am.(*OTP)
 	assert.True(t, ok)
-	return otp
+	return o
 }

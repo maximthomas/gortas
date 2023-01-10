@@ -97,22 +97,22 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 		return state.IN_PROGRESS, errCbs, nil
 	}
 
-	user := user.User{
+	u := user.User{
 		ID:         username,
 		Properties: fields,
 	}
 
-	_, err = us.CreateUser(user)
+	_, err = us.CreateUser(u)
 	if err != nil {
 		return state.FAIL, cbs, err
 	}
 
-	err = us.SetPassword(user.ID, password)
+	err = us.SetPassword(u.ID, password)
 	if err != nil {
 		return state.FAIL, cbs, err
 	}
 
-	fs.UserID = user.ID
+	fs.UserID = u.ID
 
 	return state.PASS, rm.Callbacks, err
 }

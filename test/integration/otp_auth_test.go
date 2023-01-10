@@ -78,10 +78,10 @@ var (
 
 	conf = config.Config{
 		Flows: flows,
-		Session: session.SessionConfig{
+		Session: session.Config{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: session.SessionJWT{
+			Jwt: session.JWT{
 				Issuer:        "http://gortas",
 				PrivateKeyPem: privateKeyStr,
 			},
@@ -92,8 +92,8 @@ var (
 )
 
 func init() {
-	config.SetConfig(conf)
-	router = server.SetupRouter(conf)
+	config.SetConfig(&conf)
+	router = server.SetupRouter(&conf)
 }
 func TestOTPAuth(t *testing.T) {
 

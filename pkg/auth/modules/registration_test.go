@@ -213,7 +213,7 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 }
 
 func getNewRegistrationModule(t *testing.T) *Registration {
-	config.SetConfig(config.Config{})
+	config.SetConfig(&config.Config{})
 	var b = BaseAuthModule{
 		l: log.WithField("module", "registration"),
 		Properties: map[string]interface{}{

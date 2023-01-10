@@ -48,7 +48,7 @@ func TestModuleRegistered(t *testing.T) {
 }
 
 func TestGetModuleFromRegistry(t *testing.T) {
-	config.SetConfig(config.Config{})
+	config.SetConfig(&config.Config{})
 	mi := state.FlowStateModuleInfo{
 		ID:   "simple",
 		Type: "simple",

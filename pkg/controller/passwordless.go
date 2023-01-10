@@ -29,9 +29,9 @@ type PasswordlessServicesController struct {
 	conf   config.Config
 }
 
-func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
+func NewPasswordlessServicesController(c *config.Config) *PasswordlessServicesController {
 	logger := log.WithField("module", "PasswordlessServicesController")
-	return &PasswordlessServicesController{logger, config}
+	return &PasswordlessServicesController{logger, *c}
 }
 
 type QRProps struct {
@@ -63,7 +63,7 @@ func (pc *PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 		return
 	}
 
-	image := "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
+	image := "data:image/png;base64," + base64.StdEncoding.EncodeToString(png)
 	c.JSON(http.StatusOK, gin.H{"qr": image})
 }
 

@@ -31,11 +31,11 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 	if valid {
 		fs.UserID = username
 		return state.PASS, cbs, err
-	} else {
-		cbs = lm.Callbacks
-		(&cbs[0]).Error = "Invalid username or password"
-		return state.IN_PROGRESS, cbs, err
 	}
+	cbs = lm.Callbacks
+	(&cbs[0]).Error = "Invalid username or password"
+	return state.IN_PROGRESS, cbs, err
+
 }
 
 func (lm *LoginPassword) ValidateCallbacks(cbs []callbacks.Callback) error {

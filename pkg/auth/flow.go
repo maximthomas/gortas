@@ -133,7 +133,7 @@ modules:
 		}
 
 		var sessID string
-		sessID, err = f.createSession(fs)
+		sessID, err = f.createSession(&fs)
 		if err != nil {
 			return cbResp, errors.Wrap(err, "error creating session")
 		}
@@ -152,9 +152,9 @@ modules:
 	return cbResp, err
 }
 
-func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {
+func (f *flowProcessor) createSession(fs *state.FlowState) (sessID string, err error) {
 	if fs.UserID == "" {
-		return sessId, errors.New("user id is not set")
+		return sessID, errors.New("user id is not set")
 	}
 
 	return session.GetSessionService().CreateUserSession(fs.UserID)
@@ -188,10 +188,10 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 
 }
 
-func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, error) {
+func (f *flowProcessor) getFlowState(name, id string) (state.FlowState, error) {
 	c := config.GetConfig()
 	ss := session.GetSessionService()
-	session, err := ss.GetSession(id)
+	sess, err := ss.GetSession(id)
 	var fs state.FlowState
 	if err != nil {
 		flow, ok := c.Flows[name]
@@ -200,7 +200,7 @@ func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, e
 		}
 		fs = f.newFlowState(name, flow)
 	} else {
-		err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+		err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 		if err != nil {
 			return fs, errors.New("session property fs does not exsit")
 		}
