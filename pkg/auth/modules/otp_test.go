@@ -85,7 +85,8 @@ func TestProcess_MagicLink(t *testing.T) {
 
 func TestGenerateOTP(t *testing.T) {
 	m := getOTPModule(t)
-	m.generate()
+	err := m.generate()
+	assert.NoError(t, err)
 	otpCode := m.otpState.Otp
 	generated := m.otpState.GeneratedAt
 	assert.NotEmpty(t, otpCode)
@@ -96,7 +97,8 @@ func TestGenerateOTP(t *testing.T) {
 func TestProcessCallbacks_CodeExpired(t *testing.T) {
 	const testOTP = "1234"
 	m := getOTPModule(t)
-	m.generate()
+	err := m.generate()
+	assert.NoError(t, err)
 	m.otpState.Otp = testOTP
 	m.otpState.GeneratedAt = int64(0)
 	inCbs := []callbacks.Callback{
@@ -118,7 +120,8 @@ func TestProcessCallbacks_CodeExpired(t *testing.T) {
 func TestProcessCallbacks_BadOTP(t *testing.T) {
 	const testOTP = "1234"
 	m := getOTPModule(t)
-	m.generate()
+	err := m.generate()
+	assert.NoError(t, err)
 	m.otpState.Otp = testOTP
 	m.otpState.GeneratedAt = time.Now().UnixMilli()
 	inCbs := []callbacks.Callback{
