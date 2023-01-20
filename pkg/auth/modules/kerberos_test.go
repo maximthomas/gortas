@@ -38,7 +38,7 @@ func TestKerberos(t *testing.T) {
 		assert.Equal(t, "httpstatus", cbs[0].Name)
 		assert.Equal(t, "Negotiate", cbs[0].Properties["WWW-Authenticate"])
 
-		assert.Equal(t, state.IN_PROGRESS, status)
+		assert.Equal(t, state.InProgress, status)
 	})
 
 	t.Run("Test failed authentication", func(t *testing.T) {

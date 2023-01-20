@@ -65,7 +65,7 @@ func Decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	}
 
 	if len(cipherText) < aes.BlockSize {
-		err = errors.New("Ciphertext block size is too short!")
+		err = errors.New("ciphertext block size is too short")
 		return
 	}
 
@@ -86,7 +86,7 @@ func MD5(str string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func RandomString(length int, useLetters bool, useDigits bool) (string, error) {
+func RandomString(length int, useLetters, useDigits bool) (string, error) {
 	var runes string
 	if useLetters {
 		runes += "abcdefghijklmnopqrstuvwxyz"

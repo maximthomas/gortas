@@ -86,7 +86,7 @@ func (k *Kerberos) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []ca
 	r := k.req
 	s := strings.SplitN(r.Header.Get(spnego.HTTPHeaderAuthRequest), " ", 2)
 	if len(s) != 2 || s[0] != spnego.HTTPHeaderAuthResponseValueKey {
-		return state.IN_PROGRESS, outCallback, err
+		return state.InProgress, outCallback, err
 	}
 
 	settings := service.KeytabPrincipal(servicePrincipal)
@@ -131,23 +131,19 @@ func (k *Kerberos) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []ca
 	}
 	if authed {
 		// Authentication successful; get user's credentials from the context
-
 		id := ctx.Value(ctxCredentials).(*credentials.Credentials)
-		fs.UserId = id.UserName()
-
+		fs.UserID = id.UserName()
 		log.Printf("%s %s@%s - SPNEGO authentication succeeded", r.RemoteAddr, id.UserName(), id.Domain())
-
-		return state.PASS, k.Callbacks, err
-
-	} else {
-		errText := fmt.Sprintf("%s - SPNEGO Kerberos authentication failed", r.RemoteAddr)
-		log.Print(errText)
-		return ms, cbs, errors.New(errText)
+		return state.Pass, k.Callbacks, err
 	}
+	errText := fmt.Sprintf("%s - SPNEGO Kerberos authentication failed", r.RemoteAddr)
+	log.Print(errText)
+	return ms, cbs, errors.New(errText)
+
 }
 
 func (k *Kerberos) ProcessCallbacks(_ []callbacks.Callback, _ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, outCallback, err
+	return state.InProgress, outCallback, err
 }
 
 func (k *Kerberos) ValidateCallbacks(cbs []callbacks.Callback) error {

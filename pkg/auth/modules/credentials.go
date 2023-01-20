@@ -23,7 +23,7 @@ type credentialsState struct {
 }
 
 func (cm *Credentials) Process(s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, cm.Callbacks, nil
+	return state.InProgress, cm.Callbacks, nil
 }
 
 func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
@@ -32,18 +32,20 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 
 	callbacksValid := true
 
-	//callbacks validation
-	for i, cb := range inCbs {
+	// callbacks validation
+	for i := range inCbs {
+		cb := inCbs[i]
 		if cb.Value == "" && cbs[i].Required {
 			(&cbs[i]).Error = (&cbs[i]).Prompt + " required"
 			callbacksValid = false
 		} else if cbs[i].Validation != "" {
-			re, err := regexp.Compile(cbs[i].Validation)
+			var re *regexp.Regexp
+			re, err = regexp.Compile(cbs[i].Validation)
 			if err != nil {
 				cm.l.Errorf("error compiling regex for callback %v", cb.Validation)
-				return state.FAIL, nil, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
+				return state.Fail, nil, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
-			match := re.Match([]byte(cb.Value))
+			match := re.MatchString(cb.Value)
 			if !match {
 				(&cbs[i]).Error = (&cbs[i]).Prompt + " invalid"
 				callbacksValid = false
@@ -52,12 +54,13 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 	}
 
 	if !callbacksValid {
-		return state.IN_PROGRESS, cbs, err
+		return state.InProgress, cbs, err
 	}
 
-	//fill state values
+	// fill state values
 
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		if cb.Name == cm.PrimaryField.Name {
 			cm.credentialsState.UserID = cb.Value
 		} else {
@@ -65,8 +68,8 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 		}
 	}
 	cm.updateState()
-	s.UserId = cm.credentialsState.UserID
-	return state.PASS, nil, err
+	s.UserID = cm.credentialsState.UserID
+	return state.Pass, nil, err
 }
 
 func (cm *Credentials) updateState() {
@@ -84,16 +87,16 @@ func (cm *Credentials) PostProcess(fs *state.FlowState) error {
 		Properties: cm.credentialsState.Properties,
 	}
 	us := user.GetUserService()
-	user, ok := us.GetUser(moduleUser.ID)
+	u, ok := us.GetUser(moduleUser.ID)
 	var err error
 	if !ok {
-		user, err = us.CreateUser(moduleUser)
+		u, err = us.CreateUser(moduleUser)
 		if err != nil {
 			return errors.Wrap(err, "error creating user")
 		}
 	} else {
-		user.Properties = moduleUser.Properties
-		err = us.UpdateUser(user)
+		u.Properties = moduleUser.Properties
+		err = us.UpdateUser(u)
 		if err != nil {
 			return errors.Wrap(err, "error updating user")
 		}
@@ -110,7 +113,7 @@ func newCredentials(base BaseAuthModule) AuthModule {
 	var cm Credentials
 	err := mapstructure.Decode(base.Properties, &cm)
 	if err != nil {
-		panic(err) //TODO add error processing
+		panic(err) // TODO add error processing
 	}
 
 	if cm.PrimaryField.Name == "" {

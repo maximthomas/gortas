@@ -21,22 +21,24 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+const qrSize = 256
+
 // TODO v2 refactor passwordless architecture
 type PasswordlessServicesController struct {
 	logger logrus.FieldLogger
 	conf   config.Config
 }
 
-func NewPasswordlessServicesController(config config.Config) *PasswordlessServicesController {
+func NewPasswordlessServicesController(c *config.Config) *PasswordlessServicesController {
 	logger := log.WithField("module", "PasswordlessServicesController")
-	return &PasswordlessServicesController{logger, config}
+	return &PasswordlessServicesController{logger, *c}
 }
 
 type QRProps struct {
 	Secret string `json:"secret"`
 }
 
-func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
+func (pc *PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	si, ok := c.Get("session")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
@@ -53,18 +55,19 @@ func (pc PasswordlessServicesController) RegisterGenerateQR(c *gin.Context) {
 	}
 	requestURI := middleware.GetRequestURI(c)
 	imageData := fmt.Sprintf("%s?sid=%s&action=register", requestURI, s.ID)
-	png, err := qrcode.Encode(imageData, qrcode.Medium, 256)
+
+	png, err := qrcode.Encode(imageData, qrcode.Medium, qrSize)
 	if err != nil {
 		pc.logger.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error generate QR code"})
 		return
 	}
 
-	image := "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
+	image := "data:image/png;base64," + base64.StdEncoding.EncodeToString(png)
 	c.JSON(http.StatusOK, gin.H{"qr": image})
 }
 
-func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
+func (pc *PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	si, ok := c.Get("session")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Not authenticated"})
@@ -74,12 +77,12 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	uid := s.GetUserID()
 	us := user.GetUserService()
 
-	user, ok := us.GetUser(uid)
+	u, ok := us.GetUser(uid)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
 	}
-	//generate secret key
+	// generate secret key
 	secret := uuid.New().String()
 	qrProps := QRProps{Secret: secret}
 	qrPropsJSON, err := json.Marshal(qrProps)
@@ -87,11 +90,11 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
 	}
-	if user.Properties == nil {
-		user.Properties = make(map[string]string)
+	if u.Properties == nil {
+		u.Properties = make(map[string]string)
 	}
-	user.Properties["passwordless.qr"] = string(qrPropsJSON)
-	err = us.UpdateUser(user)
+	u.Properties["passwordless.qr"] = string(qrPropsJSON)
+	err = us.UpdateUser(u)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
 		return
@@ -99,10 +102,10 @@ func (pc PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 	requestURI := middleware.GetRequestURI(c)
 	authURI := strings.ReplaceAll(requestURI, "/idm/otp/qr", "/service/otp/qr/login")
 
-	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": user.ID, "authURI": authURI})
+	c.JSON(http.StatusOK, gin.H{"secret": secret, "userId": u.ID, "authURI": authURI})
 }
 
-func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
+func (pc *PasswordlessServicesController) AuthQR(c *gin.Context) {
 	var authQRRequest struct {
 		SID    string `json:"sid"`
 		UID    string `json:"uid"`
@@ -124,12 +127,12 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 	}
 
 	us := user.GetUserService()
-	user, ok := us.GetUser(authQRRequest.UID)
+	u, ok := us.GetUser(authQRRequest.UID)
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "error updating user"})
 		return
 	}
-	jsonProp, ok := user.Properties["passwordless.qr"]
+	jsonProp, ok := u.Properties["passwordless.qr"]
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})
 		return
@@ -142,14 +145,13 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	err = json.Unmarshal([]byte(jsonProp), &qrProps)
 	if qrProps.Secret != authQRRequest.Secret {
 		pc.logger.Warn("AuthQR: user qr secrets does not match")
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "the user is not bound to QR"})
 		return
 	}
 
-	//authorise session
+	// authorise session
 	var fs state.FlowState
 	err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
@@ -159,7 +161,7 @@ func (pc PasswordlessServicesController) AuthQR(c *gin.Context) {
 
 	moduleFound := false
 	for _, m := range fs.Modules {
-		if m.Type == "qr" && m.Status == state.IN_PROGRESS {
+		if m.Type == "qr" && m.Status == state.InProgress {
 			m.State["qrUserId"] = authQRRequest.UID
 			moduleFound = true
 			break

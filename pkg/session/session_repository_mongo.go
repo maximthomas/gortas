@@ -23,8 +23,10 @@ type mongoRepoSession struct {
 	Session `bson:",inline"`
 }
 
-func NewMongoSessionRepository(uri, db, c string) (*mongoSessionRepository, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+const mongoSessionExpireSeconds = 24
+
+func newMongoSessionRepository(uri, db, c string) (*mongoSessionRepository, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), cleanupIntervalSeconds*time.Second)
 	defer cancel()
 	log.Printf("connecting to mongo, uri: %v", uri)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
@@ -32,7 +34,7 @@ func NewMongoSessionRepository(uri, db, c string) (*mongoSessionRepository, erro
 		return nil, err
 	}
 	idxOpt := options.Index()
-	idxOpt.SetExpireAfterSeconds(60 * 60 * 24)
+	idxOpt.SetExpireAfterSeconds(60 * 60 * mongoSessionExpireSeconds)
 	mod := mongo.IndexModel{
 		Keys: bson.M{
 			"createdAt": 1, // index in ascending order

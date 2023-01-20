@@ -1,18 +1,18 @@
 package session
 
-type SessionConfig struct {
-	Type      string           `yaml:"type"`
-	Expires   int              `yaml:"expires"`
-	Jwt       SessionJWT       `yaml:"jwt,omitempty"`
-	DataStore SessionDataStore `yaml:"dataStore,omitempty"`
+type Config struct {
+	Type      string    `yaml:"type"`
+	Expires   int       `yaml:"expires"`
+	Jwt       JWT       `yaml:"jwt,omitempty"`
+	DataStore DataStore `yaml:"dataStore,omitempty"`
 }
 
-type SessionJWT struct {
+type JWT struct {
 	Issuer        string `yaml:"issuer"`
 	PrivateKeyPem string `yml:"privateKeyPem"`
 }
 
-type SessionDataStore struct {
+type DataStore struct {
 	Type       string
 	Properties map[string]string
 }

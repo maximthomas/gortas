@@ -13,15 +13,16 @@ import (
 	"github.com/maximthomas/gortas/pkg/session"
 )
 
-func NewAuthenticatedMiddleware(s session.SessionConfig) gin.HandlerFunc {
-	return authenticatedMiddleware{s}.build()
+func NewAuthenticatedMiddleware(s *session.Config) gin.HandlerFunc {
+	am := authenticatedMiddleware{*s}
+	return am.build()
 }
 
 type authenticatedMiddleware struct {
-	sc session.SessionConfig
+	sc session.Config
 }
 
-func (a authenticatedMiddleware) build() gin.HandlerFunc {
+func (a *authenticatedMiddleware) build() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sessionID := getSessionIDFromRequest(c)
 		if sessionID == "" {
@@ -32,7 +33,7 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 		var err error
 		if a.sc.Type == "stateless" {
 			claims := jwt.MapClaims{}
-			_, err := jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
+			_, err = jwt.ParseWithClaims(sessionID, claims, func(token *jwt.Token) (interface{}, error) {
 				return session.GetSessionService().GetJwtPublicKey(), nil
 			})
 			if err != nil {
@@ -51,7 +52,8 @@ func (a authenticatedMiddleware) build() gin.HandlerFunc {
 				}
 				var strVal string
 				if key == "props" {
-					bytes, err := json.Marshal(value)
+					var bytes []byte
+					bytes, err = json.Marshal(value)
 					if err != nil {
 						c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Error parsing token attrs"})
 						return

@@ -34,30 +34,29 @@ func (sr *inMemorySessionRepository) DeleteSession(id string) error {
 	if _, ok := sr.sessions[id]; ok {
 		delete(sr.sessions, id)
 		return nil
-	} else {
-		return errors.New("session does not exist")
 	}
+	return errors.New("session does not exist")
 }
 
 func (sr *inMemorySessionRepository) GetSession(id string) (Session, error) {
 	if session, ok := sr.sessions[id]; ok {
 		return session, nil
-	} else {
-		return Session{}, errors.New("session does not exist")
 	}
+	return Session{}, errors.New("session does not exist")
 }
 
 func (sr *inMemorySessionRepository) UpdateSession(session Session) error {
 	if _, ok := sr.sessions[session.ID]; ok {
 		sr.sessions[session.ID] = session
 		return nil
-	} else {
-		return errors.New("session does not exist")
 	}
+	return errors.New("session does not exist")
 }
 
+const cleanupIntervalSeconds = 10
+
 func (sr *inMemorySessionRepository) cleanupExpired() {
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * cleanupIntervalSeconds)
 	defer ticker.Stop()
 	for {
 		<-ticker.C
@@ -71,7 +70,7 @@ func (sr *inMemorySessionRepository) cleanupExpired() {
 	}
 }
 
-func NewInMemorySessionRepository() sessionRepository {
+func newInMemorySessionRepository() sessionRepository {
 	repo := &inMemorySessionRepository{
 		sessions: make(map[string]Session),
 	}

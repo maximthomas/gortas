@@ -37,11 +37,11 @@ func NewFlowProcessor() FlowProcessor {
 // goes through flow state authentication modules, requests and processes callbacks
 func (f *flowProcessor) Process(flowName string, cbReq callbacks.Request, r *http.Request, w http.ResponseWriter) (cbResp callbacks.Response, err error) {
 
-	fs, err := f.getFlowState(flowName, cbReq.FlowId)
+	fs, err := f.getFlowState(flowName, cbReq.FlowID)
 	if err != nil {
 		return cbResp, fmt.Errorf("Process: error getting flow state %w", err)
 	}
-	//TODO extract process callbacks to a separate function
+	// TODO extract process callbacks to a separate function
 
 	inCbs := cbReq.Callbacks
 	var outCbs []callbacks.Callback
@@ -49,14 +49,15 @@ modules:
 	for moduleIndex, moduleInfo := range fs.Modules {
 		switch moduleInfo.Status {
 		// TODO v2 match module names in a callback request
-		case state.START, state.IN_PROGRESS:
-			instance, err := modules.GetAuthModule(moduleInfo, r, w)
+		case state.Start, state.InProgress:
+			var instance modules.AuthModule
+			instance, err = modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, fmt.Errorf("Process: error getting auth module %v %w", moduleInfo, err)
 			}
 			var newState state.ModuleStatus
-			//if module is the first in the flow, then pass callbacks directly to the module
-			if (len(cbReq.Callbacks) == 0 || moduleIndex > 0) && moduleInfo.Status == state.START {
+			// if module is the first in the flow, then pass callbacks directly to the module
+			if (len(cbReq.Callbacks) == 0 || moduleIndex > 0) && moduleInfo.Status == state.Start {
 				newState, outCbs, err = instance.Process(&fs)
 				if err != nil {
 					return cbResp, err
@@ -85,20 +86,20 @@ modules:
 			}
 
 			switch moduleInfo.Status {
-			case state.IN_PROGRESS, state.START:
-				cbResp := callbacks.Response{
+			case state.InProgress, state.Start:
+				cbResp = callbacks.Response{
 					Callbacks: outCbs,
-					Module:    moduleInfo.Id,
-					FlowId:    fs.Id,
+					Module:    moduleInfo.ID,
+					FlowID:    fs.ID,
 				}
 				return cbResp, err
-			case state.PASS:
-				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
+			case state.Pass:
+				if moduleInfo.Criteria == constants.CriteriaSufficient { // TODO v2 refactor move to function
 					break modules
 				}
 				continue
-			case state.FAIL:
-				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
+			case state.Fail:
+				if moduleInfo.Criteria == constants.CriteriaSufficient { // TODO v2 refactor move to function
 					continue
 				}
 				return cbResp, autherrors.NewAuthFailed("auth failed")
@@ -108,11 +109,11 @@ modules:
 	authSucceeded := true
 	for _, moduleInfo := range fs.Modules {
 
-		if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
-			if moduleInfo.Status == state.PASS {
+		if moduleInfo.Criteria == constants.CriteriaSufficient { // TODO v2 refactor move to function
+			if moduleInfo.Status == state.Pass {
 				break
 			}
-		} else if moduleInfo.Status != state.PASS {
+		} else if moduleInfo.Status != state.Pass {
 			authSucceeded = false
 			break
 		}
@@ -120,7 +121,8 @@ modules:
 
 	if authSucceeded {
 		for _, moduleInfo := range fs.Modules {
-			am, err := modules.GetAuthModule(moduleInfo, r, w)
+			var am modules.AuthModule
+			am, err = modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
 				return cbResp, errors.Wrap(err, "error getting auth module for postprocess")
 			}
@@ -130,7 +132,8 @@ modules:
 			}
 		}
 
-		sessID, err := f.createSession(fs)
+		var sessID string
+		sessID, err = f.createSession(&fs)
 		if err != nil {
 			return cbResp, errors.Wrap(err, "error creating session")
 		}
@@ -138,38 +141,38 @@ modules:
 			Token: sessID,
 			Type:  "Bearer",
 		}
-		err = session.GetSessionService().DeleteSession(fs.Id)
+		err = session.GetSessionService().DeleteSession(fs.ID)
 		if err != nil {
-			f.logger.Warnf("error clearing session %s %v", fs.Id, err)
+			f.logger.Warnf("error clearing session %s %v", fs.ID, err)
 		}
 
 		return cbResp, err
 	}
 
-	return
+	return cbResp, err
 }
 
-func (f *flowProcessor) createSession(fs state.FlowState) (sessId string, err error) {
-	if fs.UserId == "" {
-		return sessId, errors.New("user id is not set")
+func (f *flowProcessor) createSession(fs *state.FlowState) (sessID string, err error) {
+	if fs.UserID == "" {
+		return sessID, errors.New("user id is not set")
 	}
 
-	return session.GetSessionService().CreateUserSession(fs.UserId)
+	return session.GetSessionService().CreateUserSession(fs.UserID)
 
 }
 
 func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 	sessionProp, err := json.Marshal(*fs)
 	if err != nil {
-		return errors.Wrap(err, "error marshalling flow sate")
+		return errors.Wrap(err, "error marshaling flow sate")
 	}
 
 	ss := session.GetSessionService()
 
-	sess, err := ss.GetSession(fs.Id)
+	sess, err := ss.GetSession(fs.ID)
 	if err != nil {
 		sess = session.Session{
-			ID:         fs.Id,
+			ID:         fs.ID,
 			Properties: make(map[string]string),
 		}
 		sess.Properties[constants.FlowStateSessionProperty] = string(sessionProp)
@@ -185,10 +188,10 @@ func (f *flowProcessor) updateFlowState(fs *state.FlowState) error {
 
 }
 
-func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, error) {
+func (f *flowProcessor) getFlowState(name, id string) (state.FlowState, error) {
 	c := config.GetConfig()
 	ss := session.GetSessionService()
-	session, err := ss.GetSession(id)
+	sess, err := ss.GetSession(id)
 	var fs state.FlowState
 	if err != nil {
 		flow, ok := c.Flows[name]
@@ -197,7 +200,7 @@ func (f *flowProcessor) getFlowState(name string, id string) (state.FlowState, e
 		}
 		fs = f.newFlowState(name, flow)
 	} else {
-		err = json.Unmarshal([]byte(session.Properties[constants.FlowStateSessionProperty]), &fs)
+		err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 		if err != nil {
 			return fs, errors.New("session property fs does not exsit")
 		}
@@ -212,13 +215,13 @@ func (f *flowProcessor) newFlowState(flowName string, flow config.Flow) state.Fl
 	fs := state.FlowState{
 		Modules:     make([]state.FlowStateModuleInfo, len(flow.Modules)),
 		SharedState: make(map[string]string),
-		UserId:      "",
-		Id:          uuid.New().String(),
+		UserID:      "",
+		ID:          uuid.New().String(),
 		Name:        flowName,
 	}
 
 	for i, module := range flow.Modules {
-		fs.Modules[i].Id = module.ID
+		fs.Modules[i].ID = module.ID
 		fs.Modules[i].Type = module.Type
 		fs.Modules[i].Properties = make(state.FlowStateModuleProperties)
 		for k, v := range module.Properties {

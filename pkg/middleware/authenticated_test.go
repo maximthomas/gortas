@@ -21,26 +21,27 @@ import (
 )
 
 func TestMiddleware(t *testing.T) {
-	var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+	var privateKey, _ = rsa.GenerateKey(rand.Reader, 2048)
 	var privateKeyStr = string(pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
 			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 		},
 	))
-	s := session.SessionConfig{
+	s := session.Config{
 		Type:    "stateless",
 		Expires: 0,
-		Jwt: session.SessionJWT{
+		Jwt: session.JWT{
 			Issuer:        "http://gortas",
 			PrivateKeyPem: privateKeyStr,
 		},
-		DataStore: session.SessionDataStore{
+		DataStore: session.DataStore{
 			Type:       "",
 			Properties: nil,
 		},
 	}
-	session.InitSessionService(s)
+	err := session.InitSessionService(&s)
+	assert.NoError(t, err)
 
 	// Create the Claims
 	claims := &jwt.StandardClaims{
@@ -52,11 +53,11 @@ func TestMiddleware(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	sessJWT, _ := token.SignedString(privateKey)
 
-	m := NewAuthenticatedMiddleware(s)
+	m := NewAuthenticatedMiddleware(&s)
 
 	var tests = []struct {
 		expectedStatus int
-		sessionId      string
+		sessionID      string
 		name           string
 		exists         bool
 	}{
@@ -71,7 +72,7 @@ func TestMiddleware(t *testing.T) {
 			c.Request = httptest.NewRequest("GET", "/login", nil)
 			authCookie := &http.Cookie{
 				Name:  state.SessionCookieName,
-				Value: tt.sessionId,
+				Value: tt.sessionID,
 			}
 			c.Request.AddCookie(authCookie)
 			m(c)

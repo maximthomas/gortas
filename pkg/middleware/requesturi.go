@@ -10,9 +10,9 @@ func GetRequestURI(c *gin.Context) string {
 	requestURI, ok := c.Get(requestURIKey)
 	if ok {
 		return requestURI.(string)
-	} else {
-		return c.Request.RequestURI
 	}
+	return c.Request.RequestURI
+
 }
 func NewRequestURIMiddleware() gin.HandlerFunc {
 	return requestURIMiddleware{}.build()
@@ -35,9 +35,8 @@ func (r requestURIMiddleware) getScheme(c *gin.Context) string {
 	if r.getHost(c) != "" {
 		if c.Request.TLS != nil {
 			return "https://"
-		} else {
-			return "http://"
 		}
+		return "http://"
 	}
 	return ""
 }

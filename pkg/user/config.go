@@ -1,6 +1,6 @@
 package user
 
-type UserConfig struct {
+type Config struct {
 	Type       string                 `yaml:"type"`
 	Properties map[string]interface{} `yaml:"properties,omitempty"`
 }

@@ -16,7 +16,7 @@ func TestCredentialsProcess(t *testing.T) {
 	ms, cbs, err := cm.Process(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(cbs))
-	assert.Equal(t, state.IN_PROGRESS, ms)
+	assert.Equal(t, state.InProgress, ms)
 
 	assert.Equal(t, "login", cbs[0].Name)
 	assert.Equal(t, "name", cbs[1].Name)
@@ -42,7 +42,7 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			name:     "",
 			emailErr: "Email required",
 			nameErr:  "Name required",
-			status:   state.IN_PROGRESS,
+			status:   state.InProgress,
 		},
 		{
 			test:     "invalid email",
@@ -50,7 +50,7 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			name:     testName,
 			emailErr: "Email invalid",
 			nameErr:  "",
-			status:   state.IN_PROGRESS,
+			status:   state.InProgress,
 		},
 		{
 			test:     "valid name email",
@@ -58,7 +58,7 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			name:     testName,
 			emailErr: "",
 			nameErr:  "",
-			status:   state.PASS,
+			status:   state.Pass,
 		},
 	}
 	for _, tt := range tests {
@@ -78,11 +78,11 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tt.status, ms)
 			switch ms {
-			case state.IN_PROGRESS:
+			case state.InProgress:
 				assert.Equal(t, 2, len(cbs))
 				assert.Equal(t, tt.emailErr, cbs[0].Error)
 				assert.Equal(t, tt.nameErr, cbs[1].Error)
-			case state.PASS:
+			case state.Pass:
 				assert.Equal(t, testEmail, cm.credentialsState.UserID)
 				assert.Equal(t, testName, cm.credentialsState.Properties["name"])
 
@@ -114,10 +114,10 @@ func TestCredentiaslPostProcess(t *testing.T) {
 	err := cm.PostProcess(fs)
 	assert.NoError(t, err)
 
-	user, ok := us.GetUser(testEmail)
+	u, ok := us.GetUser(testEmail)
 	assert.True(t, ok, "user exists")
-	assert.Equal(t, testEmail, user.ID)
-	assert.Equal(t, testName, user.Properties["name"])
+	assert.Equal(t, testEmail, u.ID)
+	assert.Equal(t, testName, u.Properties["name"])
 }
 
 func TestGetCredentialsModule(t *testing.T) {
@@ -128,7 +128,7 @@ func TestGetCredentialsModule(t *testing.T) {
 
 func getCredentialsModule(t *testing.T) *Credentials {
 	conf := config.Config{}
-	config.SetConfig(conf)
+	config.SetConfig(&conf)
 
 	const emailRegexp = "^([a-z0-9_-]+)(@[a-z0-9-]+)(\\.[a-z]+|\\.[a-z]+\\.[a-z]+)?$"
 	var b = BaseAuthModule{

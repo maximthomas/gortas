@@ -8,7 +8,7 @@ import (
 	cors "github.com/rs/cors/wrapper/gin"
 )
 
-func SetupRouter(conf config.Config) *gin.Engine {
+func SetupRouter(conf *config.Config) *gin.Engine {
 	router := gin.Default()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   conf.Server.Cors.AllowedOrigins,
@@ -31,17 +31,16 @@ func SetupRouter(conf config.Config) *gin.Engine {
 			auth.POST(route, ac.Auth)
 		}
 		session := v1.Group("/session")
-		{
-			session.GET("/info", sc.SessionInfo)
-			session.GET("/jwt", sc.SessionJwt)
-		}
+		session.GET("/info", sc.SessionInfo)
+		session.GET("/jwt", sc.SessionJwt)
+
 	}
 	return router
 }
 
 func RunServer() {
 	ac := config.GetConfig()
-	router := SetupRouter(ac)
+	router := SetupRouter(&ac)
 	err := router.Run(":" + "8080")
 	if err != nil {
 		panic(err)

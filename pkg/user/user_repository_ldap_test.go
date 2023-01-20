@@ -13,7 +13,7 @@ func TestLdapConnection(t *testing.T) {
 	ur := getUserLdapRepository()
 	conn, err := ur.getConnection()
 	assert.NoError(t, err)
-	defer conn.Close()
+	conn.Close()
 }
 
 func TestGetUser(t *testing.T) {
@@ -60,10 +60,10 @@ func TestCreateUser(t *testing.T) {
 	user := User{
 		ID: userID,
 	}
-	user, err := ur.CreateUser(user)
+	_, err := ur.CreateUser(user)
 	assert.NoError(t, err)
 
-	user, exists := ur.GetUser("jerso")
+	_, exists := ur.GetUser("jerso")
 	assert.True(t, exists)
 }
 

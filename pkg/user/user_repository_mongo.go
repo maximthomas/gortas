@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	dbSessionExpireHours         = 24
+	mongoDBConnectTimeoutSeconds = 10
+)
+
 type userMongoRepository struct {
 	client     *mongo.Client
 	db         string
@@ -57,7 +62,7 @@ func (ur *userMongoRepository) ValidatePassword(id, password string) bool {
 	if err == nil {
 		valid = true
 	}
-	//valid = repoUser.Password == password
+	// valid = repoUser.Password == password
 
 	return valid
 }
@@ -119,8 +124,8 @@ func (ur *userMongoRepository) SetPassword(id, password string) error {
 	return nil
 }
 
-func NewUserMongoRepository(uri, db, c string) (*userMongoRepository, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func newUserMongoRepository(uri, db, c string) (*userMongoRepository, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDBConnectTimeoutSeconds*time.Second)
 	defer cancel()
 	log.Printf("connecting to mongo, uri: %v", uri)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
@@ -128,7 +133,7 @@ func NewUserMongoRepository(uri, db, c string) (*userMongoRepository, error) {
 		return nil, err
 	}
 	idxOpt := options.Index()
-	idxOpt.SetExpireAfterSeconds(60 * 60 * 24)
+	idxOpt.SetExpireAfterSeconds(60 * 60 * dbSessionExpireHours)
 	mod := mongo.IndexModel{
 		Keys: bson.M{
 			"createdAt": 1, // index in ascending order
@@ -146,7 +151,6 @@ func NewUserMongoRepository(uri, db, c string) (*userMongoRepository, error) {
 		return nil, err
 	}
 	return rep, nil
-
 }
 
 func (ur *userMongoRepository) getCollection() *mongo.Collection {

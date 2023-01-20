@@ -2,6 +2,7 @@ package modules
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 // Hydra ORY Hydra authentication module
 type Hydra struct {
 	BaseAuthModule
-	URI    string //hydra URI
+	URI    string // hydra URI
 	client *http.Client
 }
 
@@ -37,29 +38,29 @@ func (h *Hydra) getLoginChallenge() string {
 }
 
 func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-
-	uri := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, h.getLoginChallenge())
-	resp, err := h.client.Get(uri)
+	hydraLoginURL := fmt.Sprintf("%s/oauth2/auth/requests/login?login_challenge=%s", h.URI, h.getLoginChallenge())
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, hydraLoginURL, http.NoBody)
 	if err != nil {
-		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", uri, err)
+		return state.Fail, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
+	}
+	resp, err := h.client.Do(req)
+	if err != nil {
+		return state.Fail, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return state.FAIL, h.Callbacks, err
+		return state.Fail, h.Callbacks, err
 	}
 	var hld hydraLoginData
 	err = json.Unmarshal(body, &hld)
 	if err != nil {
-		return state.FAIL, h.Callbacks, err
+		return state.Fail, h.Callbacks, err
 	}
 
-	if !hld.Skip {
-
-	}
-
-	return state.PASS, h.Callbacks, err
+	return state.Pass, h.Callbacks, err
 }
 
 func (h *Hydra) ProcessCallbacks(_ []callbacks.Callback, s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
@@ -73,7 +74,7 @@ func (h *Hydra) ValidateCallbacks(cbs []callbacks.Callback) error {
 func (h *Hydra) PostProcess(fs *state.FlowState) error {
 
 	hs := hydraSubject{
-		Subject:     fs.UserId,
+		Subject:     fs.UserID,
 		Remember:    false,
 		RememberFor: 0,
 		ACR:         "gortas",
@@ -85,8 +86,8 @@ func (h *Hydra) PostProcess(fs *state.FlowState) error {
 		return err
 	}
 	uri := fmt.Sprintf("%s/oauth2/auth/requests/login/accept?login_challenge=%s", h.URI, h.getLoginChallenge())
-
-	req, err := http.NewRequest(http.MethodPut, uri, bytes.NewBuffer(jsonBody))
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uri, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return err
 	}

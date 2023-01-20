@@ -6,19 +6,17 @@ import (
 	"reflect"
 )
 
-//import "encoding/json"
-
 type FlowState struct {
 	Modules     []FlowStateModuleInfo
 	SharedState map[string]string
-	UserId      string
-	Id          string
+	UserID      string
+	ID          string
 	RedirectURI string
 	Name        string
 }
 
 type FlowStateModuleInfo struct {
-	Id         string
+	ID         string
 	Type       string
 	Properties FlowStateModuleProperties
 	Status     ModuleStatus
@@ -83,10 +81,10 @@ func (f *FlowState) UpdateModuleInfo(mIndex int, mInfo FlowStateModuleInfo) {
 type ModuleStatus int
 
 const (
-	FAIL ModuleStatus = -1 + iota
-	START
-	IN_PROGRESS //callbacks requested
-	PASS
+	Fail ModuleStatus = -1 + iota
+	Start
+	InProgress // callbacks requested
+	Pass
 )
 
 const (

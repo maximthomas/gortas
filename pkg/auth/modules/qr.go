@@ -13,6 +13,11 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
+const (
+	qrCodeSize = 256
+	secretLen  = 32
+)
+
 type QR struct {
 	BaseAuthModule
 	qrTimeout int64
@@ -30,20 +35,20 @@ func (q *QR) Process(lss *state.FlowState) (ms state.ModuleStatus, cbs []callbac
 		q.State["qrT"] = qrT
 	}
 
-	image, err := q.generateQRImage(lss.Id, qrT)
+	image, err := q.generateQRImage(lss.ID, qrT)
 	if err != nil {
-		return state.FAIL, q.Callbacks, err
+		return state.Fail, q.Callbacks, err
 	}
 
 	q.Callbacks[0].Properties["image"] = image
-	return state.IN_PROGRESS, q.Callbacks, err
+	return state.InProgress, q.Callbacks, err
 }
 
 func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 
 	uid, ok := q.BaseAuthModule.State["qrUserId"].(string)
 	if !ok {
-		//check if qr is outdated
+		// check if qr is outdated
 		var qrT int64
 		qrTf, ok := q.State["qrT"].(float64)
 		seconds := time.Now().Unix()
@@ -58,18 +63,18 @@ func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms 
 		if newQrT > qrT {
 			q.State["qrT"] = newQrT
 		}
-
-		image, err := q.generateQRImage(lss.Id, qrT)
+		var image string
+		image, err = q.generateQRImage(lss.ID, qrT)
 		if err != nil {
-			return state.FAIL, cbs, err
+			return state.Fail, cbs, err
 		}
 
 		q.Callbacks[0].Properties["image"] = image
 
-		return state.IN_PROGRESS, q.Callbacks, err
+		return state.InProgress, q.Callbacks, err
 	}
-	lss.UserId = uid
-	return state.PASS, cbs, err
+	lss.UserID = uid
+	return state.Pass, cbs, err
 
 }
 
@@ -84,18 +89,19 @@ func (q *QR) PostProcess(_ *state.FlowState) error {
 func (q *QR) getSecret() (secret string, err error) {
 	secret, ok := q.State["secret"].(string)
 	if !ok {
-		key := make([]byte, 32)
-		_, err := rand.Read(key)
+
+		key := make([]byte, secretLen)
+		_, err = rand.Read(key)
 		if err != nil {
 			return secret, err
 		}
-		secret = base64.StdEncoding.EncodeToString([]byte(key))
+		secret = base64.StdEncoding.EncodeToString(key)
 		q.State["secret"] = secret
 	}
 	return secret, err
 }
 
-func (q *QR) generateQRImage(sessId string, qrT int64) (string, error) {
+func (q *QR) generateQRImage(sessID string, qrT int64) (string, error) {
 	var image string
 	secret, err := q.getSecret()
 	if err != nil {
@@ -103,8 +109,8 @@ func (q *QR) generateQRImage(sessId string, qrT int64) (string, error) {
 	}
 
 	h := crypt.MD5(secret + strconv.FormatInt(qrT, 10))
-	qrValue := fmt.Sprintf("?sid=%s;%s&action=login", sessId, h)
-	png, err := qrcode.Encode(qrValue, qrcode.Medium, 256)
+	qrValue := fmt.Sprintf("?sid=%s;%s&action=login", sessID, h)
+	png, err := qrcode.Encode(qrValue, qrcode.Medium, qrCodeSize)
 	if err != nil {
 		return image, err
 	}

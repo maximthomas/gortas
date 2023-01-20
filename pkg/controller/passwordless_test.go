@@ -17,64 +17,66 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type qrTestCaseArgs struct {
+	session interface{}
+}
+type qrTestCaseWant struct {
+	code int
+}
+type qrTestCase struct {
+	name string
+	args qrTestCaseArgs
+	want qrTestCaseWant
+}
+
+var qrTests = []qrTestCase{
+	{
+		"no session",
+		qrTestCaseArgs{
+			session: nil,
+		},
+		qrTestCaseWant{
+			code: http.StatusUnauthorized,
+		},
+	},
+	{
+		"no valid user in session",
+		qrTestCaseArgs{
+			session: session.Session{
+				ID:        uuid.New().String(),
+				CreatedAt: time.Time{},
+				Properties: map[string]string{
+					"sub":   "bad",
+					"realm": "staff",
+				},
+			},
+		},
+		qrTestCaseWant{
+			code: http.StatusUnauthorized,
+		},
+	},
+	{
+		"valid user in session",
+		qrTestCaseArgs{
+			session: session.Session{
+				ID:        uuid.New().String(),
+				CreatedAt: time.Time{},
+				Properties: map[string]string{
+					"sub":   "user1",
+					"realm": "staff",
+				},
+			},
+		},
+		qrTestCaseWant{
+			code: http.StatusOK,
+		},
+	},
+}
+
 func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
-	pc := NewPasswordlessServicesController(conf)
-	type args struct {
-		session interface{}
-	}
-	type want struct {
-		code int
-	}
+	pc := NewPasswordlessServicesController(&conf)
 
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			"no session",
-			args{
-				session: nil,
-			},
-			want{
-				code: http.StatusUnauthorized,
-			},
-		},
-		{
-			"no valid user in session",
-			args{
-				session: session.Session{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Time{},
-					Properties: map[string]string{
-						"sub":   "bad",
-						"realm": "staff",
-					},
-				},
-			},
-			want{
-				code: http.StatusUnauthorized,
-			},
-		},
-		{
-			"valid user in session",
-			args{
-				session: session.Session{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Time{},
-					Properties: map[string]string{
-						"sub":   "user1",
-						"realm": "staff",
-					},
-				},
-			},
-			want{
-				code: http.StatusOK,
-			},
-		},
-	}
-
-	for _, tt := range tests {
+	for _, tt := range qrTests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			recorder := httptest.NewRecorder()
@@ -91,7 +93,7 @@ func TestPasswordlessServicesController_RegisterGenerateQR(t *testing.T) {
 }
 
 func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
-	pc := NewPasswordlessServicesController(conf)
+	pc := NewPasswordlessServicesController(&conf)
 	type args struct {
 		session interface{}
 	}
@@ -99,55 +101,7 @@ func TestPasswordlessServicesController_RegisterConfirmQR(t *testing.T) {
 		code int
 	}
 
-	tests := []struct {
-		name string
-		args args
-		want want
-	}{
-		{
-			"no session",
-			args{
-				session: nil,
-			},
-			want{
-				code: http.StatusUnauthorized,
-			},
-		},
-		{
-			"no valid user in session",
-			args{
-				session: session.Session{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Time{},
-					Properties: map[string]string{
-						"sub":   "bad",
-						"realm": "staff",
-					},
-				},
-			},
-			want{
-				code: http.StatusUnauthorized,
-			},
-		},
-		{
-			"valid user in session",
-			args{
-				session: session.Session{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Time{},
-					Properties: map[string]string{
-						"sub":   "user1",
-						"realm": "staff",
-					},
-				},
-			},
-			want{
-				code: http.StatusOK,
-			},
-		},
-	}
-
-	for _, tt := range tests {
+	for _, tt := range qrTests {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(recorder)
@@ -171,21 +125,22 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		CreatedAt:  time.Now(),
 		Properties: nil,
 	}
-	session.GetSessionService().CreateSession(badSess)
+	_, err := session.GetSessionService().CreateSession(badSess)
+	assert.NoError(t, err)
 
 	lss := state.FlowState{
 		Modules: []state.FlowStateModuleInfo{
 			{
-				Id:         "",
+				ID:         "",
 				Type:       "qr",
 				Properties: nil,
-				Status:     state.IN_PROGRESS,
+				Status:     state.InProgress,
 				State:      map[string]interface{}{},
 			},
 		},
 		SharedState: map[string]string{},
-		UserId:      "",
-		Id:          "",
+		UserID:      "",
+		ID:          "",
 		RedirectURI: "",
 	}
 	lssBytes, _ := json.Marshal(lss)
@@ -196,16 +151,18 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			"lss": string(lssBytes),
 		},
 	}
-	session.GetSessionService().CreateSession(validSess)
+	_, err = session.GetSessionService().CreateSession(validSess)
+	assert.NoError(t, err)
 
 	us := user.GetUserService()
-	user, _ := us.GetUser("user1")
-	user.Properties = map[string]string{
+	u, _ := us.GetUser("user1")
+	u.Properties = map[string]string{
 		"passwordless.qr": `{"secret": "s3cr3t"}`,
 	}
-	us.UpdateUser(user)
+	err = us.UpdateUser(u)
+	assert.NoError(t, err)
 
-	pc := NewPasswordlessServicesController(conf)
+	pc := NewPasswordlessServicesController(&conf)
 	type args struct {
 		body string
 	}
@@ -241,7 +198,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "no valid user in a repo",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"bad","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -251,7 +208,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "user not bound",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user2","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -261,7 +218,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "secret does not match",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user1","realm":"staff","secret":"secret"}`, validSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -272,7 +229,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "bad authentication session",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, badSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user1","realm":"staff","secret":"s3cr3t"}`, badSess.ID),
 			},
 			want: want{
 				code:       http.StatusUnauthorized,
@@ -282,7 +239,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 		{
 			name: "valid authentication session",
 			args: args{
-				body: fmt.Sprintf(`{"sid":"%s","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
+				body: fmt.Sprintf(`{"sid":"%q","uid":"user1","realm":"staff","secret":"s3cr3t"}`, validSess.ID),
 			},
 			want: want{
 				code: http.StatusOK,
@@ -296,11 +253,11 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 			c.Request = httptest.NewRequest("POST", "/", strings.NewReader(tt.args.body))
 			pc.AuthQR(c)
 			assert.Equal(t, tt.want.code, recorder.Code)
-			var respJson = make(map[string]interface{})
-			err := json.Unmarshal([]byte(recorder.Body.String()), &respJson)
+			var respJSON = make(map[string]interface{})
+			err := json.Unmarshal(recorder.Body.Bytes(), &respJSON)
 			assert.NoError(t, err)
 			if tt.want.errMessage != "" {
-				assert.Equal(t, respJson["error"], tt.want.errMessage)
+				assert.Equal(t, respJSON["error"], tt.want.errMessage)
 			}
 		})
 	}

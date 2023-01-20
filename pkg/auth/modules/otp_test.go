@@ -30,11 +30,18 @@ func TestNewOTP(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
+	key := make([]byte, 32)
+	rand.Read(key)
+	keyStr := base64.StdEncoding.EncodeToString(key)
+	conf := config.Config{}
+	conf.EncryptionKey = keyStr
+	config.SetConfig(&conf)
+
 	m := getOTPModule(t)
 	var fs state.FlowState
 	status, cbs, err := m.Process(&fs)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, status)
+	assert.Equal(t, state.InProgress, status)
 	assert.Equal(t, 2, len(cbs))
 
 	//check otp callback
@@ -56,15 +63,15 @@ func TestProcess_MagicLink(t *testing.T) {
 	keyStr := base64.StdEncoding.EncodeToString(key)
 	conf := config.Config{}
 	conf.EncryptionKey = keyStr
-	config.SetConfig(conf)
-	sessionId := "test_session"
-	code := sessionId + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
+	config.SetConfig(&conf)
+	sessionID := "test_session"
+	code := sessionID + "|" + strconv.FormatInt(time.Now().UnixMilli()+10000, 10)
 	encrypted, err := crypt.EncryptWithConfig(code)
 	assert.NoError(t, err)
 	sess := session.Session{}
 	sess.Properties = make(map[string]string, 1)
 	sess.Properties[constants.FlowStateSessionProperty] = "{}"
-	sess.ID = sessionId
+	sess.ID = sessionID
 	session.GetSessionService().CreateSession(sess)
 
 	m := getOTPModule(t)
@@ -73,23 +80,25 @@ func TestProcess_MagicLink(t *testing.T) {
 	var fs state.FlowState
 	st, _, err := m.Process(&fs)
 	assert.NoError(t, err)
-	assert.Equal(t, state.PASS, st)
+	assert.Equal(t, state.Pass, st)
 }
 
 func TestGenerateOTP(t *testing.T) {
 	m := getOTPModule(t)
-	m.generate()
-	otp := m.otpState.Otp
+	err := m.generate()
+	assert.NoError(t, err)
+	otpCode := m.otpState.Otp
 	generated := m.otpState.GeneratedAt
-	assert.NotEmpty(t, otp)
-	assert.Equal(t, 4, len(otp))
+	assert.NotEmpty(t, otpCode)
+	assert.Equal(t, 4, len(otpCode))
 	assert.True(t, generated > time.Now().UnixMilli()-10000)
 }
 
 func TestProcessCallbacks_CodeExpired(t *testing.T) {
 	const testOTP = "1234"
 	m := getOTPModule(t)
-	m.generate()
+	err := m.generate()
+	assert.NoError(t, err)
 	m.otpState.Otp = testOTP
 	m.otpState.GeneratedAt = int64(0)
 	inCbs := []callbacks.Callback{
@@ -104,14 +113,15 @@ func TestProcessCallbacks_CodeExpired(t *testing.T) {
 	}
 	st, cbs, err := m.ProcessCallbacks(inCbs, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Equal(t, "OTP expired", cbs[0].Error)
 }
 
 func TestProcessCallbacks_BadOTP(t *testing.T) {
 	const testOTP = "1234"
 	m := getOTPModule(t)
-	m.generate()
+	err := m.generate()
+	assert.NoError(t, err)
 	m.otpState.Otp = testOTP
 	m.otpState.GeneratedAt = time.Now().UnixMilli()
 	inCbs := []callbacks.Callback{
@@ -126,7 +136,7 @@ func TestProcessCallbacks_BadOTP(t *testing.T) {
 	}
 	st, cbs, err := m.ProcessCallbacks(inCbs, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Equal(t, "Invalid OTP", cbs[0].Error)
 	assert.Equal(t, "4", cbs[0].Properties["retryCount"])
 }
@@ -147,7 +157,7 @@ func TestProcessCallbacks_SendNotAllowed(t *testing.T) {
 	var fs state.FlowState
 	st, cbs, err := m.ProcessCallbacks(inCbs, &fs)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Equal(t, "Sending not allowed yet", cbs[1].Error)
 	resend, err := strconv.Atoi(cbs[0].Properties["resendSec"])
 	assert.NoError(t, err, "incorrect converted")
@@ -172,7 +182,7 @@ func TestProcessCallbacks_Send(t *testing.T) {
 	m.otpState.Otp = testOTP
 	st, cbs, err := m.ProcessCallbacks(inCbs, &state.FlowState{})
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Empty(t, cbs[1].Error)
 	assert.NotEqual(t, testOTP, m.State["otp"])
 	otpCb := cbs[0]
@@ -200,13 +210,13 @@ func TestProcessCallbacks_CodeValid(t *testing.T) {
 	}
 	st, cbs, err := m.ProcessCallbacks(inCbs, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, state.PASS, st)
+	assert.Equal(t, state.Pass, st)
 	assert.Empty(t, cbs[0].Error)
 }
 
 func TestGetMessage(t *testing.T) {
 	fs := &state.FlowState{
-		Id: "test",
+		ID: "test",
 	}
 	m := getOTPModule(t)
 	m.otpState.Otp = "1234"
@@ -218,7 +228,7 @@ func TestGetMessage(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	fs := &state.FlowState{
-		Id: "test",
+		ID: "test",
 	}
 	m := getOTPModule(t)
 	err := m.send(fs)
@@ -249,7 +259,7 @@ func getOTPModule(t *testing.T) *OTP {
 	}
 	am := newOTP(b)
 	assert.NotNil(t, am)
-	otp, ok := am.(*OTP)
+	o, ok := am.(*OTP)
 	assert.True(t, ok)
-	return otp
+	return o
 }

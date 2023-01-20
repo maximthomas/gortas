@@ -57,7 +57,7 @@ func TestRegistration_Process_InvalidLogin(t *testing.T) {
 			assert.Equal(t, 4, len(cbs))
 			assert.Equal(t, tt.emailError, cbs[0].Error)
 			assert.Equal(t, tt.nameError, cbs[1].Error)
-			assert.Equal(t, state.IN_PROGRESS, ms)
+			assert.Equal(t, state.InProgress, ms)
 		})
 	}
 
@@ -74,146 +74,148 @@ func TestRegistration_Process(t *testing.T) {
 		fmt.Print(status, cbs, err)
 		assert.Equal(t, 4, len(cbs))
 		assert.NoError(t, err)
-		assert.Equal(t, state.IN_PROGRESS, status)
+		assert.Equal(t, state.InProgress, status)
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
 }
 
 func TestRegistration_ProcessCallbacks(t *testing.T) {
 	rm := getNewRegistrationModule(t)
-	t.Run("test empty callbacks", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &state.FlowState{}
-		status, _, err := rm.ProcessCallbacks(nil, lss)
-		assert.Error(t, err)
-		assert.Equal(t, state.FAIL, status)
-	})
 
-	t.Run("test empty fields", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &state.FlowState{}
-		inCbs := []callbacks.Callback{
-			{
-				Name:  "login",
-				Value: "",
+	tests := []struct {
+		name       string
+		inCbs      []callbacks.Callback
+		assertions func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error)
+	}{
+		{
+			name:  "test empty callbacks",
+			inCbs: nil,
+			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
+				assert.Error(t, err)
+				assert.Equal(t, state.Fail, status)
 			},
-			{
-				Name:  "name",
-				Value: "",
+		},
+		{
+			name: "test empty fields",
+			inCbs: []callbacks.Callback{
+				{
+					Name:  "login",
+					Value: "",
+				},
+				{
+					Name:  "name",
+					Value: "",
+				},
+				{
+					Name:  "password",
+					Value: "",
+				},
 			},
-			{
-				Name:  "password",
-				Value: "",
+			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, state.InProgress, status)
+				assert.Equal(t, "Email required", cbs[0].Error)
+				assert.Equal(t, "Name required", cbs[1].Error)
+				assert.Equal(t, "Password required", cbs[2].Error)
 			},
-		}
-		status, cbs, err := rm.ProcessCallbacks(inCbs, lss)
-		assert.NoError(t, err)
-		assert.Equal(t, state.IN_PROGRESS, status)
-		assert.Equal(t, "Email required", cbs[0].Error)
-		assert.Equal(t, "Name required", cbs[1].Error)
-		assert.Equal(t, "Password required", cbs[2].Error)
-	})
+		},
+		{
+			name: "test user exists",
+			inCbs: []callbacks.Callback{
+				{
+					Name:  "login",
+					Value: "user1",
+				},
+				{
+					Name:  "name",
+					Value: "John Doe",
+				},
+				{
+					Name:  "password",
+					Value: password,
+				},
+				{
+					Name:  "repeatPassword",
+					Value: password,
+				},
+			},
+			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
+				assert.Equal(t, state.InProgress, status)
+				assert.Equal(t, "User exists", cbs[0].Error)
+			},
+		},
+		{
+			name: "test passwords do not match",
+			inCbs: []callbacks.Callback{
+				{
+					Name:  "login",
+					Value: userName,
+				},
+				{
+					Name:  "name",
+					Value: "John Doe",
+				},
+				{
+					Name:  "password",
+					Value: password,
+				},
+				{
+					Name:  "repeatPassword",
+					Value: "bad",
+				},
+			},
+			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, state.InProgress, status)
+				assert.Equal(t, "Passwords do not match", cbs[3].Error)
+			},
+		},
+		{
+			name: "test successful registration",
+			inCbs: []callbacks.Callback{
+				{
+					Name:  "login",
+					Value: userName,
+				},
+				{
+					Name:  "name",
+					Value: "John Doe",
+				},
+				{
+					Name:  "password",
+					Value: password,
+				},
+				{
+					Name:  "repeatPassword",
+					Value: password,
+				},
+			},
+			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, state.Pass, status)
+				us := user.GetUserService()
+				_, ok := us.GetUser(userName)
+				assert.True(t, ok)
+				pValid := us.ValidatePassword(userName, password)
+				assert.True(t, pValid)
+			},
+		},
+	}
 
-	t.Run("test user exists", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &state.FlowState{}
-		inCbs := []callbacks.Callback{
-			{
-				Name:  "login",
-				Value: "user1",
-			},
-			{
-				Name:  "name",
-				Value: "John Doe",
-			},
-			{
-				Name:  "password",
-				Value: password,
-			},
-			{
-				Name:  "repeatPassword",
-				Value: password,
-			},
-		}
-		status, cbs, err := rm.ProcessCallbacks(inCbs, lss)
-		assert.NoError(t, err)
-		assert.Equal(t, state.IN_PROGRESS, status)
-		assert.Equal(t, "User exists", cbs[0].Error)
-	})
-
-	t.Run("test passwords do not match", func(t *testing.T) {
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &state.FlowState{}
-		inCbs := []callbacks.Callback{
-			{
-				Name:  "login",
-				Value: userName,
-			},
-			{
-				Name:  "name",
-				Value: "John Doe",
-			},
-			{
-				Name:  "password",
-				Value: password,
-			},
-			{
-				Name:  "repeatPassword",
-				Value: "bad",
-			},
-		}
-		status, cbs, err := rm.ProcessCallbacks(inCbs, lss)
-		assert.NoError(t, err)
-		assert.Equal(t, state.IN_PROGRESS, status)
-		assert.Equal(t, "Passwords do not match", cbs[3].Error)
-	})
-
-	t.Run("test successful registration", func(t *testing.T) {
-
-		recorder := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(recorder)
-		c.Request = httptest.NewRequest("POST", "/login", nil)
-		lss := &state.FlowState{}
-		inCbs := []callbacks.Callback{
-			{
-				Name:  "login",
-				Value: userName,
-			},
-			{
-				Name:  "name",
-				Value: "John Doe",
-			},
-			{
-				Name:  "password",
-				Value: password,
-			},
-			{
-				Name:  "repeatPassword",
-				Value: password,
-			},
-		}
-		status, _, err := rm.ProcessCallbacks(inCbs, lss)
-		assert.NoError(t, err)
-		assert.Equal(t, state.PASS, status)
-		us := user.GetUserService()
-		_, ok := us.GetUser(userName)
-		assert.True(t, ok)
-		pValid := us.ValidatePassword(userName, password)
-		assert.True(t, pValid)
-
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(recorder)
+			c.Request = httptest.NewRequest("POST", "/login", nil)
+			lss := &state.FlowState{}
+			status, cbs, err := rm.ProcessCallbacks(tt.inCbs, lss)
+			tt.assertions(t, status, cbs, err)
+		})
+	}
 }
 
 func getNewRegistrationModule(t *testing.T) *Registration {
-	config.SetConfig(config.Config{})
+	config.SetConfig(&config.Config{})
 	var b = BaseAuthModule{
 		l: log.WithField("module", "registration"),
 		Properties: map[string]interface{}{

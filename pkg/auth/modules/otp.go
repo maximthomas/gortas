@@ -55,47 +55,46 @@ type otpSenderProperties struct {
 func (lm *OTP) Process(fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	defer lm.updateState()
 
-	//TODO add check expired date
-	if lm.OtpCheckMagicLink { //TODO refactor move to function and code to constant
+	// TODO add check expired date
+	if lm.OtpCheckMagicLink { // TODO refactor move to function and code to constant
 		return lm.checkMagicLink(fs)
 	}
-	lm.generateAndSendOTP(fs)
-	return state.IN_PROGRESS, lm.Callbacks, err
+	return lm.generateAndSendOTP(fs)
 }
 
 func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 
 	if lm.req.URL.Query().Get(otpMagicLinkParameter) == "" {
-		return state.FAIL, lm.Callbacks, err
+		return state.Fail, lm.Callbacks, err
 	}
 
 	code := lm.req.URL.Query().Get(otpMagicLinkParameter)
 	codeDecrypted, err := crypt.DecryptWithConfig(code)
 	if err != nil {
-		return state.FAIL, lm.Callbacks, err
+		return state.Fail, lm.Callbacks, err
 	}
 
 	codeParts := strings.Split(codeDecrypted, "|")
-	sessionId := codeParts[0]
+	sessionID := codeParts[0]
 	expired, err := strconv.ParseInt(codeParts[1], 10, 0)
 	if err != nil {
-		return state.FAIL, lm.Callbacks, err
+		return state.Fail, lm.Callbacks, err
 	}
 
 	if time.Now().UnixMilli() > expired {
-		return state.FAIL, lm.Callbacks, errors.New("code link expired")
+		return state.Fail, lm.Callbacks, errors.New("code link expired")
 	}
 
-	sess, err := session.GetSessionService().GetSession(sessionId)
+	sess, err := session.GetSessionService().GetSession(sessionID)
 	if err != nil {
-		return state.FAIL, lm.Callbacks, err
+		return state.Fail, lm.Callbacks, err
 	}
 	var oldFlowState state.FlowState
 	err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &oldFlowState)
 	if err != nil {
-		return state.FAIL, lm.Callbacks, err
+		return state.Fail, lm.Callbacks, err
 	}
-	fs.UserId = oldFlowState.UserId
+	fs.UserID = oldFlowState.UserID
 	for k, v := range oldFlowState.SharedState {
 		fs.SharedState[k] = v
 	}
@@ -104,61 +103,60 @@ func (lm *OTP) checkMagicLink(fs *state.FlowState) (ms state.ModuleStatus, cbs [
 		fs.Modules[i].State = m.State
 	}
 
-	return state.PASS, lm.Callbacks, err
+	return state.Pass, lm.Callbacks, err
 }
 
 func (lm *OTP) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	defer lm.updateState()
-	var otp string
+	var o string
 	var action string
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		switch cb.Name {
 		case "otp":
-			otp = cb.Value
+			o = cb.Value
 		case "action":
 			action = cb.Value
 		}
 	}
 
 	if action == actionSend {
-
 		return lm.generateAndSendOTP(fs)
 	}
-	//TODO move to BaseAuthModule
+	// TODO move to BaseAuthModule
 	cbs = make([]callbacks.Callback, len(lm.Callbacks))
 	copy(cbs, lm.Callbacks)
 
 	generatedTime := lm.otpState.GeneratedAt
-	expiresAt := generatedTime + (int64)(lm.OtpTimeoutSec*1000)
+	expiresAt := generatedTime + int64(lm.OtpTimeoutSec*1000)
 	if time.Now().UnixMilli() > expiresAt {
 		(&cbs[0]).Error = "OTP expired"
-		return state.IN_PROGRESS, cbs, err
+		return state.InProgress, cbs, err
 	}
 
 	generatedOtp := lm.otpState.Otp
 	if generatedOtp == "" {
 		cbs = lm.Callbacks
 		(&cbs[0]).Error = "OTP was not generated"
-		return state.IN_PROGRESS, cbs, err
+		return state.InProgress, cbs, err
 	}
 
 	rc := lm.getRetryCount()
 	if rc <= 0 {
 		(&cbs[0]).Error = "OTP retries excceded"
 		(&cbs[0]).Properties["retryCount"] = strconv.Itoa(rc)
-		return state.IN_PROGRESS, cbs, err
+		return state.InProgress, cbs, err
 	}
 
-	valid := generatedOtp == otp || os.Getenv("GORTAS_OTP_TEST") == otp
+	valid := generatedOtp == o || os.Getenv("GORTAS_OTP_TEST") == o
 	if valid {
-		return state.PASS, cbs, err
-	} else {
-		cbs = lm.Callbacks
-		lm.incrementRetries()
-		(&cbs[0]).Error = "Invalid OTP"
-		lm.updateOTPCallbackProperties(&cbs[0])
-		return state.IN_PROGRESS, cbs, err
+		return state.Pass, cbs, err
 	}
+	cbs = lm.Callbacks
+	lm.incrementRetries()
+	(&cbs[0]).Error = "Invalid OTP"
+	lm.updateOTPCallbackProperties(&cbs[0])
+	return state.InProgress, cbs, err
 }
 
 func (lm *OTP) updateState() {
@@ -171,32 +169,32 @@ func (lm *OTP) generateAndSendOTP(fs *state.FlowState) (ms state.ModuleStatus, c
 	cbs = make([]callbacks.Callback, len(lm.Callbacks))
 	copy(cbs, lm.Callbacks)
 	generatedAt := lm.otpState.GeneratedAt
-	//check if send allowed
+	// check if send allowed
 	if generatedAt > time.Now().UnixMilli()-int64(lm.OtpResendSec)*1000 {
 		(&cbs[1]).Error = "Sending not allowed yet"
 		lm.updateOTPCallbackProperties(&cbs[0])
-		return state.IN_PROGRESS, cbs, err
+		return state.InProgress, cbs, err
 	}
 
 	err = lm.generate()
 	if err != nil {
-		return state.FAIL, cbs, err
+		return state.Fail, cbs, err
 	}
 	err = lm.send(fs)
 	if err != nil {
-		return state.FAIL, cbs, err
+		return state.Fail, cbs, err
 	}
 	lm.updateOTPCallbackProperties(&cbs[0])
-	return state.IN_PROGRESS, cbs, err
+	return state.InProgress, cbs, err
 }
 
 func (lm *OTP) generate() error {
-	otp, err := crypt.RandomString(lm.OtpLength, lm.UseLetters, lm.UseDigits)
+	o, err := crypt.RandomString(lm.OtpLength, lm.UseLetters, lm.UseDigits)
 	if err != nil {
 		return errors.Wrap(err, "error generating OTP")
 	}
 
-	lm.otpState.Otp = otp
+	lm.otpState.Otp = o
 	lm.otpState.GeneratedAt = time.Now().UnixMilli()
 	return nil
 }
@@ -206,13 +204,15 @@ func (lm *OTP) send(fs *state.FlowState) error {
 	if err != nil {
 		return errors.Wrap(err, "error generating message")
 	}
-	err = lm.otpSender.Send(fs.UserId, msg)
+	err = lm.otpSender.Send(fs.UserID, msg)
 	if err != nil {
 		return errors.Wrap(err, "error sending message")
 	}
 	return nil
 
 }
+
+const millisecondsMultiplier = 1000
 
 // TODO add authentication link
 func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
@@ -223,10 +223,10 @@ func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
 
 	minutes := lm.OtpTimeoutSec / 60
 	seconds := lm.OtpTimeoutSec % 60
-	otpExpiresAt := time.Now().UnixMilli() + int64(lm.OtpTimeoutSec*1000)
+	otpExpiresAt := time.Now().UnixMilli() + int64(lm.OtpTimeoutSec*millisecondsMultiplier)
 
 	otpTimeoutFormatted := fmt.Sprintf("%02d:%02d", minutes, seconds)
-	magicLink, err := crypt.EncryptWithConfig(fs.Id + "|" + strconv.FormatInt(otpExpiresAt, 10))
+	magicLink, err := crypt.EncryptWithConfig(fs.ID + "|" + strconv.FormatInt(otpExpiresAt, 10))
 	if err != nil {
 		return "", err
 	}
@@ -242,7 +242,10 @@ func (lm *OTP) getMessage(fs *state.FlowState) (string, error) {
 	}
 
 	var b bytes.Buffer
-	tmpl.Execute(&b, otpData)
+	err = tmpl.Execute(&b, otpData)
+	if err != nil {
+		return "", err
+	}
 
 	return b.String(), nil
 }
@@ -287,7 +290,7 @@ func newOTP(base BaseAuthModule) AuthModule {
 	var om OTP
 	err := mapstructure.Decode(base.Properties, &om)
 	if err != nil {
-		panic(err) //TODO add error processing
+		panic(err) // TODO add error processing
 	}
 
 	(&base).Callbacks = []callbacks.Callback{
@@ -309,7 +312,7 @@ func newOTP(base BaseAuthModule) AuthModule {
 			Required: true,
 			Value:    "check",
 			Properties: map[string]string{
-				"values":        "send|check", //TODO add Camel case
+				"values":        "send|check", // TODO add Camel case
 				"skipVerifyFor": "send",
 			},
 		},
@@ -317,11 +320,11 @@ func newOTP(base BaseAuthModule) AuthModule {
 
 	om.BaseAuthModule = base
 
-	var os otpState
-	_ = mapstructure.Decode(base.State, &os)
-	om.otpState = &os
+	var st otpState
+	_ = mapstructure.Decode(base.State, &st)
+	om.otpState = &st
 
-	if !om.OtpCheckMagicLink { //if module just checks magic link, there's no need to init OTP sender
+	if !om.OtpCheckMagicLink { // if module just checks magic link, there's no need to init OTP sender
 		var osp otpSenderProperties
 		err = mapstructure.Decode(base.Properties[otpSenderProperty], &osp)
 		if err != nil {

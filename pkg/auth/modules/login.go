@@ -11,14 +11,15 @@ type LoginPassword struct {
 }
 
 func (lm *LoginPassword) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, lm.Callbacks, err
+	return state.InProgress, lm.Callbacks, err
 }
 
 func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	var username string
 	var password string
 
-	for _, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		switch cb.Name {
 		case "login":
 			username = cb.Value
@@ -29,13 +30,13 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 	us := user.GetUserService()
 	valid := us.ValidatePassword(username, password)
 	if valid {
-		fs.UserId = username
-		return state.PASS, cbs, err
-	} else {
-		cbs = lm.Callbacks
-		(&cbs[0]).Error = "Invalid username or password"
-		return state.IN_PROGRESS, cbs, err
+		fs.UserID = username
+		return state.Pass, cbs, err
 	}
+	cbs = lm.Callbacks
+	(&cbs[0]).Error = "Invalid username or password"
+	return state.InProgress, cbs, err
+
 }
 
 func (lm *LoginPassword) ValidateCallbacks(cbs []callbacks.Callback) error {

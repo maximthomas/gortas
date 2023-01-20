@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var privateKey, _ = rsa.GenerateKey(rand.Reader, 1024)
+var privateKey, _ = rsa.GenerateKey(rand.Reader, 2048)
 var privateKeyStr = string(pem.EncodeToMemory(
 	&pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -38,8 +37,8 @@ var privateKeyStr = string(pem.EncodeToMemory(
 
 var publicKey = &privateKey.PublicKey
 
-var us user.UserService
-var ss session.SessionService
+var us user.Service
+var ss session.Service
 var (
 	flows = map[string]config.Flow{
 		"default": {Modules: []config.Module{
@@ -62,13 +61,12 @@ var (
 		}},
 	}
 
-	logger = logrus.New()
-	conf   = config.Config{
+	conf = config.Config{
 		Flows: flows,
-		Session: session.SessionConfig{
+		Session: session.Config{
 			Type:    "stateless",
 			Expires: 60000,
-			Jwt: session.SessionJWT{
+			Jwt: session.JWT{
 				Issuer:        "http://gortas",
 				PrivateKeyPem: privateKeyStr,
 			},
@@ -78,10 +76,10 @@ var (
 )
 
 func init() {
-	config.SetConfig(conf)
-	router = SetupRouter(conf)
+	config.SetConfig(&conf)
+	router = SetupRouter(&conf)
 	us = user.GetUserService()
-	ss = session.GetSessionService()
+	ss = *session.GetSessionService()
 }
 
 func TestSetupRouter(t *testing.T) {
@@ -97,12 +95,14 @@ func TestLogin(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
 		router.ServeHTTP(recorder, request)
-		assert.Equal(t, 200, recorder.Result().StatusCode)
+		resp := recorder.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, 200, resp.StatusCode)
 		cbReq := &callbacks.Request{}
 		err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
-		recorder.Result().Header = recorder.Header()
-		cookieVal, err := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
+		resp.Header = recorder.Header()
+		cookieVal, err := getCookieValue(state.FlowCookieName, resp.Cookies())
 
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
@@ -110,17 +110,20 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Test bad credentials", func(t *testing.T) {
-
 		request := httptest.NewRequest("GET", target, nil)
 		recorder := httptest.NewRecorder()
 
 		router.ServeHTTP(recorder, request)
-		assert.Equal(t, 200, recorder.Result().StatusCode)
+
+		resp := recorder.Result()
+		defer resp.Body.Close()
+
+		assert.Equal(t, 200, resp.StatusCode)
 		cbReq := &callbacks.Request{}
 		err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
-		recorder.Result().Header = recorder.Header()
-		cookieVal, err := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
+		resp.Header = recorder.Header()
+		cookieVal, err := getCookieValue(state.FlowCookieName, resp.Cookies())
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
 
@@ -137,6 +140,7 @@ func TestLogin(t *testing.T) {
 		request.AddCookie(authCookie)
 		recorder = httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
+
 		err = json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
 		assert.Equal(t, "Invalid username or password", cbReq.Callbacks[0].Error)
@@ -147,12 +151,16 @@ func TestLogin(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
 		router.ServeHTTP(recorder, request)
-		assert.Equal(t, 200, recorder.Result().StatusCode)
+
+		resp := recorder.Result()
+		defer resp.Body.Close()
+
+		assert.Equal(t, 200, resp.StatusCode)
 		cbReq := &callbacks.Request{}
 		err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
-		recorder.Result().Header = recorder.Header()
-		cookieVal, err := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
+		resp.Header = recorder.Header()
+		cookieVal, err := getCookieValue(state.FlowCookieName, resp.Cookies())
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
 
@@ -164,11 +172,13 @@ func TestLogin(t *testing.T) {
 		request.AddCookie(authCookie)
 		recorder = httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
-		var respJson = make(map[string]interface{})
-		err = json.Unmarshal(recorder.Body.Bytes(), &respJson)
+		resp = recorder.Result()
+		defer resp.Body.Close()
+		var respJSON = make(map[string]interface{})
+		err = json.Unmarshal(recorder.Body.Bytes(), &respJSON)
 		assert.NoError(t, err)
-		assert.Equal(t, "bad request", respJson["error"])
-		assert.Equal(t, 400, recorder.Result().StatusCode)
+		assert.Equal(t, "bad request", respJSON["error"])
+		assert.Equal(t, 400, resp.StatusCode)
 	})
 
 	t.Run("Test successful authentication", func(t *testing.T) {
@@ -177,18 +187,22 @@ func TestLogin(t *testing.T) {
 		recorder := httptest.NewRecorder()
 
 		router.ServeHTTP(recorder, request)
-		assert.Equal(t, 200, recorder.Result().StatusCode)
+
+		resp := recorder.Result()
+
+		assert.Equal(t, 200, resp.StatusCode)
 		cbReq := &callbacks.Request{}
 		err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 		assert.NoError(t, err)
-		recorder.Result().Header = recorder.Header()
-		cookieVal, err := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
+		resp.Header = recorder.Header()
+		cookieVal, err := getCookieValue(state.FlowCookieName, resp.Cookies())
 		assert.NoError(t, err)
 		assert.Equal(t, "login", cbReq.Module)
 
-		recorder.Result().Header = recorder.Header()
-		newCookieVal, _ := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
+		resp.Header = recorder.Header()
+		newCookieVal, _ := getCookieValue(state.FlowCookieName, resp.Cookies())
 		assert.Equal(t, cookieVal, newCookieVal)
+		resp.Body.Close()
 
 		authCookie := &http.Cookie{
 			Name:  state.FlowCookieName,
@@ -208,15 +222,17 @@ func TestLogin(t *testing.T) {
 		recorder = httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
 
-		var respJson = make(map[string]interface{})
-		_ = json.Unmarshal(recorder.Body.Bytes(), &respJson)
-		log.Print(recorder.Result())
+		resp = recorder.Result()
+
+		var respJSON = make(map[string]interface{})
+		_ = json.Unmarshal(recorder.Body.Bytes(), &respJSON)
+		log.Print(resp)
 		assert.NoError(t, err)
-		sessionCookie, err := getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
+		sessionCookie, err := getCookieValue(state.SessionCookieName, resp.Cookies())
 		assert.NoError(t, err)
 		assert.NotEmpty(t, sessionCookie)
-		assert.NotEmpty(t, respJson["token"])
-
+		assert.NotEmpty(t, respJSON["token"])
+		resp.Body.Close()
 		claims := jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(sessionCookie, claims, func(token *jwt.Token) (interface{}, error) {
 			return publicKey, nil
@@ -253,18 +269,18 @@ func TestLogin(t *testing.T) {
 		request := httptest.NewRequest("POST", target, bytes.NewBuffer(body))
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
-
-		var respJson = make(map[string]interface{})
-		_ = json.Unmarshal(recorder.Body.Bytes(), &respJson)
-		log.Print(recorder.Result())
-		sessionCookie, err := getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
+		resp := recorder.Result()
+		defer resp.Body.Close()
+		var respJSON = make(map[string]interface{})
+		_ = json.Unmarshal(recorder.Body.Bytes(), &respJSON)
+		log.Print(resp)
+		sessionCookie, err := getCookieValue(state.SessionCookieName, resp.Cookies())
 		assert.NoError(t, err)
 		assert.NotEmpty(t, sessionCookie)
-		assert.NotEmpty(t, respJson["token"])
+		assert.NotEmpty(t, respJSON["token"])
 	})
 
 	t.Run("test authentication without init invalid data", func(t *testing.T) {
-
 		cbReq := callbacks.Request{
 			Callbacks: []callbacks.Callback{
 				{
@@ -280,9 +296,9 @@ func TestLogin(t *testing.T) {
 		recorder := httptest.NewRecorder()
 		router.ServeHTTP(recorder, request)
 
-		var respJson = make(map[string]interface{})
-		_ = json.Unmarshal(recorder.Body.Bytes(), &respJson)
-		assert.Equal(t, "fail", respJson["status"])
+		var respJSON = make(map[string]interface{})
+		_ = json.Unmarshal(recorder.Body.Bytes(), &respJSON)
+		assert.Equal(t, "fail", respJSON["status"])
 		assert.Equal(t, 401, recorder.Result().StatusCode)
 	})
 }
@@ -296,22 +312,22 @@ func TestIDM(t *testing.T) {
 func TestRegisterQR(t *testing.T) {
 	t.Skip()
 	assert.Fail(t, "implement test")
-	sessionId := doLogin("user1", "password")
-	assert.NotEmpty(t, sessionId)
+	sessionID := doLogin("user1", "password")
+	assert.NotEmpty(t, sessionID)
 
 	//getting QR code
 	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/idm/otp/qr", nil)
 
 	sessionCookie := &http.Cookie{
 		Name:  state.SessionCookieName,
-		Value: sessionId,
+		Value: sessionID,
 	}
 	request.AddCookie(sessionCookie)
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
 	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
 	var resp map[string]string
-	err := json.Unmarshal([]byte(recorder.Body.String()), &resp)
+	err := json.Unmarshal(recorder.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	qrB64, ok := resp["qr"]
 	assert.True(t, ok)
@@ -336,7 +352,7 @@ func TestAuthQR(t *testing.T) {
 	assert.Fail(t, "implement test")
 	const secret = "s3cr3t"
 	user1, _ := us.GetUser("user1")
-	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%s"}`, secret))
+	user1.SetProperty("passwordless.qr", fmt.Sprintf(`{"secret": "%q"}`, secret))
 	_ = us.UpdateUser(user1)
 
 	request := httptest.NewRequest("GET", "http://localhost/gortas/v1/login/staff/qr", nil)
@@ -352,11 +368,11 @@ func TestAuthQR(t *testing.T) {
 	}
 
 	cbReq := &callbacks.Request{}
-	err := json.Unmarshal([]byte(recorder.Body.String()), cbReq)
+	err := json.Unmarshal(recorder.Body.Bytes(), cbReq)
 	assert.NoError(t, err)
 
 	//auth QR
-	authQRBody := fmt.Sprintf(`{"sid":"%s", "uid": "%s", "realm":"%s", "secret": "%s"}`, cookieVal, "user1", "staff", secret)
+	authQRBody := fmt.Sprintf(`{"sid":"%q", "uid": "%q", "realm":"%q", "secret": "%q"}`, cookieVal, "user1", "staff", secret)
 	request = httptest.NewRequest("POST", "http://localhost/gortas/v1/service/otp/qr/login", bytes.NewBuffer([]byte(authQRBody)))
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
@@ -370,23 +386,22 @@ func TestAuthQR(t *testing.T) {
 	assert.Equal(t, http.StatusOK, recorder.Result().StatusCode)
 
 	var respJSON = make(map[string]interface{})
-	_ = json.Unmarshal([]byte(recorder.Body.String()), &respJSON)
+	_ = json.Unmarshal(recorder.Body.Bytes(), &respJSON)
 	log.Print(recorder.Result())
 	assert.NoError(t, err)
 	sessionCookie, err := getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
 	assert.NoError(t, err)
 	assert.NotEmpty(t, sessionCookie)
 	assert.Equal(t, "success", respJSON["status"])
-
 }
 
-func doLogin(login string, password string) (sessionId string) {
+func doLogin(login, password string) (sessionID string) {
 	request := httptest.NewRequest("GET", target, nil)
 	recorder := httptest.NewRecorder()
 
 	router.ServeHTTP(recorder, request)
 	cbReq := &callbacks.Request{}
-	_ = json.Unmarshal([]byte(recorder.Body.String()), cbReq)
+	_ = json.Unmarshal(recorder.Body.Bytes(), cbReq)
 	recorder.Result().Header = recorder.Header()
 	cookieVal, _ := getCookieValue(state.FlowCookieName, recorder.Result().Cookies())
 
@@ -403,8 +418,8 @@ func doLogin(login string, password string) (sessionId string) {
 	request.AddCookie(authCookie)
 	recorder = httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)
-	sessionId, _ = getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
-	return sessionId
+	sessionID, _ = getCookieValue(state.SessionCookieName, recorder.Result().Cookies())
+	return sessionID
 }
 
 // helper functions
