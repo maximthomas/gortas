@@ -1,4 +1,8 @@
 # Gortas
+
+<a href="https://github.com/maximthomas/gortas/actions/workflows/build.yml"><img src="https://github.com/maximthomas/gortas/actions/workflows/build.yml/badge.svg?branch=master&event=push" alt="Build status"></a>
+<a href="https://goreportcard.com/report/github.com/maximthomas/gortas"><img src="https://goreportcard.com/badge/github.com/maximthomas/gortas" alt="Go Report"></a>
+
 **Gortas** (Golang Authentication Service) is a flexible API based authentication service, allows adding authentication to your site or service with minimum effort. 
 **Gortas** supports multiple authentication methods across various data sources. You can authenticate against your Active Directory or other LDAP user directory or MongoDB.
 
