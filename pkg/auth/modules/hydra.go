@@ -17,7 +17,7 @@ import (
 // Hydra ORY Hydra authentication module
 type Hydra struct {
 	BaseAuthModule
-	URI    string //hydra URI
+	URI    string // hydra URI
 	client *http.Client
 }
 
@@ -42,25 +42,25 @@ func (h *Hydra) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callba
 	ctx := context.Background()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, hydraLoginURL, http.NoBody)
 	if err != nil {
-		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
+		return state.Fail, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
 	}
 	resp, err := h.client.Do(req)
 	if err != nil {
-		return state.FAIL, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
+		return state.Fail, h.Callbacks, fmt.Errorf("Process %v: %v", hydraLoginURL, err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return state.FAIL, h.Callbacks, err
+		return state.Fail, h.Callbacks, err
 	}
 	var hld hydraLoginData
 	err = json.Unmarshal(body, &hld)
 	if err != nil {
-		return state.FAIL, h.Callbacks, err
+		return state.Fail, h.Callbacks, err
 	}
 
-	return state.PASS, h.Callbacks, err
+	return state.Pass, h.Callbacks, err
 }
 
 func (h *Hydra) ProcessCallbacks(_ []callbacks.Callback, s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {

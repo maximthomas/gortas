@@ -37,18 +37,18 @@ func (q *QR) Process(lss *state.FlowState) (ms state.ModuleStatus, cbs []callbac
 
 	image, err := q.generateQRImage(lss.ID, qrT)
 	if err != nil {
-		return state.FAIL, q.Callbacks, err
+		return state.Fail, q.Callbacks, err
 	}
 
 	q.Callbacks[0].Properties["image"] = image
-	return state.IN_PROGRESS, q.Callbacks, err
+	return state.InProgress, q.Callbacks, err
 }
 
 func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 
 	uid, ok := q.BaseAuthModule.State["qrUserId"].(string)
 	if !ok {
-		//check if qr is outdated
+		// check if qr is outdated
 		var qrT int64
 		qrTf, ok := q.State["qrT"].(float64)
 		seconds := time.Now().Unix()
@@ -66,15 +66,15 @@ func (q *QR) ProcessCallbacks(_ []callbacks.Callback, lss *state.FlowState) (ms 
 		var image string
 		image, err = q.generateQRImage(lss.ID, qrT)
 		if err != nil {
-			return state.FAIL, cbs, err
+			return state.Fail, cbs, err
 		}
 
 		q.Callbacks[0].Properties["image"] = image
 
-		return state.IN_PROGRESS, q.Callbacks, err
+		return state.InProgress, q.Callbacks, err
 	}
 	lss.UserID = uid
-	return state.PASS, cbs, err
+	return state.Pass, cbs, err
 
 }
 

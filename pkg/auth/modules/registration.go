@@ -32,18 +32,19 @@ func (f *Field) initField() error {
 }
 
 func (rm *Registration) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, rm.Callbacks, err
+	return state.InProgress, rm.Callbacks, err
 }
 
 func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
 	if inCbs == nil {
-		return state.FAIL, cbs, errors.New("callbacks can't be nil")
+		return state.Fail, cbs, errors.New("callbacks can't be nil")
 	}
 	callbacksValid := true
 	errCbs := make([]callbacks.Callback, len(rm.Callbacks))
 	copy(errCbs, rm.Callbacks)
 
-	for i, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		if cb.Value == "" && errCbs[i].Required {
 			(&errCbs[i]).Error = (&errCbs[i]).Prompt + " required"
 			callbacksValid = false
@@ -52,7 +53,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 			re, err = regexp.Compile(errCbs[i].Validation)
 			if err != nil {
 				rm.l.Errorf("error compiling regex for callback %v", cb.Validation)
-				return state.FAIL, cbs, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
+				return state.Fail, cbs, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
 			match := re.MatchString(cb.Value)
 			if !match {
@@ -63,7 +64,7 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 	}
 
 	if !callbacksValid {
-		return state.IN_PROGRESS, errCbs, nil
+		return state.InProgress, errCbs, nil
 	}
 
 	var username string
@@ -88,14 +89,14 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 
 	if repeatPassword != password {
 		(&errCbs[len(inCbs)-1]).Error = "Passwords do not match"
-		return state.IN_PROGRESS, errCbs, nil
+		return state.InProgress, errCbs, nil
 	}
 
 	us := user.GetUserService()
 	_, exists := us.GetUser(username)
 	if exists {
 		(&errCbs[0]).Error = "User exists"
-		return state.IN_PROGRESS, errCbs, nil
+		return state.InProgress, errCbs, nil
 	}
 
 	u := user.User{
@@ -105,17 +106,17 @@ func (rm *Registration) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.F
 
 	_, err = us.CreateUser(u)
 	if err != nil {
-		return state.FAIL, cbs, err
+		return state.Fail, cbs, err
 	}
 
 	err = us.SetPassword(u.ID, password)
 	if err != nil {
-		return state.FAIL, cbs, err
+		return state.Fail, cbs, err
 	}
 
 	fs.UserID = u.ID
 
-	return state.PASS, rm.Callbacks, err
+	return state.Pass, rm.Callbacks, err
 }
 
 func (rm *Registration) ValidateCallbacks(cbs []callbacks.Callback) error {
@@ -132,11 +133,11 @@ func init() {
 
 func newRegistrationModule(base BaseAuthModule) AuthModule {
 	var rm Registration
-	rm.UsePassword = true //default value
+	rm.UsePassword = true // default value
 	rm.UseRepeatPassword = true
 	err := mapstructure.Decode(base.Properties, &rm)
 	if err != nil {
-		panic(err) //TODO add error processing
+		panic(err) // TODO add error processing
 	}
 	rm.BaseAuthModule = base
 

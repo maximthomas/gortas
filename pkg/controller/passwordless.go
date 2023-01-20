@@ -82,7 +82,7 @@ func (pc *PasswordlessServicesController) RegisterConfirmQR(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No user found in the repository"})
 		return
 	}
-	//generate secret key
+	// generate secret key
 	secret := uuid.New().String()
 	qrProps := QRProps{Secret: secret}
 	qrPropsJSON, err := json.Marshal(qrProps)
@@ -151,7 +151,7 @@ func (pc *PasswordlessServicesController) AuthQR(c *gin.Context) {
 		return
 	}
 
-	//authorise session
+	// authorise session
 	var fs state.FlowState
 	err = json.Unmarshal([]byte(sess.Properties[constants.FlowStateSessionProperty]), &fs)
 	if err != nil {
@@ -161,7 +161,7 @@ func (pc *PasswordlessServicesController) AuthQR(c *gin.Context) {
 
 	moduleFound := false
 	for _, m := range fs.Modules {
-		if m.Type == "qr" && m.Status == state.IN_PROGRESS {
+		if m.Type == "qr" && m.Status == state.InProgress {
 			m.State["qrUserId"] = authQRRequest.UID
 			moduleFound = true
 			break

@@ -38,7 +38,7 @@ func TestQR(t *testing.T) {
 		lss.ID = uuid.New().String()
 		q.BaseAuthModule.State["qrUserId"] = "ivan"
 		ms, _, err := q.ProcessCallbacks(q.Callbacks, lss)
-		assert.Equal(t, state.PASS, ms)
+		assert.Equal(t, state.Pass, ms)
 		assert.NoError(t, err)
 	})
 
@@ -50,7 +50,7 @@ func TestQR(t *testing.T) {
 		lss := &state.FlowState{SharedState: map[string]string{}}
 		lss.ID = uuid.New().String()
 		ms, cbs, err := q.ProcessCallbacks(q.Callbacks, lss)
-		assert.Equal(t, state.IN_PROGRESS, ms)
+		assert.Equal(t, state.InProgress, ms)
 		assert.NoError(t, err)
 		image := cbs[0].Properties["image"]
 		assert.NotEmpty(t, image)

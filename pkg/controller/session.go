@@ -45,10 +45,10 @@ func (sc *SessionController) SessionInfo(c *gin.Context) {
 func (sc *SessionController) SessionJwt(c *gin.Context) {
 	var sessionID string
 	authHeader := c.Request.Header.Get("Authorization")
-	if authHeader != "" { //from header
+	if authHeader != "" { // from header
 		sessionID = strings.TrimPrefix(authHeader, "Bearer ")
 	}
-	if sessionID == "" { //from cookie
+	if sessionID == "" { // from cookie
 		cookie, err := c.Request.Cookie(state.SessionCookieName)
 		if err == nil {
 			sessionID = cookie.Value

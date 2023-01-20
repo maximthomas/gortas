@@ -14,11 +14,11 @@ type SimpleModule struct {
 }
 
 func (sm *SimpleModule) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, sm.Callbacks, err
+	return state.InProgress, sm.Callbacks, err
 }
 
 func (sm *SimpleModule) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, sm.Callbacks, err
+	return state.InProgress, sm.Callbacks, err
 }
 
 func (sm *SimpleModule) ValidateCallbacks(cbs []callbacks.Callback) error {

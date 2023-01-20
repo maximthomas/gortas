@@ -62,7 +62,7 @@ func (ur *userMongoRepository) ValidatePassword(id, password string) bool {
 	if err == nil {
 		valid = true
 	}
-	//valid = repoUser.Password == password
+	// valid = repoUser.Password == password
 
 	return valid
 }

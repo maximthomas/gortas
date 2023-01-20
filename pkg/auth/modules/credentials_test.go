@@ -16,7 +16,7 @@ func TestCredentialsProcess(t *testing.T) {
 	ms, cbs, err := cm.Process(nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(cbs))
-	assert.Equal(t, state.IN_PROGRESS, ms)
+	assert.Equal(t, state.InProgress, ms)
 
 	assert.Equal(t, "login", cbs[0].Name)
 	assert.Equal(t, "name", cbs[1].Name)
@@ -42,7 +42,7 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			name:     "",
 			emailErr: "Email required",
 			nameErr:  "Name required",
-			status:   state.IN_PROGRESS,
+			status:   state.InProgress,
 		},
 		{
 			test:     "invalid email",
@@ -50,7 +50,7 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			name:     testName,
 			emailErr: "Email invalid",
 			nameErr:  "",
-			status:   state.IN_PROGRESS,
+			status:   state.InProgress,
 		},
 		{
 			test:     "valid name email",
@@ -58,7 +58,7 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			name:     testName,
 			emailErr: "",
 			nameErr:  "",
-			status:   state.PASS,
+			status:   state.Pass,
 		},
 	}
 	for _, tt := range tests {
@@ -78,11 +78,11 @@ func TestCredentialsProcessCallbacks(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tt.status, ms)
 			switch ms {
-			case state.IN_PROGRESS:
+			case state.InProgress:
 				assert.Equal(t, 2, len(cbs))
 				assert.Equal(t, tt.emailErr, cbs[0].Error)
 				assert.Equal(t, tt.nameErr, cbs[1].Error)
-			case state.PASS:
+			case state.Pass:
 				assert.Equal(t, testEmail, cm.credentialsState.UserID)
 				assert.Equal(t, testName, cm.credentialsState.Properties["name"])
 

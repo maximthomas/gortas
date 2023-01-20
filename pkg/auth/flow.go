@@ -49,7 +49,7 @@ modules:
 	for moduleIndex, moduleInfo := range fs.Modules {
 		switch moduleInfo.Status {
 		// TODO v2 match module names in a callback request
-		case state.START, state.IN_PROGRESS:
+		case state.Start, state.InProgress:
 			var instance modules.AuthModule
 			instance, err = modules.GetAuthModule(moduleInfo, r, w)
 			if err != nil {
@@ -57,7 +57,7 @@ modules:
 			}
 			var newState state.ModuleStatus
 			// if module is the first in the flow, then pass callbacks directly to the module
-			if (len(cbReq.Callbacks) == 0 || moduleIndex > 0) && moduleInfo.Status == state.START {
+			if (len(cbReq.Callbacks) == 0 || moduleIndex > 0) && moduleInfo.Status == state.Start {
 				newState, outCbs, err = instance.Process(&fs)
 				if err != nil {
 					return cbResp, err
@@ -86,20 +86,20 @@ modules:
 			}
 
 			switch moduleInfo.Status {
-			case state.IN_PROGRESS, state.START:
+			case state.InProgress, state.Start:
 				cbResp = callbacks.Response{
 					Callbacks: outCbs,
 					Module:    moduleInfo.ID,
 					FlowID:    fs.ID,
 				}
 				return cbResp, err
-			case state.PASS:
-				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
+			case state.Pass:
+				if moduleInfo.Criteria == constants.CriteriaSufficient { // TODO v2 refactor move to function
 					break modules
 				}
 				continue
-			case state.FAIL:
-				if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
+			case state.Fail:
+				if moduleInfo.Criteria == constants.CriteriaSufficient { // TODO v2 refactor move to function
 					continue
 				}
 				return cbResp, autherrors.NewAuthFailed("auth failed")
@@ -109,11 +109,11 @@ modules:
 	authSucceeded := true
 	for _, moduleInfo := range fs.Modules {
 
-		if moduleInfo.Criteria == constants.CriteriaSufficient { //TODO v2 refactor move to function
-			if moduleInfo.Status == state.PASS {
+		if moduleInfo.Criteria == constants.CriteriaSufficient { // TODO v2 refactor move to function
+			if moduleInfo.Status == state.Pass {
 				break
 			}
-		} else if moduleInfo.Status != state.PASS {
+		} else if moduleInfo.Status != state.Pass {
 			authSucceeded = false
 			break
 		}

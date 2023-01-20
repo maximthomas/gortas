@@ -41,7 +41,7 @@ func TestProcess(t *testing.T) {
 	var fs state.FlowState
 	status, cbs, err := m.Process(&fs)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, status)
+	assert.Equal(t, state.InProgress, status)
 	assert.Equal(t, 2, len(cbs))
 
 	//check otp callback
@@ -80,7 +80,7 @@ func TestProcess_MagicLink(t *testing.T) {
 	var fs state.FlowState
 	st, _, err := m.Process(&fs)
 	assert.NoError(t, err)
-	assert.Equal(t, state.PASS, st)
+	assert.Equal(t, state.Pass, st)
 }
 
 func TestGenerateOTP(t *testing.T) {
@@ -113,7 +113,7 @@ func TestProcessCallbacks_CodeExpired(t *testing.T) {
 	}
 	st, cbs, err := m.ProcessCallbacks(inCbs, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Equal(t, "OTP expired", cbs[0].Error)
 }
 
@@ -136,7 +136,7 @@ func TestProcessCallbacks_BadOTP(t *testing.T) {
 	}
 	st, cbs, err := m.ProcessCallbacks(inCbs, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Equal(t, "Invalid OTP", cbs[0].Error)
 	assert.Equal(t, "4", cbs[0].Properties["retryCount"])
 }
@@ -157,7 +157,7 @@ func TestProcessCallbacks_SendNotAllowed(t *testing.T) {
 	var fs state.FlowState
 	st, cbs, err := m.ProcessCallbacks(inCbs, &fs)
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Equal(t, "Sending not allowed yet", cbs[1].Error)
 	resend, err := strconv.Atoi(cbs[0].Properties["resendSec"])
 	assert.NoError(t, err, "incorrect converted")
@@ -182,7 +182,7 @@ func TestProcessCallbacks_Send(t *testing.T) {
 	m.otpState.Otp = testOTP
 	st, cbs, err := m.ProcessCallbacks(inCbs, &state.FlowState{})
 	assert.NoError(t, err)
-	assert.Equal(t, state.IN_PROGRESS, st)
+	assert.Equal(t, state.InProgress, st)
 	assert.Empty(t, cbs[1].Error)
 	assert.NotEqual(t, testOTP, m.State["otp"])
 	otpCb := cbs[0]
@@ -210,7 +210,7 @@ func TestProcessCallbacks_CodeValid(t *testing.T) {
 	}
 	st, cbs, err := m.ProcessCallbacks(inCbs, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, state.PASS, st)
+	assert.Equal(t, state.Pass, st)
 	assert.Empty(t, cbs[0].Error)
 }
 

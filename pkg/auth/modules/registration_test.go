@@ -57,7 +57,7 @@ func TestRegistration_Process_InvalidLogin(t *testing.T) {
 			assert.Equal(t, 4, len(cbs))
 			assert.Equal(t, tt.emailError, cbs[0].Error)
 			assert.Equal(t, tt.nameError, cbs[1].Error)
-			assert.Equal(t, state.IN_PROGRESS, ms)
+			assert.Equal(t, state.InProgress, ms)
 		})
 	}
 
@@ -74,7 +74,7 @@ func TestRegistration_Process(t *testing.T) {
 		fmt.Print(status, cbs, err)
 		assert.Equal(t, 4, len(cbs))
 		assert.NoError(t, err)
-		assert.Equal(t, state.IN_PROGRESS, status)
+		assert.Equal(t, state.InProgress, status)
 		assert.Equal(t, http.StatusOK, recorder.Code)
 	})
 }
@@ -92,7 +92,7 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 			inCbs: nil,
 			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
 				assert.Error(t, err)
-				assert.Equal(t, state.FAIL, status)
+				assert.Equal(t, state.Fail, status)
 			},
 		},
 		{
@@ -113,7 +113,7 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 			},
 			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, state.IN_PROGRESS, status)
+				assert.Equal(t, state.InProgress, status)
 				assert.Equal(t, "Email required", cbs[0].Error)
 				assert.Equal(t, "Name required", cbs[1].Error)
 				assert.Equal(t, "Password required", cbs[2].Error)
@@ -140,7 +140,7 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 				},
 			},
 			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
-				assert.Equal(t, state.IN_PROGRESS, status)
+				assert.Equal(t, state.InProgress, status)
 				assert.Equal(t, "User exists", cbs[0].Error)
 			},
 		},
@@ -166,7 +166,7 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 			},
 			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, state.IN_PROGRESS, status)
+				assert.Equal(t, state.InProgress, status)
 				assert.Equal(t, "Passwords do not match", cbs[3].Error)
 			},
 		},
@@ -192,7 +192,7 @@ func TestRegistration_ProcessCallbacks(t *testing.T) {
 			},
 			assertions: func(t *testing.T, status state.ModuleStatus, cbs []callbacks.Callback, err error) {
 				assert.NoError(t, err)
-				assert.Equal(t, state.PASS, status)
+				assert.Equal(t, state.Pass, status)
 				us := user.GetUserService()
 				_, ok := us.GetUser(userName)
 				assert.True(t, ok)

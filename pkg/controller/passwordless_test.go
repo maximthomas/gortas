@@ -134,7 +134,7 @@ func TestPasswordlessServicesController_AuthQR(t *testing.T) {
 				ID:         "",
 				Type:       "qr",
 				Properties: nil,
-				Status:     state.IN_PROGRESS,
+				Status:     state.InProgress,
 				State:      map[string]interface{}{},
 			},
 		},

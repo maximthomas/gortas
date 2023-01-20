@@ -23,7 +23,7 @@ type credentialsState struct {
 }
 
 func (cm *Credentials) Process(s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, cm.Callbacks, nil
+	return state.InProgress, cm.Callbacks, nil
 }
 
 func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
@@ -33,7 +33,8 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 	callbacksValid := true
 
 	// callbacks validation
-	for i, cb := range inCbs {
+	for i := range inCbs {
+		cb := inCbs[i]
 		if cb.Value == "" && cbs[i].Required {
 			(&cbs[i]).Error = (&cbs[i]).Prompt + " required"
 			callbacksValid = false
@@ -42,7 +43,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 			re, err = regexp.Compile(cbs[i].Validation)
 			if err != nil {
 				cm.l.Errorf("error compiling regex for callback %v", cb.Validation)
-				return state.FAIL, nil, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
+				return state.Fail, nil, errors.Wrapf(err, "error compiling regex for callback %v", cb.Validation)
 			}
 			match := re.MatchString(cb.Value)
 			if !match {
@@ -53,10 +54,10 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 	}
 
 	if !callbacksValid {
-		return state.IN_PROGRESS, cbs, err
+		return state.InProgress, cbs, err
 	}
 
-	//fill state values
+	// fill state values
 
 	for i := range inCbs {
 		cb := inCbs[i]
@@ -68,7 +69,7 @@ func (cm *Credentials) ProcessCallbacks(inCbs []callbacks.Callback, s *state.Flo
 	}
 	cm.updateState()
 	s.UserID = cm.credentialsState.UserID
-	return state.PASS, nil, err
+	return state.Pass, nil, err
 }
 
 func (cm *Credentials) updateState() {
@@ -112,7 +113,7 @@ func newCredentials(base BaseAuthModule) AuthModule {
 	var cm Credentials
 	err := mapstructure.Decode(base.Properties, &cm)
 	if err != nil {
-		panic(err) //TODO add error processing
+		panic(err) // TODO add error processing
 	}
 
 	if cm.PrimaryField.Name == "" {

@@ -11,7 +11,7 @@ type LoginPassword struct {
 }
 
 func (lm *LoginPassword) Process(_ *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
-	return state.IN_PROGRESS, lm.Callbacks, err
+	return state.InProgress, lm.Callbacks, err
 }
 
 func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.FlowState) (ms state.ModuleStatus, cbs []callbacks.Callback, err error) {
@@ -31,11 +31,11 @@ func (lm *LoginPassword) ProcessCallbacks(inCbs []callbacks.Callback, fs *state.
 	valid := us.ValidatePassword(username, password)
 	if valid {
 		fs.UserID = username
-		return state.PASS, cbs, err
+		return state.Pass, cbs, err
 	}
 	cbs = lm.Callbacks
 	(&cbs[0]).Error = "Invalid username or password"
-	return state.IN_PROGRESS, cbs, err
+	return state.InProgress, cbs, err
 
 }
 
