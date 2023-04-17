@@ -2,6 +2,8 @@ version: '3.7'
 
 services:
   gortas:
+    build:
+      context: .
     image: maximthomas/gortas:latest
     ports:
       - "8080:8080"
