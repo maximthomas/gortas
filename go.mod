@@ -1,6 +1,6 @@
 module github.com/maximthomas/gortas
 
-go 1.20
+go 1.24.0
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -28,10 +28,10 @@ require (
 	github.com/stretchr/testify v1.8.3
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	go.mongodb.org/mongo-driver v1.11.4
-	golang.org/x/crypto v0.31.0
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/crypto v0.45.0
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -63,7 +63,7 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/xhit/go-simple-mail/v2 v2.13.0
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
 
